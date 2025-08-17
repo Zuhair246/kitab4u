@@ -9,11 +9,25 @@ const { router } = require("../../app")
 
 const loadHomePage = async (req,res) => {
     try {
+        const user = req.session.user;
+    //   console.log(`found:${user}`);
+      
+    if (user && user._id) {
+      const userData = await User.findById(user._id); 
+    //   console.log(`userData: ${userData}`);
+      
+      
+      if (!userData) {
+        return res.render("homePage"); 
+      }
+      return res.render("homePage", { user: userData });
+    }
 
-        return res.render('homePage')
+    // if no session user
+    res.render("homePage");
     }catch (error) {
 
-        console.log("Home Page Not Found")
+        console.log("Home Page Not Loading:", error)
         res.status(500).send("Server error")
         
     }
@@ -172,6 +186,7 @@ const signup = async (req, res) => {
 
         req.session.userOtp = otp;
         req.session.userData = {name, phone, email, password};
+        req.session.otpExpiry = Date.now() + 2 * 60 * 1000;
 
         res.render("verify-otp",  {
         error: req.flash("error"),
@@ -200,39 +215,18 @@ const signup = async (req, res) => {
     if (otp === req.session.userOtp) {
       const user = req.session.userData;
 
-          const existingUser = await User.findOne({ email: user.email });
-      if (existingUser) {
-          req.session.user = existingUser._id;
-        delete req.session.userOtp;
-        delete req.session.userData;
-        delete req.session.otpExpiry;
-        delete req.session.otpAttempts;
-        return res.json({ success: false, message: 'This email is already registered. Please log in.' });
-      }
-
-      if (user.phone) {
-        const existingPhone = await User.findOne({ phone: user.phone });
-        if (existingPhone) {
-          return res.json({ success: false, message: 'Phone number already registered.' });
-        }
-      }
-
       const hashedPassword = await bcrypt.hash(user.password, 10);
       const newUser = new User({
         name: user.name,
         email: user.email,
         phone: user.phone,
-        password: hashedPassword
+        password: hashedPassword,
+        isVerified: true
       });
 
       await newUser.save();
 
       req.session.user = newUser._id;
-
-    delete req.session.userOtp;
-      delete req.session.userData;
-      delete req.session.otpExpiry;
-      delete req.session.otpAttempts;
 
       return res.json({ success: true, message: 'Account created successfully. Redirecting...' });
     } else {
@@ -315,13 +309,38 @@ const login = async (req,res) => {
             return res.render("login", {message: "Incorrect Password"})
         }
 
-        req.session.user = findUser.id;
+        req.session.user = {
+           _id: findUser._id,
+           name: findUser.name,
+           email: findUser.email
+        }
+        console.log(`Login session data: ${req.session.user}`);
+        
         res.redirect('/')
     } catch (error) {
         
         console.error('login error:', error)
         res.render('login', {message: "Login Failed! Please try again!" })
 
+    }
+}
+
+const logout = async (req,res) => {
+    try {
+        
+        req.session.destroy((err)=> {
+            if(err) {
+                console.log("Session destruction error", err.message);
+                return res.redirect('/pageNotFound')
+            } else {
+            return res.redirect('/login')
+            }
+        })
+
+    } catch (error) {
+        console.log("Logout error", error);
+        res.redirect('/pageNotFound')
+        
     }
 }
 
@@ -333,6 +352,7 @@ module.exports = {
     verifyOtp,
     resendOtp,
     loadLogin,
-    login
+    login,
+    logout
 }
 

@@ -163,292 +163,113 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- Timer and AJAX Script -->
-     <script>
-   document.addEventListener("DOMContentLoaded", function() {
-  let storedTime = parseInt(localStorage.getItem('otpTimer'), 10);
+    <script>
+document.addEventListener("DOMContentLoaded", function () {
+  let storedTime = parseInt(localStorage.getItem("otpTimer"), 10);
   let timeLeft = isNaN(storedTime) || storedTime <= 0 ? 59 : storedTime;
 
-  const timerElement = document.getElementById('timer');
-  const resendLink = document.getElementById('resendLink');
-  const flashMessages = document.getElementById('flashMessages');
+  const timerElement = document.getElementById("timer");
+  const resendLink = document.getElementById("resendLink");
+  const flashMessages = document.getElementById("flashMessages");
+  const otpInput = document.getElementById("confirmationCode");
+  const otpForm = document.getElementById("otpForm");
 
+  // Timer update function
   function updateTimer() {
     const minutes = Math.floor(timeLeft / 60);
     const seconds = timeLeft % 60;
-    timerElement.textContent = `${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}s`;
-    localStorage.setItem('otpTimer', timeLeft);
+    timerElement.textContent = `${minutes.toString().padStart(2, "0")}:${seconds
+      .toString()
+      .padStart(2, "0")}s`;
+    localStorage.setItem("otpTimer", timeLeft);
 
     if (timeLeft > 0) {
-      resendLink.classList.add('disabled');
-      resendLink.style.pointerEvents = 'none';
-      resendLink.style.opacity = '0.5';
+      resendLink.classList.add("disabled");
+      resendLink.style.pointerEvents = "none";
+      resendLink.style.opacity = "0.5";
       timeLeft--;
       setTimeout(updateTimer, 1000);
     } else {
-      resendLink.classList.remove('disabled');
-      resendLink.style.pointerEvents = 'auto';
-      resendLink.style.opacity = '1';
+      resendLink.classList.remove("disabled");
+      resendLink.style.pointerEvents = "auto";
+      resendLink.style.opacity = "1";
     }
   }
 
   updateTimer();
 
-  document.getElementById('confirmationCode').focus();
-  document.getElementById('confirmationCode').addEventListener('input', function() {
-    this.value = this.value.replace(/[^0-9]/g, '');
+  // Auto focus & restrict OTP input
+  otpInput.focus();
+  otpInput.addEventListener("input", function () {
+    this.value = this.value.replace(/[^0-9]/g, ""); // only numbers
   });
 
-  document.getElementById('otpForm').addEventListener('submit', async function(e) {
+  // OTP form submission
+  otpForm.addEventListener("submit", async function (e) {
     e.preventDefault();
-    const otp = document.getElementById('confirmationCode').value;
+    const otp = otpInput.value;
     const verifyButton = this.querySelector('button[type="submit"]');
     verifyButton.disabled = true;
 
     try {
-      const response = await fetch('/verify-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ otp }),
       });
       const data = await response.json();
+
       if (data.success) {
-        showFlashMessage('success', data.message);
-        setTimeout(() => window.location.href = '/', 2000);
+        showFlashMessage("success", data.message);
+        setTimeout(() => (window.location.href = "/"), 2000);
       } else {
-        showFlashMessage('error', data.message);
+        showFlashMessage("error", data.message);
       }
     } catch {
-      showFlashMessage('error', 'Failed to verify OTP. Please try again.');
+      showFlashMessage("error", "Failed to verify OTP. Please try again.");
     } finally {
       verifyButton.disabled = false;
     }
   });
 
+  // Resend OTP
   async function resendOTP(e) {
     e.preventDefault();
-    if (!resendLink.classList.contains('disabled')) {
-      localStorage.setItem('otpTimer', 59);
+    if (!resendLink.classList.contains("disabled")) {
+      localStorage.setItem("otpTimer", 59);
       timeLeft = 59;
-      document.getElementById('confirmationCode').value = '';
-      document.getElementById('confirmationCode').focus();
+      otpInput.value = "";
+      otpInput.focus();
       updateTimer();
 
       try {
-        const response = await fetch('/resendOtp', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        const response = await fetch("/resendOtp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
         });
         const data = await response.json();
         if (data.success) {
-          showFlashMessage('success', data.message);
+          showFlashMessage("success", data.message);
         } else {
-          showFlashMessage('error', data.message);
+          showFlashMessage("error", data.message);
           if (data.redirect) window.location.href = data.redirect;
         }
       } catch {
-        showFlashMessage('error', 'Failed to resend OTP. Please try again.');
+        showFlashMessage("error", "Failed to resend OTP. Please try again.");
       }
     }
   }
 
-  resendLink.addEventListener('click', resendOTP);
+  resendLink.addEventListener("click", resendOTP);
 
+  // Flash message
   function showFlashMessage(type, message) {
-    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    const alertClass = type === "success" ? "alert-success" : "alert-danger";
     flashMessages.innerHTML = `<div class="alert ${alertClass}" role="alert">${message}</div>`;
-    setTimeout(() => flashMessages.innerHTML = '', 5000);
-  }
-});
-document.addEventListener("DOMContentLoaded", function() {
-  let storedTime = parseInt(localStorage.getItem('otpTimer'), 10);
-  let timeLeft = isNaN(storedTime) || storedTime <= 0 ? 59 : storedTime;
-
-  const timerElement = document.getElementById('timer');
-  const resendLink = document.getElementById('resendLink');
-  const flashMessages = document.getElementById('flashMessages');
-
-  function updateTimer() {
-    const minutes = Math.floor(timeLeft / 60);
-    const seconds = timeLeft % 60;
-    timerElement.textContent = `${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}s`;
-    localStorage.setItem('otpTimer', timeLeft);
-
-    if (timeLeft > 0) {
-      resendLink.classList.add('disabled');
-      resendLink.style.pointerEvents = 'none';
-      resendLink.style.opacity = '0.5';
-      timeLeft--;
-      setTimeout(updateTimer, 1000);
-    } else {
-      resendLink.classList.remove('disabled');
-      resendLink.style.pointerEvents = 'auto';
-      resendLink.style.opacity = '1';
-    }
-  }
-
-  updateTimer();
-
-  document.getElementById('confirmationCode').focus();
-  document.getElementById('confirmationCode').addEventListener('input', function() {
-    this.value = this.value.replace(/[^0-9]/g, '');
-  });
-
-  document.getElementById('otpForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const otp = document.getElementById('confirmationCode').value;
-    const verifyButton = this.querySelector('button[type="submit"]');
-    verifyButton.disabled = true;
-
-    try {
-      const response = await fetch('/verify-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ otp }),
-      });
-      const data = await response.json();
-      if (data.success) {
-        showFlashMessage('success', data.message);
-        setTimeout(() => window.location.href = '/', 2000);
-      } else {
-        showFlashMessage('error', data.message);
-      }
-    } catch {
-      showFlashMessage('error', 'Failed to verify OTP. Please try again.');
-    } finally {
-      verifyButton.disabled = false;
-    }
-  });
-
-  async function resendOTP(e) {
-    e.preventDefault();
-    if (!resendLink.classList.contains('disabled')) {
-      localStorage.setItem('otpTimer', 59);
-      timeLeft = 59;
-      document.getElementById('confirmationCode').value = '';
-      document.getElementById('confirmationCode').focus();
-      updateTimer();
-
-      try {
-        const response = await fetch('/resendOtp', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-        });
-        const data = await response.json();
-        if (data.success) {
-          showFlashMessage('success', data.message);
-        } else {
-          showFlashMessage('error', data.message);
-          if (data.redirect) window.location.href = data.redirect;
-        }
-      } catch {
-        showFlashMessage('error', 'Failed to resend OTP. Please try again.');
-      }
-    }
-  }
-
-  resendLink.addEventListener('click', resendOTP);
-
-  function showFlashMessage(type, message) {
-    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
-    flashMessages.innerHTML = `<div class="alert ${alertClass}" role="alert">${message}</div>`;
-    setTimeout(() => flashMessages.innerHTML = '', 5000);
-  }
-});
-document.addEventListener("DOMContentLoaded", function() {
-  let storedTime = parseInt(localStorage.getItem('otpTimer'), 10);
-  let timeLeft = isNaN(storedTime) || storedTime <= 0 ? 59 : storedTime;
-
-  const timerElement = document.getElementById('timer');
-  const resendLink = document.getElementById('resendLink');
-  const flashMessages = document.getElementById('flashMessages');
-
-  function updateTimer() {
-    const minutes = Math.floor(timeLeft / 60);
-    const seconds = timeLeft % 60;
-    timerElement.textContent = `${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}s`;
-    localStorage.setItem('otpTimer', timeLeft);
-
-    if (timeLeft > 0) {
-      resendLink.classList.add('disabled');
-      resendLink.style.pointerEvents = 'none';
-      resendLink.style.opacity = '0.5';
-      timeLeft--;
-      setTimeout(updateTimer, 1000);
-    } else {
-      resendLink.classList.remove('disabled');
-      resendLink.style.pointerEvents = 'auto';
-      resendLink.style.opacity = '1';
-    }
-  }
-
-  updateTimer();
-
-  document.getElementById('confirmationCode').focus();
-  document.getElementById('confirmationCode').addEventListener('input', function() {
-    this.value = this.value.replace(/[^0-9]/g, '');
-  });
-
-  document.getElementById('otpForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const otp = document.getElementById('confirmationCode').value;
-    const verifyButton = this.querySelector('button[type="submit"]');
-    verifyButton.disabled = true;
-
-    try {
-      const response = await fetch('/verify-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ otp }),
-      });
-      const data = await response.json();
-      if (data.success) {
-        showFlashMessage('success', data.message);
-        setTimeout(() => window.location.href = '/', 2000);
-      } else {
-        showFlashMessage('error', data.message);
-      }
-    } catch {
-      showFlashMessage('error', 'Failed to verify OTP. Please try again.');
-    } finally {
-      verifyButton.disabled = false;
-    }
-  });
-
-  async function resendOTP(e) {
-    e.preventDefault();
-    if (!resendLink.classList.contains('disabled')) {
-      localStorage.setItem('otpTimer', 59);
-      timeLeft = 59;
-      document.getElementById('confirmationCode').value = '';
-      document.getElementById('confirmationCode').focus();
-      updateTimer();
-
-      try {
-        const response = await fetch('/resendOtp', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-        });
-        const data = await response.json();
-        if (data.success) {
-          showFlashMessage('success', data.message);
-        } else {
-          showFlashMessage('error', data.message);
-          if (data.redirect) window.location.href = data.redirect;
-        }
-      } catch {
-        showFlashMessage('error', 'Failed to resend OTP. Please try again.');
-      }
-    }
-  }
-
-  resendLink.addEventListener('click', resendOTP);
-
-  function showFlashMessage(type, message) {
-    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
-    flashMessages.innerHTML = `<div class="alert ${alertClass}" role="alert">${message}</div>`;
-    setTimeout(() => flashMessages.innerHTML = '', 5000);
+    setTimeout(() => (flashMessages.innerHTML = ""), 5000);
   }
 });
 </script>
+
   </body>
 </html>

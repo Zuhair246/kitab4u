@@ -40,26 +40,63 @@
                 <div class="collapse navbar-collapse" id="navbarNav">
                     <ul class="navbar-nav mx-auto">
                         <li class="nav-item">
-                            <a class="nav-link text-dark fw-medium px-5" href="/">Home</a>
+                            <a class="nav-link text-dark fw-medium px-3" href="/">Home</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark fw-medium px-5" href="/shop">Shop</a>
+                            <a class="nav-link text-dark fw-medium px-4" href="/shop">Shop</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark fw-medium px-5" href="/new-arrivals">New Arrivals</a>
+                            <a class="nav-link text-dark fw-medium px-4" href="/new-arrivals">New Arrivals</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark fw-medium px-5" href="/about">About</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark fw-medium px-5" href="/login">Log in</a>
+                            <a class="nav-link text-dark fw-medium px-4" href="/about">About</a>
                         </li>
                     </ul>
 
-                    <!-- Sign Up Button -->
-                    <div class="d-flex">
-                        <a href="/signup" class="btn btn-danger px-4 py-2 fw-medium rounded-pill">Sign Up</a>
-                    </div>
+                  <!-- Right side - User actions -->
+            <div class="user-actions d-flex align-items-center ms-lg-3 mt-3 mt-lg-0">
+                <!-- Search -->
+               <div class="search-container me-3">
+    <form action="/search" method="GET" class="d-flex">
+        <input type="text" name="q" 
+               class="form-control rounded-pill me-2 px-3" 
+               placeholder="Search books..." style="max-width: 200px;">
+        <button type="submit" class="btn btn-primary rounded-pill ms-2">
+            <i class="bi bi-search"></i>
+        </button>
+    </form>
+</div>
+
+<% if (locals.user) {%>
+     <!-- User Profile -->
+                <div class="dropdown me-3">
+                    <button class="btn dropdown-toggle p-0 text-primary" type="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-person-circle fs-3 ps-3"></i>
+                        <p><%=locals.user.name%></p>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item text-success" href="/profile">My Profile</a></li>
+                        <li><a class="dropdown-item text-success" href="/orders">My Orders</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="/logout">Logout</a></li>
+                    </ul>
+                </div>
+<%} else {%>
+                            <a class="nav-link text-dark fw-medium px-4" href="/login">Log in</a>
+                <% } %>
+
+                <!-- Wishlist -->
+                <a href="/wishlist" class="btn position-relative">
+                    <i class="bi bi-heart fs-3"></i>
+                  
+                </a>
+
+                <!-- Shopping Cart -->
+                <a href="/cart" class="btn position-relative">
+                    <i class="bi bi-bag fs-3"></i>
+                  
+                </a>
+            </div>
                 </div>
             </div>
         </nav>

@@ -100,7 +100,7 @@
             <div id="flashMessages"></div>
 
             <!-- Form -->
-            <form id="otpForm">
+            <form id="otpForm" action="<%= formAction %>" method="post">
               <!-- Instructions -->
               <h5 class="mb-3 fw-semibold text-dark">
                 Enter The OTP sent to your Email:
@@ -116,7 +116,7 @@
               <!-- OTP Input -->
               <div class="mb-4">
                 <input
-                  type="text"
+                  type="number"
                   class="form-control form-control-lg"
                   id="confirmationCode"
                   name="otp"
@@ -145,7 +145,7 @@
 
               <!-- Resend Link -->
               <div class="text-center">
-                <span class="text-muted">Didn't receive an OTP? </span>
+                <span class="text-muted">Didn't receive an OTP ? </span>
                 <a href="#" class="resend-link" id='resendLink'>Resend OTP</a>
               </div>
             </form>
@@ -205,60 +205,72 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   // OTP form submission
-  otpForm.addEventListener("submit", async function (e) {
-    e.preventDefault();
-    const otp = otpInput.value;
-    const verifyButton = this.querySelector('button[type="submit"]');
-    verifyButton.disabled = true;
+otpForm.addEventListener("submit", async function (e) {
+  e.preventDefault();
+  const otp = otpInput.value;
+  const verifyButton = this.querySelector('button[type="submit"]');
+  verifyButton.disabled = true;
+
+  try {
+    const response = await fetch(this.action, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ otp }),
+    });
+    const data = await response.json();
+
+    if (data.success) {
+      showFlashMessage("success", data.message);
+      if (data.redirect) {
+        setTimeout(() => (window.location.href = data.redirect), 2000);
+      }
+    } else {
+      showFlashMessage("error", data.message);
+      if (data.redirect) {
+        setTimeout(() => (window.location.href = data.redirect), 2000);
+      }
+    }
+  } catch {
+    showFlashMessage("error", "Failed to verify OTP. Please try again.");
+  } finally {
+    verifyButton.disabled = false;
+  }
+});
+
+
+  // Resend OTP
+  async function resendOTP(e) {
+  e.preventDefault();
+  if (!resendLink.classList.contains("disabled")) {
+    localStorage.setItem("otpTimer", 59);
+    timeLeft = 59;
+    otpInput.value = "";
+    otpInput.focus();
+    updateTimer();
 
     try {
-      const response = await fetch("/verify-otp", {
+      const response = await fetch("/resendOtp", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ otp }),
+        headers: { "Content-Type": "application/json" }
       });
+
       const data = await response.json();
 
       if (data.success) {
         showFlashMessage("success", data.message);
-        setTimeout(() => (window.location.href = "/"), 2000);
       } else {
         showFlashMessage("error", data.message);
-      }
-    } catch {
-      showFlashMessage("error", "Failed to verify OTP. Please try again.");
-    } finally {
-      verifyButton.disabled = false;
-    }
-  });
-
-  // Resend OTP
-  async function resendOTP(e) {
-    e.preventDefault();
-    if (!resendLink.classList.contains("disabled")) {
-      localStorage.setItem("otpTimer", 59);
-      timeLeft = 59;
-      otpInput.value = "";
-      otpInput.focus();
-      updateTimer();
-
-      try {
-        const response = await fetch("/resendOtp", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-        });
-        const data = await response.json();
-        if (data.success) {
-          showFlashMessage("success", data.message);
-        } else {
-          showFlashMessage("error", data.message);
-          if (data.redirect) window.location.href = data.redirect;
+        if (data.redirect) {
+          window.location.href = data.redirect;  // handle redirect if backend sends it
         }
-      } catch {
-        showFlashMessage("error", "Failed to resend OTP. Please try again.");
       }
+
+    } catch (error) {
+      showFlashMessage("error", "Failed to resend OTP. Please try again.");
     }
   }
+}
+
 
   resendLink.addEventListener("click", resendOTP);
 

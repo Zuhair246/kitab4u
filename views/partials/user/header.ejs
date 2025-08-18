@@ -78,7 +78,10 @@
                         <li><a class="dropdown-item text-success" href="/profile">My Profile</a></li>
                         <li><a class="dropdown-item text-success" href="/orders">My Orders</a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item text-danger" href="/logout">Logout</a></li>
+                        <li><form action="/logout" method="POST" style="display:inline;">
+  <button type="submit" class="btn text-danger">Logout</button>
+</form>
+</li>
                     </ul>
                 </div>
 <%} else {%>

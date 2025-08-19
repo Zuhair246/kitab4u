@@ -410,6 +410,7 @@ const verifyEmail = async (req,res) => {
         }
         req.session.userOtp = otp;
         req.session.otpExpiry = Date.now() + 2 * 60 * 1000;
+        req.session.resetEmail = email;
         console.log("Forgot password OTP:", otp);
         req.flash('success', "OTP sent to your email!");
             res.render("verify-otp",  {
@@ -447,10 +448,12 @@ const verifyEmail = async (req,res) => {
     }
 
     if (otp === req.session.userOtp) {
+      // req.session.resetEmail = req.session.userData.email;
+      // console.log(req.session.resetEmail);
       return res.json({ 
         success: true, 
         message: 'Email verified successfully ! Redirecting to reset password...', 
-        redirect: '/resetPassword' 
+        redirect: '/newPassword'
       });
     } else {
       return res.json({ success: false, message: 'Invalid OTP! Please try again!' });
@@ -464,6 +467,57 @@ const verifyEmail = async (req,res) => {
   }
 };
 
+const loadNewPassword = async (req,res) => {
+  try {
+      res.render("newPassword",  {
+        error: req.flash("error"),
+        success: req.flash("success")
+    });
+  } catch (error) {
+         console.log('New password loading error:', error);
+     res.status(500).send("Server error")
+        
+  }
+}
+
+const newPassword = async (req,res) => {
+  try {
+    const {newPassword, confirmPassword} = req.body;
+    if(!newPassword || !confirmPassword) {
+      req.flash('error',"Enter password and confirm password")
+      req.flash("formData", {newPassword, confirmPassword})
+      return res.redirect('/newPassword')
+    }
+    const checkPassword = /^(?=.{7,}$)(?=.*[A-Za-z]|\d)[A-Za-z\d@._!#$%&*?-]+$/
+    if (!checkPassword.test(newPassword)) {
+        req.flash("error", "Password must be 7 characters");
+        req.flash("formData", { newPassword, confirmPassword });
+        return res.redirect("/newPassword");
+    }
+
+    if(newPassword !== confirmPassword) {
+      req.flash('error', "Password miss-match")
+      req.flash("formData", {newPassword, confirmPassword})
+      return res.redirect('/newPassword')
+    }
+      const email = req.session.resetEmail;
+      console.log(email);
+      
+      const user = await User.findOne({email});
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+       user.password = hashedPassword;
+      await user.save();
+
+    delete req.session.resetEmail; // cleanup
+
+    req.flash("success", "Password reset successful, Please login");
+    return res.redirect("/login");
+    
+  } catch (error) {
+            console.error("new password setting error:", error);
+        res.redirect("/pageNotFound")
+  }
+}
 
 module.exports = {
     loadHomePage,
@@ -477,6 +531,8 @@ module.exports = {
     logout,
     loadVerifyEmail,
     verifyEmail,
-    resetPasswordOtp
+    resetPasswordOtp,
+    loadNewPassword,
+    newPassword
 }
 

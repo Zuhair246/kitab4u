@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Log In - KITAB4U</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="shortcut icon" href="../../images/logo.png" type="image/x-icon">
+  <style>
+    .left-panel {
+      background: linear-gradient(135deg, #e8e2d4 0%, #f0ebe0 100%);
+    }
+    .form-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #2d3748;
+      text-align: center;
+    }
+    .form-control:focus {
+      border-color: #f7931e;
+      box-shadow: 0 0 0 0.2rem rgba(247, 147, 30, 0.25);
+    }
+    .create-btn {
+      background: #4a5568;
+      border: none;
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 8px;
+      width: 100%;
+      font-weight: 500;
+    }
+    .create-btn:hover {
+      background: #f7931e;
+    }
+  </style>
+</head>
+<body>
+   <div class="container-fluid signup-container d-flex flex-column flex-lg-row min-vh-100">
+  <!-- Left Panel -->
+  <div class="col-12 col-lg-6 left-panel d-flex align-items-center justify-content-center">
+    <img src="../../images/logo.png" alt="logo" class="img-fluid" style="max-width: 500px;">
+  </div>
+
+  <!-- Right Panel -->
+  <div class="col-12 col-lg-6 d-flex align-items-center justify-content-center p-4">
+    <div class="w-100" style="max-width: 400px;">
+      <h2 class="form-title">ADMIN LOG IN TO KITAB4U</h2>
+      <br>
+
+      <% if (locals.message && message.length>0) { %>
+        <div class="alert alert-danger text-center">
+          <%= message %>    
+        </div>
+      <% } %>
+
+      <form action="/adminLogin" method="POST"> 
+        <input type="text" class="form-control mb-3" name="email" placeholder="Admin" id="email">
+        <input type="password" class="form-control mb-3" name="password" placeholder="Password" id="password">
+        <button type="submit" class="btn create-btn">Login</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

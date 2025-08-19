@@ -6,6 +6,7 @@ dotenv.config();
 const session = require('express-session')
 const db = require('./config/db')
 const userRouter = require("./routes/userRouter")
+const adminRouter = require('./routes/adminRouter')
 const ejs = require('ejs')
 const flash = require('connect-flash')
 const passport = require("./config/passport");
@@ -36,6 +37,7 @@ app.set("views", [path.join(__dirname,'views/user'), path.join(__dirname,"views/
 app.use(express.static(path.join(__dirname,"public")))
 
 app.use('/', userRouter)
+app.use('/admin', adminRouter)
 
 app.listen(process.env.PORT, ()=>{
     console.log("Server Running");

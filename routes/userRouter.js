@@ -16,6 +16,8 @@ router.post('/logout', userController.logout)
 router.get('/verifyEmail', userController.loadVerifyEmail)
 router.post('/verifyEmail', userController.verifyEmail)
 router.post('/resetPasswordOtp', userController.resetPasswordOtp)
+router.get('/newPassword', userController.loadNewPassword)
+router.post('/newPassword', userController.newPassword)
 
 router.get('/auth/google', passport.authenticate('google',{scope:['profile','email']}));
 

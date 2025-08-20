@@ -1,0 +1,61 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KITAB4U - Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="shortcut icon" href="../../../images/logo.png" type="image/x-icon">
+    <link rel="stylesheet" href="../../../styles/admin/header.css">
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-2 sidebar p-0">
+                <div class="p-3">
+                    <div class="text-center mb-4">
+                        <img src="../../images/logo.png" alt="kitab4u-logo">
+                    </div>
+                    <nav class="nav flex-column">
+                        <a class="nav-link active" href="/dashboard">
+                            <i class="fas fa-th-large me-2"></i> Dashboard
+                        </a>
+                        <a class="nav-link" href="/orders">
+                            <i class="fas fa-shopping-bag me-2"></i> Orders
+                        </a>
+                        <a class="nav-link" href="/products">
+                            <i class="fas fa-box me-2"></i> Products
+                        </a>
+                        <a class="nav-link" href="/sales-report">
+                            <i class="fas fa-chart-line me-2"></i> Sales report
+                        </a>
+                        <a class="nav-link" href="/customers">
+                            <i class="fas fa-users me-2"></i> Customer
+                        </a>
+                        <a class="nav-link" href="/coupons">
+                            <i class="fas fa-ticket-alt me-2"></i> Coupon
+                        </a>
+                        <a class="nav-link" href="/categories">
+                            <i class="fas fa-th me-2"></i> Category
+                        </a>
+                        <a class="nav-link" href="/refunds">
+                            <i class="fas fa-undo me-2"></i> Refund/Return
+                        </a>
+                        <a class="nav-link" href="/banners">
+                            <i class="fas fa-image me-2"></i> Banners
+                        </a>
+                        <a class="nav-link" href="/referrals">
+                            <i class="fas fa-user-friends me-2"></i> Referrals
+                        </a>
+                        <form action="/admin/logout" method="post">
+                             <button type="submit" class="btn  text-danger"> 
+                                <i class="fas fa-sign-out-alt me-2"></i> Sign out
+                            </button>
+                        </form>
+                    </nav>
+                </div>
+            </div>

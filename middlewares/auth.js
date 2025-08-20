@@ -36,7 +36,7 @@ const adminAuth = (req,res,next) => {
     })
 }
 
-mosdule.exports = {
+module.exports = {
     userAuth,
     adminAuth
 }

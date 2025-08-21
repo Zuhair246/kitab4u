@@ -13,11 +13,9 @@ const categorySchema = new mongoose.Schema({
     isListed: {
         type: Boolean,
         default: true
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
     }
-})
+},
+{timestamps: true}
+)
 
 module.exports = mongoose.model("Category", categorySchema);

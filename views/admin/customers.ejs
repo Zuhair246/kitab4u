@@ -1,0 +1,123 @@
+<%-include("../../views/partials/admin/header")%>
+
+<!-- Main Content Area for Customers Page -->
+<div class="col-md-10">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+        <h2>Customers</h2>
+        <div class="d-flex gap-3">
+            <form class="d-flex" method="GET" action="/admin/users">
+                <div class="position-relative">
+                    <i class="fas fa-search position-absolute"
+                       style="left: 12px; top: 50%; transform: translateY(-50%); color: #6c757d;"></i>
+                    <input type="text" class="form-control"
+                           placeholder="Search here"
+                           style="padding-left: 40px; width: 300px;"
+                           name="search"
+                           value="<%= typeof search !== 'undefined' ? search : '' %>">
+                </div>
+                <button type="submit" class="btn btn-outline-primary ms-2">
+                    Search
+                </button>
+                <% if (typeof search !== 'undefined' && search.trim() !== '') { %>
+                    <a href="/admin/users" class="btn btn-outline-secondary ms-2">Clear</a>
+                <% } %>
+            </form>
+        </div>
+    </div>
+
+    <!-- Customer Table -->
+    <div class="p-4">
+        <div class="bg-white rounded-3 shadow-sm overflow-hidden">
+            <table class="table table-hover mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="border-0 py-3 px-4 fw-semibold text-muted">Name</th>
+                        <th class="border-0 py-3 px-4 fw-semibold text-muted">Email</th>
+                        <th class="border-0 py-3 px-4 fw-semibold text-muted">Phone</th>
+                        <th class="border-0 py-3 px-4 fw-semibold text-muted">Action</th>
+                        <th class="border-0 py-3 px-4 fw-semibold text-muted">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% for (let i = 0; i<data.length; i++) { %>
+                    <tr>
+                        <td><%=data[i].name%></td>
+                        <td><%=data[i].email%></td>
+                        <td><%=data[i].phone%></td>
+                        <td>
+                            <% if (data[i].isBlocked === false) { %>
+                                <a href="/admin/blockCustomer?id=<%=data[i]._id%>" class="btn btn-danger text-white" style="width: 80px;">Block</a>
+                            <% } else { %>
+                                <a href="/admin/unblockCustomer?id=<%=data[i]._id%>" class="btn btn-success text-white" style="width: 80px;">Unblock</a>
+                            <% } %>
+                        </td>
+                        <td>
+                            <% if (data[i].isBlocked === true) { %>
+                                <span class="badge text-danger">Blocked</span>
+                            <% } else { %>
+                                <span class="text-success">Active</span>
+                            <% } %>
+                        </td>
+                    </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="d-flex justify-content-between align-items-center mt-4">
+            <nav aria-label="Customer pagination">
+  <ul class="pagination mb-0">
+
+    <!-- Prev Button -->
+    <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
+      <a class="page-link"
+         href="?page=<%= currentPage - 1 %><%= search ? '&search=' + search : '' %>">
+        Prev
+      </a>
+    </li>
+
+    <!-- Always show Page 1 -->
+    <li class="page-item <%= currentPage === 1 ? 'active' : '' %>">
+      <a class="page-link" href="?page=1<%= search ? '&search=' + search : '' %>">1</a>
+    </li>
+
+    <!-- Left dots -->
+    <% if (currentPage > 3) { %>
+      <li class="page-item disabled"><span class="page-link">…</span></li>
+    <% } %>
+
+    <!-- Middle Pages -->
+    <% for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) { %>
+      <li class="page-item <%= currentPage === i ? 'active' : '' %>">
+        <a class="page-link" href="?page=<%= i %><%= search ? '&search=' + search : '' %>"><%= i %></a>
+      </li>
+    <% } %>
+
+    <!-- Right dots -->
+    <% if (currentPage < totalPages - 2) { %>
+      <li class="page-item disabled"><span class="page-link">…</span></li>
+    <% } %>
+
+    <!-- Always show Last Page -->
+    <% if (totalPages > 1) { %>
+      <li class="page-item <%= currentPage === totalPages ? 'active' : '' %>">
+        <a class="page-link" href="?page=<%= totalPages %><%= search ? '&search=' + search : '' %>"><%= totalPages %></a>
+      </li>
+    <% } %>
+
+    <!-- Next Button -->
+    <li class="page-item <%= currentPage === totalPages ? 'disabled' : '' %>">
+      <a class="page-link"
+         href="?page=<%= currentPage + 1 %><%= search ? '&search=' + search : '' %>">
+        Next
+      </a>
+    </li>
+  </ul>
+</nav>
+        </div>
+    </div>
+</div>
+
+<%-include("../../views/partials/admin/footer")%>

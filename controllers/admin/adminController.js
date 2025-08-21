@@ -25,10 +25,10 @@ const login = async (req,res) => {
                 req.session.admin = true;
                 return res.redirect('/admin')
             }else {
-                return res.redirect('/login')
+                return res.redirect('/admin/login')
             }
         }else {
-            return res.redirect('/login')
+            return res.redirect('/admin/login')
         }
        
     } catch (error) {

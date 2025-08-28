@@ -5,13 +5,16 @@ const variantSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  originalPrice: { type: Number, required: true },
+  originalPrice: { type: Number, 
+  required: true 
+},
   discountPrice: {
     type: Number,
     required: true,
     min: 0,
     validate: {
       validator: function (value) {
+        if (value === null) return true;
         return value <= this.originalPrice;
       },
       message: "Discount price must be less than or equal to original price"
@@ -34,6 +37,18 @@ const productSchema = new mongoose.Schema({
   description: {
     type: String,
     required: true,
+  },
+  author: {
+    type: String,
+    required: true
+  },
+  publisher:{
+    type: String,
+    required:true
+  },
+  pages:{
+    type: Number,
+    required: true
   },
   categoryId: {
     type: mongoose.Schema.Types.ObjectId,

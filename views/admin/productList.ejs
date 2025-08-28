@@ -34,6 +34,7 @@
                 <thead class="bg-dark text-white">
                     <tr>
                         <th>Product</th>
+                        <th>Author</th>
                         <th>Category</th>
                         <th>Prices</th>
                         <th>Stock</th>
@@ -59,6 +60,11 @@
                                 </div>
                             </td>
 
+                            <!-- Author -->
+                            <td>
+                                 <span class="fw-medium d-block"><%= product.author %></span>
+                            </td>
+
                             <!-- Category -->
                             <td>
                                 <span class="badge bg-light text-dark px-2 py-1">
@@ -66,32 +72,30 @@
                                 </span>
                             </td>
 
-                            <!-- Price (from variants) -->
+                            <!-- Price (from all variants) -->
                             <td>
                                 <% if (product.variants && product.variants.length > 0) { %>
-                                    <% let basePrice = product.variants[0].originalPrice; %>
-                                    <% let discount = product.variants[0].discountPrice; %>
                                     <div class="small">
-                                        <div>Base: ₹<%= basePrice %></div>
-                                        <% if (discount < basePrice) { %>
-                                            <div class="text-success">Sale: ₹<%= discount %></div>
-                                        <% } %>
+                                        <% product.variants.forEach((v) => { %>
+                                            <div><%= v.coverType %>: ₹<%= v.originalPrice %><% if (v.discountPrice && v.discountPrice < v.originalPrice) { %> <span class="text-success">(Sale: ₹<%= v.discountPrice %>)</span><% } %></div>
+                                        <% }) %>
                                     </div>
                                 <% } else { %>
                                     <span class="text-muted">No variants</span>
                                 <% } %>
                             </td>
 
-                            <!-- Stock (sum of all variants) -->
+                            <!-- Stock (from all variants) -->
                             <td>
-                                <% 
-                                    let totalStock = product.variants && product.variants.length > 0 
-                                        ? product.variants.reduce((sum, v) => sum + v.stock, 0) 
-                                        : 0;
-                                %>
-                                <span class="<%= totalStock > 10 ? 'text-success' : totalStock > 0 ? 'text-warning' : 'text-danger' %>">
-                                    <%= totalStock %>
-                                </span>
+                                <% if (product.variants && product.variants.length > 0) { %>
+                                    <div class="small">
+                                        <% product.variants.forEach((v) => { %>
+                                            <div><%= v.coverType %>: <span class="<%= v.stock > 10 ? 'text-success' : v.stock > 0 ? 'text-warning' : 'text-danger' %>"><%= v.stock %></span></div>
+                                        <% }) %>
+                                    </div>
+                                <% } else { %>
+                                    <span class="text-muted">No variants</span>
+                                <% } %>
                             </td>
 
                             <!-- Listed / Unlisted -->
@@ -120,11 +124,11 @@
                                         title="<%= !product.isBlocked ? 'Unlist' : 'List' %>">
                                     <i class="fas fa-<%= !product.isBlocked ? 'eye-slash' : 'eye' %>"></i>
                                 </button>
-                                <button class="btn btn-sm" style="background-color: #ffebee; color: #d32f2f;"
+                                <!-- <button class="btn btn-sm" style="background-color: #ffebee; color: #d32f2f;"
                                         onclick="deleteProduct('<%= product._id %>', '<%= product.name %>')" 
                                         title="Delete">
                                     <i class="fas fa-trash"></i>
-                                </button>
+                                </button> -->
                             </td>
                         </tr>
                         <% }) %>

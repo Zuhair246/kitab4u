@@ -24,7 +24,7 @@ const getProductAddPage = async (req, res) => {
 
 const addProduct = async (req, res) => {
     try {
-        const { name, author, description, categoryId } = req.body;
+        const { name, author, description, categoryId,publisher,pages} = req.body;
         
         // Parse variants as array
         const variantsData = req.body.variants || [];
@@ -54,24 +54,24 @@ const addProduct = async (req, res) => {
             });
         });
 
-        if (!name || !author || !description || !categoryId || variants.length === 0) {
+        if (!name || !author || !description || !categoryId || !publisher || !pages || variants.length === 0) {
             return res.redirect('/admin/addProducts?error=' + encodeURIComponent('All fields are required, including at least one valid variant'));
         }
 
         // Handle images
         const images = [];
         if (req.files && req.files.length > 0) {
-            const uploadPath = path.join(__dirname, '../../uploads');
-            if (!fs.existsSync(uploadPath)) fs.mkdirSync(uploadPath, { recursive: true });
+            const uploadDir = path.join(__dirname, '../../public/uploads');
+            if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
             for (const file of req.files) {
-                const imagePath = `/uploads/${Date.now()}_${file.originalname}`;
-                const fullPath = path.join(__dirname, '../../', imagePath); // Adjusted for correct path
+                const fileName = `${Date.now()}_${file.originalname}`;
+                const fullPath = path.join(uploadDir, fileName);
                 await sharp(file.buffer) // Use file.buffer if multer memoryStorage, or file.path if diskStorage
                     .resize(800, 800, { fit: 'contain' })
                     .toFile(fullPath);
                 // fs.unlinkSync(file.path); // Only if diskStorage
-                images.push(imagePath);
+                images.push(`/uploads/${fileName}`);
             }
         }
 
@@ -84,6 +84,8 @@ const addProduct = async (req, res) => {
             author,
             description,
             categoryId,
+            publisher,
+            pages: parseInt(pages),
             variants,
             images,
             isBlocked: req.body.isListed !== 'true'

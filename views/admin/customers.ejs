@@ -45,13 +45,24 @@
                         <td><%=data[i].name%></td>
                         <td><%=data[i].email%></td>
                         <td><%=data[i].phone%></td>
-                        <td>
-                            <% if (data[i].isBlocked === false) { %>
-                                <a href="/admin/blockCustomer?id=<%=data[i]._id%>" class="btn btn-danger text-white" style="width: 80px;">Block</a>
-                            <% } else { %>
-                                <a href="/admin/unblockCustomer?id=<%=data[i]._id%>" class="btn btn-success text-white" style="width: 80px;">Unblock</a>
-                            <% } %>
-                        </td>
+  <td>
+    <% if (data[i].isBlocked === false) { %>
+      <button 
+        class="btn btn-danger text-white" 
+        style="width: 80px;"
+        onclick="confirmBlock('<%= data[i]._id %>', '<%= data[i].name %>')">
+        Block
+      </button>
+    <% } else { %>
+      <button 
+        class="btn btn-success text-white" 
+        style="width: 80px;"
+        onclick="confirmUnblock('<%= data[i]._id %>', '<%= data[i].name %>')">
+        Unblock
+      </button>
+    <% } %>
+  </td>
+
                         <td>
                             <% if (data[i].isBlocked === true) { %>
                                 <span class="badge text-danger">Blocked</span>
@@ -121,3 +132,38 @@
 </div>
 
 <%-include("../../views/partials/admin/footer")%>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  function confirmBlock(userId, userName) {
+    Swal.fire({
+      title: `Block ${userName}?`,
+      text: "This user will not be able to access their account.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Yes, Block"
+    }).then((result) => {
+      if (result.isConfirmed) {
+        window.location.href = `/admin/blockCustomer?id=${userId}`;
+      }
+    });
+  }
+
+  function confirmUnblock(userId, userName) {
+    Swal.fire({
+      title: `Unblock ${userName}?`,
+      text: "This user will regain access to their account.",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#28a745",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Yes, Unblock"
+    }).then((result) => {
+      if (result.isConfirmed) {
+        window.location.href = `/admin/unblockCustomer?id=${userId}`;
+      }
+    });
+  }
+</script>

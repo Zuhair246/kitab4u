@@ -45,6 +45,7 @@ const customerInfo = async (req, res) => {
 };
 
 
+
 const customerBlocked = async (req,res) => {
     try {
         let id = req.query.id;

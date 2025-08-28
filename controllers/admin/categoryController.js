@@ -2,19 +2,27 @@ const Category = require('../../models/categorySchema')
 
 const categoryInfo = async (req,res) => {
     try {
+
         const page = parseInt(req.query.page) || 1;
         const limit = 4;
         const skip = (page-1)*limit;
 
-        const search = req.query.search ? { name: { $regex: req.query.search, $options: "i" } } : {};
+       let filter = {$or:[{isListed:true},{isListed:false}] };
 
-        const categoryData = await Category.find({})
+
+        if(req.query.search) {
+            filter.name = {$regex: req.query.search, $options:"i"};
+        }
+
+        const categoryData = await Category.find(filter)
         .sort ({createdAt: -1})
         .skip (skip)
         .limit(limit)
+        .exec()
 
-        const totalCategories = await Category.countDocuments();
-        const totalPages = Math.ceil(totalCategories / limit)
+        const totalCategories = await Category.countDocuments(filter);
+        const totalPages = Math.ceil(totalCategories / limit);
+
         res.render("category", {
             cat: categoryData,
             currentPage: page,
@@ -24,7 +32,7 @@ const categoryInfo = async (req,res) => {
             error: req.query.error || null,
             success: req.query.success || null
         })
-
+    
     } catch (error) {
         console.error("Category management error:", error)
         res.redirect('/pageNotFound')
@@ -33,7 +41,7 @@ const categoryInfo = async (req,res) => {
 }
 
 const addCategory = async (req, res) => {
-    const { name, description } = req.body;
+    const { name, description, status } = req.body;  // Add status here
     try {
         if (!name || !description) {
             return res.redirect("/admin/category?error=" + encodeURIComponent("Name and Description can't be empty"));
@@ -44,7 +52,11 @@ const addCategory = async (req, res) => {
             return res.redirect("/admin/category?error=" + encodeURIComponent("Category already exists"));
         }
 
-        const newCategory = new Category({ name, description });
+        const newCategory = new Category({
+            name,
+            description,
+            isListed: status === "active"  // Use the status from form
+        });
         await newCategory.save();
 
         return res.redirect("/admin/category?success=" + encodeURIComponent("Category added successfully"));
@@ -54,29 +66,37 @@ const addCategory = async (req, res) => {
     }
 };
 
-
 const editCategory = async (req, res) => {
     try {
         const { id, name, description, status } = req.body;
 
         if (!id || !name || !description) {
-            return res.redirect("/admin/category?error=Invalid data for update");
+            return res.redirect("/admin/category?error=" + encodeURIComponent("Invalid data for update"));
+        }
+
+        // Check for duplicate name, but exclude the current category's ID
+        const existingCategory = await Category.findOne({
+            name: { $regex: new RegExp("^" + name + "$", "i") },
+            _id: { $ne: id }  // This is the key fix: ignore the category being edited
+        });
+
+        if (existingCategory) {
+            return res.redirect("/admin/category?error=" + encodeURIComponent("Category already exists"));
         }
 
         await Category.findByIdAndUpdate(id, {
             name,
             description,
-            isListed: status === "active" ? true : false
+            isListed: status === "active"
         });
 
-        return res.redirect("/admin/category?success=Category updated successfully");
+        return res.redirect("/admin/category?success=" + encodeURIComponent("Category updated successfully"));
     } catch (error) {
         console.error("Edit Category error:", error);
-        return res.redirect("/admin/category?error=Internal server error");
+        return res.redirect("/admin/category?error=" + encodeURIComponent("Internal server error"));
     }
 };
 
-// Delete category
 const deleteCategory = async (req, res) => {
     try {
         const { id } = req.body;
@@ -85,18 +105,37 @@ const deleteCategory = async (req, res) => {
             return res.redirect("/admin/category?error=Invalid category id");
         }
 
-        await Category.findByIdAndDelete(id);
+        await Category.findByIdAndUpdate(id, {isListed:false});
 
-        return res.redirect("/admin/category?success=Category deleted successfully");
+        return res.redirect("/admin/category?success=Category deleted/unlisted successfully");
     } catch (error) {
         console.error("Delete Category error:", error);
         return res.redirect("/admin/category?error=Internal server error");
     }
 };
 
+const activateCategory = async (req, res) => {
+    try {
+        const { id } = req.body;
+
+        if (!id) {
+            return res.redirect("/admin/category?error=Invalid category id");
+        }
+
+        await Category.findByIdAndUpdate(id, { isListed: true });
+
+        return res.redirect("/admin/category?success=" + encodeURIComponent("Category activated successfully"));
+    } catch (error) {
+        console.error("Activate Category error:", error);
+        return res.redirect("/admin/category?error=" + encodeURIComponent("Internal server error"));
+    }
+};
+
+
 module.exports = {
     categoryInfo,
     addCategory,
     editCategory,
-    deleteCategory
+    deleteCategory,
+    activateCategory
 }

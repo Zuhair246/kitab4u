@@ -9,12 +9,11 @@ const { router } = require("../../app")
 
 const loadHomePage = async (req,res) => {
     try {
-        const user = req.session.user;
-      console.log(`found:${user}`);
+        const user = req.session.user || req.user;
       
     if (user && user._id) {
       const userData = await User.findById(user._id); 
-    //   console.log(`userData: ${userData}`);
+    console.log(`userData: ${userData}`);
       
       
       if (!userData) {
@@ -142,10 +141,10 @@ const signup = async (req, res) => {
         return res.redirect("/signup");
     }
 
-       const checkPassword = /^(?=.{7,}$)(?=.*[A-Za-z]|\d)[A-Za-z\d@._!#$%&*?-]+$/
+       const checkPassword = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).{7,}$/
 
     if (!checkPassword.test(password)) {
-        req.flash("error", "Password must be 7 characters");
+        req.flash("error", "Password must be 7 characters with atleast one alphabet, one number and non-alphanumeric character");
         req.flash("formData", { name, email, password, phone });
         return res.redirect("/signup");
     }
@@ -156,12 +155,14 @@ const signup = async (req, res) => {
         return res.redirect("/signup");
     }
 
-    const checkPhone = /^[0-9]{10}$/;
-    if (!checkPhone.test(phone)) {
-        req.flash("error", "Phone number must be 10 digit numbers");
-        req.flash("formData", { name, email, password, phone });
-        return res.redirect("/signup");
-    }
+const checkPhone = /^(?!([0-9])\1{9})([6-9][0-9]{9})$/;
+
+if (!checkPhone.test(phone)) {
+    req.flash("error", "Invalid Phone number format");
+    req.flash("formData", { name, email, password, phone });
+    return res.redirect("/signup");
+}
+
 
     try {
         const existingUser = await User.findOne({ email });
@@ -234,7 +235,7 @@ const verifyOtp = async (req, res) => {
 
       await newUser.save();
       req.session.user = newUser;
-      console.log(req.session.user);
+      console.log(req.session.user.name);
       
 
       return res.json({ 
@@ -322,6 +323,10 @@ const login = async (req,res) => {
     try {
         
         const {email, password} = req.body;
+
+        if(!email || !password) {
+          return res.render('login', {message: "Enter email and password"})
+        }
 
         const findUser = await User.findOne({isAdmin:0, email: email})
 

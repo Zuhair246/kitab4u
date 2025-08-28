@@ -39,13 +39,14 @@
     </div>
 <% } %>
 
-                <form action="/signup" method="POST">
+                <form action="/signup" method="POST" onsubmit="disableButton()">
                     <input type="text" class="form-control" name="name" value="<%= formData ? formData.name : '' %>" placeholder="Name" id="name">
                     <input type="text" class="form-control" name="email" value="<%= formData ? formData.email : '' %>" placeholder="Email Address" id="email">
                     <input type="tel" class="form-control" name="phone" value="<%= formData ? formData.phone : '' %>" placeholder="Phone Number" id="phone">
                     <input type="password" class="form-control" name="password" value="<%= formData ? formData.password : '' %>" placeholder="Password" id="password">
                     <input type="password" class="form-control" name="confirmPassword" placeholder="Confirm Password" id="confirmPassword">
-                    <button type="submit" class="btn create-btn">Create Account</button>
+                    
+                    <button type="submit" class="btn create-btn" id="createBtn">Create Account</button>
                 </form>
 
                 <div class="login-link">
@@ -56,5 +57,13 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+  function disableButton() {
+    const btn = document.getElementById("createBtn");
+    btn.disabled = true;
+    btn.innerText = "Processing..."; 
+  }
+</script>
+
 </body>
 </html>

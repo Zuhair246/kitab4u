@@ -1,5 +1,31 @@
 const mongoose = require("mongoose");
 
+const variantSchema = new mongoose.Schema({
+  coverType: {
+    type: String,
+    required: true
+  },
+  originalPrice: { type: Number, required: true },
+  discountPrice: {
+    type: Number,
+    required: true,
+    min: 0,
+    validate: {
+      validator: function (value) {
+        return value <= this.originalPrice;
+      },
+      message: "Discount price must be less than or equal to original price"
+    }
+  },
+  stock: {
+    type: Number,
+    required: true,
+    min: 0,
+    default: 0
+  }
+});
+
+
 const productSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -14,59 +40,20 @@ const productSchema = new mongoose.Schema({
     ref: "Category",
     required: true
   },
-  variants: [
-    {
-      languageId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Language",
-        required: true
-      },
-      originalPrice: {
-        type: Number,
-        required: true,
-      },
-      discountPrice: {
-        type: Number,
-        required: true,
-      },
-      stock: {
-        type: Number,
-        required: true,
-      },
-      images: [
+  variants: [variantSchema],
+  images: [
         {
           type: String,
           required: true,
-        },
+        }
       ],
-      createdAt: {
-        type: Date,
-        default: Date.now,
-      },
-      updatedAt: {
-        type: Date,
-        default: Date.now,
-      },
-      isBlocked: {
-        type: Boolean,
-        default: false
-      },
-      status: {
-        type: String,
-        enum: ["Available","Out Of Stock"],
-        required: true,
-        default: "Available"
-      }
-    },
-  ],
-  createdAt: {
-    type: Date,
-    default: Date.now,
+  isBlocked: {
+    type: Boolean,
+    default: false
   },
-  updatedAt: {
-    type: Date,
-    default: Date.now,
-  },
+},
+{
+  timestamps: true
 });
 
 module.exports = mongoose.model("Product", productSchema);

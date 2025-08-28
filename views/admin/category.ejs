@@ -12,7 +12,10 @@
                        style="padding-left: 40px; width: 300px;" id="categorySearch" name="search" 
                        value="<%= typeof search !== 'undefined' ? search : '' %>">
             </div>
-            <% if (typeof search !== 'undefined' && search) { %>
+                <button type="submit" class="btn btn-outline-primary ms-2" id="searchBtn">
+                    Search
+                </button>
+            <% if (typeof search !== 'undefined' &&  search.trim() !== '') { %>
                 <button class="btn btn-outline-secondary" onclick="clearSearch()">
                     <i class="fas fa-times"></i> Clear
                 </button>
@@ -64,19 +67,33 @@
                                     </span>
                                 <% } %>
                             </td>
+
                             <td class="py-3 px-4 border-0">
                                 <button class="btn btn-sm me-2 d-inline-flex align-items-center justify-content-center" 
                                         style="width: 35px; height: 35px; background-color: #e3f2fd; color: #1976d2; border: none; border-radius: 8px;"
-                                        onclick="editCategory('<%= category._id %>', '<%= category.name %>', '<%= category.description %>', '<%= category.status %>')"
-                                        title="Edit Category">
-                                    <i class="fas fa-edit"></i>
+                                        onclick="editCategory('<%= category._id %>', '<%= category.name %>', '<%= category.description %>', '<%= category.isListed ? 'active' : 'inactive' %>')">
+                                        <i class="fas fa-edit"></i>
                                 </button>
+
+                                <% if(category.isListed) {%>
+
                                 <button class="btn btn-sm d-inline-flex align-items-center justify-content-center" 
                                         style="width: 35px; height: 35px; background-color: #ffebee; color: #d32f2f; border: none; border-radius: 8px;"
                                         onclick="deleteCategory('<%= category._id %>', '<%= category.name %>')"
                                         title="Delete Category">
                                     <i class="fas fa-trash"></i>
                                 </button>
+
+                                <%} else { %>
+
+                                    <button class="btn btn-sm d-inline-flex align-items-center justify-content-center" 
+                                        style="width: 35px; height: 35px; background-color: #ffebee; color: hwb(126 1% 66%); border: none; border-radius: 8px;"
+                                        onclick="activateCategory('<%= category._id %>', '<%= category.name %>')"
+                                        title="Activate Category">
+                                    <i class="fa-solid fa-arrows-rotate"></i>
+                                </button>
+
+                                    <%}%>
                             </td>
                         </tr>
                         <% }); %>
@@ -119,7 +136,7 @@
 <!-- Add Category Modal -->
 <div class="modal fade" id="addCategoryModal" tabindex="-1" aria-labelledby="addCategoryModalLabel" aria-hidden="true">
     <div class="modal-dialog">
-           <% if (error) { %>
+           <!-- <% if (error) { %>
           <div class="alert alert-danger text-center">
             <%= error %>    
           </div>
@@ -129,7 +146,7 @@
           <div class="alert alert-success text-center">
             <%= success %>    
           </div>
-        <% } %>
+        <% } %> -->
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="addCategoryModalLabel">Add New Category</h5>
@@ -206,11 +223,9 @@
 // -------------------------
 // 🔍 Search functionality
 // -------------------------
-document.getElementById('categorySearch').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        performSearch();
-    }
-});
+
+document.getElementById('searchBtn').addEventListener('click', performSearch);
+
 
 function performSearch() {
     const searchTerm = document.getElementById('categorySearch').value;
@@ -245,18 +260,20 @@ function editCategory(id, name, description, status) {
     editModal.show();
 }
 
+
+
 // -------------------------
 // 🗑️ Delete Category (with SweetAlert2)
 // -------------------------
 function deleteCategory(id, name) {
     Swal.fire({
-        title: `Delete "${name}"?`,
+        title: `Unlist category: "${name}"?`,
         text: "This action cannot be undone.",
         icon: "warning",
         showCancelButton: true,
         confirmButtonColor: "#d33",
         cancelButtonColor: "#3085d6",
-        confirmButtonText: "Yes, delete it!",
+        confirmButtonText: " Yes ",
         cancelButtonText: "Cancel"
     }).then((result) => {
         if (result.isConfirmed) {
@@ -264,6 +281,39 @@ function deleteCategory(id, name) {
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = `/admin/deleteCategory`;
+
+            const idInput = document.createElement('input');
+            idInput.type = 'hidden';
+            idInput.name = 'id';
+            idInput.value = id;
+
+            form.appendChild(idInput);
+            document.body.appendChild(form);
+            form.submit();
+        }
+    });
+}
+
+// -------------------------
+// 🗑️ Activate Category (with SweetAlert2)
+// -------------------------
+
+function activateCategory(id, name) {
+    Swal.fire({
+        title: `Activate category: "${name}"?`,
+        text: "This will make the category visible again.",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonColor: "#28a745",
+        cancelButtonColor: "#6c757d",
+        confirmButtonText: "Yes, activate it!",
+        cancelButtonText: "Cancel"
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Send activate request via form
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/admin/activateCategory`;
 
             const idInput = document.createElement('input');
             idInput.type = 'hidden';
@@ -307,4 +357,5 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 });
+
 </script>

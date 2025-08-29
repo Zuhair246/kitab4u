@@ -1,0 +1,379 @@
+<%-include("../../views/partials/admin/header")%>
+<head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" />
+</head>
+
+<!-- Main Content Area for Add/Edit Product -->
+<div class="col-md-10">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+        <h2><%= typeof product !== 'undefined' ? 'Edit Product' : 'Add Product' %></h2>
+        <button class="btn btn-outline-secondary" onclick="window.location.href='/admin/listProducts'">
+            <i class="fas fa-arrow-left me-2"></i>Back to Products
+        </button>
+    </div>
+
+    <!-- Product Form -->
+    <div class="p-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="bg-white rounded-3 shadow-sm p-4">
+                    <form id="productForm" action="<%= typeof product !== 'undefined' ? `/admin/editProduct/${product._id}` : '/admin/addProducts' %>" 
+                          method="POST" enctype="multipart/form-data">
+                        
+                        <!-- Book Name -->
+                        <div class="mb-4">
+                            <label for="bookName" class="form-label fw-semibold">Book Name *</label>
+                            <input type="text" class="form-control form-control-lg" id="bookName" name="name" 
+                                   placeholder="eg: Atomic Habits" 
+                                   value="<%= typeof product !== 'undefined' ? product.name : '' %>">
+                        </div>
+
+                        <!-- Author -->
+                        <div class="mb-4">
+                            <label for="author" class="form-label fw-semibold">Author *</label>
+                            <input type="text" class="form-control form-control-lg" id="author" name="author" 
+                                   placeholder="eg: James Clear" 
+                                   value="<%= typeof product !== 'undefined' ? product.author : '' %>" >
+                        </div>
+
+                        <!-- Publisher -->
+                        <div class="mb-4">
+                            <label for="publisher" class="form-label fw-semibold">Publisher *</label>
+                            <input type="text" class="form-control form-control-lg" id="publisher" name="publisher" 
+                                   placeholder="Book Publisher" 
+                                   value="<%= typeof product !== 'undefined' ? product.publisher : '' %>">
+                        </div>
+
+                        <!-- Book Description -->
+                        <div class="mb-4">
+                            <label for="bookDescription" class="form-label fw-semibold">Book Description *</label>
+                            <textarea class="form-control" id="bookDescription" name="description" rows="4" 
+                                      placeholder="Write your description here..."><%= typeof product !== 'undefined' ? product.description : '' %></textarea>
+                        </div>
+
+                        <!-- Product Images -->
+                        <div class="mb-4">
+                            <label for="images" class="form-label fw-semibold">Product Images (Minimum 3 - upload one at a time, crop, and save each) *</label>
+                            <input type="file" class="form-control" id="images" accept="image/*" name="images">
+                            <div id="cropContainer" class="mt-3"></div>
+                            <div id="previewContainer" class="row g-3 mt-3"></div>
+                        </div>
+                        <button type="button" class="btn btn-primary mt-2" onclick="saveCroppedImage()">Save Cropped Image</button>
+
+                        <% if (typeof product !== 'undefined' && product.images && product.images.length > 0) { %>
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold">Existing Images</label>
+                                <div class="row g-3">
+                                    <% product.images.forEach((img, i) => { %>
+                                        <div class="col-md-4">
+                                            <img src="<%= img %>" alt="Existing Image" class="img-fluid rounded" style="max-height: 200px;">
+                                            <input type="hidden" name="existingImages[]" value="<%= img %>">
+                                        </div>
+                                    <% }); %>
+                                </div>
+                            </div>
+                        <% } %>
+
+                        <!-- Category and Pages Selection in the same row -->
+                        <div class="row g-3 mb-4">
+                            <!-- Category -->
+                            <div class="col-md-6">
+                                <label for="categoryId" class="form-label fw-semibold">Category *</label>
+                                <select class="form-select" id="categoryId" name="categoryId">
+                                <% for (let i = 0; i < cat.length; i++) { %>
+                                    <option value="<%= cat[i]._id %>"
+                                    <%= typeof product !== 'undefined' && product.categoryId && product.categoryId.toString() === cat[i]._id.toString() ? 'selected' : '' %>>
+                                    <%= cat[i].name %>
+                                    </option>
+                                <% } %>
+                                </select>
+                            </div>
+
+                            <!-- Pages (right side of Category) -->
+                            <div class="col-md-6">
+                                <label for="pages" class="form-label fw-semibold">Pages *</label>
+                                <input 
+                                type="number" 
+                                class="form-control" 
+                                id="pages" 
+                                name="pages" 
+                                placeholder="Total Pages"
+                                min="1"
+                                value="<%= typeof product !== 'undefined' ? product.pages : '' %>">
+                            </div>
+                        </div>
+
+                        <!-- Cover Types Below -->
+                        <div class="row g-3 mb-4">
+                        <div class="col-md-12 mb-4">
+                            <label class="form-label fw-semibold">Cover Types *</label>
+                            <div id="coverTypeContainer"></div>
+                            <button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="addCoverType()">+ Add Cover Type</button>
+                        </div>
+                        </div>
+
+
+
+                        <!-- Listed Status -->
+                        <div class="mb-4">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="isListed" name="isListed" value="true"
+                                       <%= typeof product === 'undefined' || !product.isBlocked ? 'checked' : '' %>>
+                                <label class="form-check-label fw-semibold" for="isListed">
+                                    List this product (make it visible to customers)
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-flex gap-3 justify-content-end">
+                            <button type="button" class="btn btn-outline-secondary px-4" onclick="window.location.href='/admin/listProducts'">
+                                Cancel
+                            </button>
+                            <button type="submit" class="btn btn-dark px-4">
+                                <i class="fas fa-save me-2"></i>
+                                <%= typeof product !== 'undefined' ? 'Update Product' : 'Save Product' %>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%-include("../../views/partials/admin/footer")%>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+let coverTypeIndex = 0;
+let croppedImages = []; // Array of blobs for cropped images
+let cropper;
+
+// Add new cover type row dynamically
+function addCoverType(existing = null) {
+    const container = document.getElementById("coverTypeContainer");
+
+    const index = coverTypeIndex++;
+    const div = document.createElement("div");
+    div.classList.add("border", "rounded-3", "p-3", "mb-3", "bg-light");
+
+    div.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="fw-semibold">Cover Type</h6>
+            <button type="button" class="btn btn-sm btn-danger" onclick="this.closest('.border').remove()">Remove</button>
+        </div>
+        <div class="row g-3">
+            <div class="col-md-3">
+                <input type="text" class="form-control" name="variants[${index}][coverType]" 
+                       placeholder="e.g. Paperback" required
+                       value="${existing ? existing.coverType : ''}">
+            </div>
+            <div class="col-md-3">
+                <input type="number" class="form-control" name="variants[${index}][originalPrice]" 
+                       placeholder="Original Price" min="0" step="0.01" required
+                       value="${existing ? existing.originalPrice : ''}">
+            </div>
+            <div class="col-md-3">
+                <input type="number" class="form-control" name="variants[${index}][discountPrice]" 
+                       placeholder="Discount Price" min="0" step="0.01"
+                       value="${existing ? existing.discountPrice : ''}">
+            </div>
+            <div class="col-md-2">
+                <input type="number" class="form-control" name="variants[${index}][stock]" 
+                       placeholder="Stock" min="0" required
+                       value="${existing ? existing.stock : ''}">
+            </div>
+        </div>
+    `;
+
+    container.appendChild(div);
+}
+
+// Pre-fill for edit page
+<% if (typeof product !== 'undefined' && product.variants) { %>
+    <% product.variants.forEach(function(v){ %>
+        addCoverType({
+            coverType: "<%= v.coverType %>",
+            originalPrice: "<%= v.originalPrice %>",
+            discountPrice: "<%= v.discountPrice %>",
+            stock: "<%= v.stock %>",
+        });
+    <% }) %>
+<% } %>
+
+// ---------- IMAGE PREVIEW + CROPPER ----------
+document.getElementById("images").addEventListener("change", function (event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    // Show cropper
+    const cropContainer = document.getElementById("cropContainer");
+    cropContainer.innerHTML = `<img id="cropImage" src="${e.target.result}" style="max-width:100%;">`;
+    
+    const cropImage = document.getElementById("cropImage");
+    cropper = new Cropper(cropImage, {
+      aspectRatio: 1, // square crop, change as per need
+      viewMode: 1
+    });
+  };
+  reader.readAsDataURL(file);
+});
+
+// Save cropped image
+function saveCroppedImage() {
+  if (!cropper) return;
+
+  cropper.getCroppedCanvas({
+    width: 800,
+    height: 800
+  }).toBlob((blob) => {
+    croppedImages.push(blob); // Add the new cropped blob to the array
+
+    // Preview in UI
+    const url = URL.createObjectURL(blob);
+    const preview = document.getElementById("previewContainer");
+    const div = document.createElement("div");
+    div.classList.add("col-md-4");
+    div.innerHTML = `<img src="${url}" class="img-fluid rounded" style="max-height:200px;">`;
+    preview.appendChild(div);
+
+    // Reset cropper
+    cropper.destroy();
+    cropper = null;
+    document.getElementById("cropContainer").innerHTML = "";
+    document.getElementById("images").value = ""; // Reset file input
+  }, "image/jpeg");
+}
+
+// Handle query params for error/success on page load
+const urlParams = new URLSearchParams(window.location.search);
+const errorParam = urlParams.get('error');
+const successParam = urlParams.get('success');
+
+if (errorParam) {
+    Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: decodeURIComponent(errorParam)
+    });
+}
+
+if (successParam) {
+    Swal.fire({
+        icon: 'success',
+        title: 'Success',
+        text: decodeURIComponent(successParam)
+    });
+}
+
+// ---------- FORM SUBMIT ----------
+document.getElementById('productForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const form = this;
+    const formData = new FormData(form);
+    formData.delete('images'); // Remove original uncropped file (if any)
+
+    const existingCount = <%= typeof product !== 'undefined' && product.images ? product.images.length : 0 %>;
+    const newCount = croppedImages.length; 
+
+    if (newCount + existingCount < 3) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'The product must have at least 3 images.'
+        });
+        return;
+    }
+
+    // ---------- VALIDATE VARIANTS ----------
+    const variantBlocks = document.querySelectorAll('#coverTypeContainer .border');
+    if (variantBlocks.length === 0) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Please add at least one cover type.'
+        });
+        return;
+    }
+
+    let validationError = false;
+    variantBlocks.forEach(block => {
+        const coverType = block.querySelector('input[name*="[coverType]"]').value.trim();
+        const originalPriceField = block.querySelector('input[name*="[originalPrice]"]');
+        const discountPriceField = block.querySelector('input[name*="[discountPrice]"]');
+        const stockField = block.querySelector('input[name*="[stock]"]');
+
+        if (!coverType || !originalPriceField.value || !stockField.value) {
+            validationError = true;
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: `Please fill in all required fields for ${coverType || "variant"}.`
+            });
+            return;
+        }
+
+        const originalPrice = parseFloat(originalPriceField.value);
+        const discountPrice = parseFloat(discountPriceField.value);
+
+        if (!isNaN(discountPrice) && discountPrice >= originalPrice) {
+            validationError = true;
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: `Discount price must be less than original price for ${coverType}.`
+            });
+            return;
+        }
+    });
+
+    if (validationError) return;
+
+    // Validate pages
+    const pagesField = document.getElementById('pages');
+    const pagesValue = parseInt(pagesField.value);
+    if (isNaN(pagesValue) || pagesValue < 1) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Pages must be at least 1.'
+        });
+        return;
+    }
+
+    // Append cropped images to formData
+    croppedImages.forEach((blob, i) => {
+        formData.append('images', blob, `image${i}.jpg`);
+    });
+
+    // ---------- SUBMIT ----------
+    fetch(form.action, {
+        method: 'POST', // Use POST for both add and edit (adjust if edit uses PUT)
+        body: formData
+    }).then(response => {
+        if (response.redirected) {
+            window.location.href = response.url;
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'An error occurred. Please try again.'
+            });
+        }
+    }).catch(error => {
+        console.error('Submit error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'An error occurred. Please try again.'
+        });
+    });
+});
+</script>

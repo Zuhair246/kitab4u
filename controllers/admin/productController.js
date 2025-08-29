@@ -101,7 +101,6 @@ const addProduct = async (req, res) => {
     }
 };
 
-
 const getProductList = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
@@ -109,8 +108,8 @@ const getProductList = async (req, res) => {
         const skip = (page - 1) * limit;
 
         const search = req.query.search
-            ? { name: { $regex: req.query.search, $options: "i" }, isBlocked: false }
-            : { isBlocked: false };
+            ? { name: { $regex: req.query.search, $options: "i" } }
+            : {};
 
         const productData = await Product.find(search)
             .populate('categoryId', 'name')
@@ -118,7 +117,7 @@ const getProductList = async (req, res) => {
             .skip(skip)
             .limit(limit);
 
-        const totalProducts = await Product.countDocuments({ isBlocked: false });
+        const totalProducts = await Product.countDocuments(search);
         const totalPages = Math.ceil(totalProducts / limit);
 
         res.render('productList', {
@@ -128,7 +127,7 @@ const getProductList = async (req, res) => {
             search: req.query.search || "",
             totalProducts,
             error: req.query.error || null,
-            success: req.query.success || null,
+            success: req.query.success || null
         });
     } catch (error) {
         console.error('Product list error:', error);
@@ -136,46 +135,100 @@ const getProductList = async (req, res) => {
     }
 };
 
-const editProduct = async (req, res) => {
+const getEditProduct = async (req, res) => {
     try {
-        const { id, name, description, categoryId } = req.body;
-        let variants = req.body.variants;
-        if (typeof variants === 'string') variants = JSON.parse(variants);
+        const id = req.params.id;
+        const product = await Product.findById(id).populate("categoryId");
+        const cat = await Category.find();
 
-        if (!id || !name || !description || !categoryId || !variants || variants.length === 0) {
-            return res.redirect('/admin/editProduct/list?error=Invalid data for update');
+        if (!product) {
+            return res.redirect('/admin/listProducts?error=' + encodeURIComponent('Product not found'));
         }
 
-        const existingProduct = await Product.findById(id);
-        let images = existingProduct.images;
+        res.render("editProduct", {
+            product,
+            cat
+        });
+    } catch (error) {
+        console.error("Error loading edit product page:", error);
+        res.redirect('/admin/listProducts?error=' + encodeURIComponent('Internal server error'));
+    }
+};
+
+
+const editProduct = async (req, res) => {
+    try {
+        const id = req.params.id;
+        const { name, author, description, categoryId, publisher, pages, existingImages, isListed } = req.body;
+
+        // --- Parse Variants ---
+        const variantsData = req.body.variants || [];
+        const variants = [];
+        let variantError = null;
+
+        variantsData.forEach((data) => {
+            const coverType = data.coverType?.trim();
+            const originalPrice = parseFloat(data.originalPrice);
+            const discountPrice = data.discountPrice ? parseFloat(data.discountPrice) : null;
+            const stock = parseInt(data.stock);
+
+            if (!coverType || isNaN(originalPrice) || originalPrice <= 0 || isNaN(stock) || stock < 0) {
+                return; // Skip invalid variant
+            }
+
+            if (discountPrice !== null && (isNaN(discountPrice) || discountPrice <= 0 || discountPrice >= originalPrice)) {
+                variantError = 'Discount price must be less than original price';
+                return;
+            }
+
+            variants.push({ coverType, originalPrice, discountPrice, stock });
+        });
+
+        if (variantError) {
+            return res.redirect(`/admin/editProduct/${id}?error=` + encodeURIComponent(variantError));
+        }
+
+        if (!name || !author || !description || !categoryId || !publisher || !pages || variants.length === 0) {
+            return res.redirect(`/admin/editProduct/${id}?error=` + encodeURIComponent('All fields are required, including at least one valid variant'));
+        }
+
+        // --- Handle Images ---
+        let images = existingImages ? (Array.isArray(existingImages) ? existingImages : [existingImages]) : [];
         if (req.files && req.files.length > 0) {
-            images = [];
-            const uploadPath = path.join(__dirname, '../../uploads');
-            if (!fs.existsSync(uploadPath)) fs.mkdirSync(uploadPath, { recursive: true });
+            const uploadDir = path.join(__dirname, '../../public/uploads');
+            if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
             for (const file of req.files) {
-                const imagePath = `/uploads/${Date.now()}_${file.originalname}`;
-                const fullPath = path.join(__dirname, '../../uploads' + imagePath);
-                await sharp(file.path)
+                const fileName = `${Date.now()}_${file.originalname}`;
+                const fullPath = path.join(uploadDir, fileName);
+                await sharp(file.buffer)
                     .resize(800, 800, { fit: 'contain' })
                     .toFile(fullPath);
-                fs.unlinkSync(file.path);
-                images.push(imagePath);
+                images.push(`/uploads/${fileName}`);
             }
         }
 
+        if (images.length < 3) {
+            return res.redirect(`/admin/editProduct/${id}?error=` + encodeURIComponent('At least 3 images are required'));
+        }
+
+        // --- Update product ---
         await Product.findByIdAndUpdate(id, {
             name,
+            author,
             description,
             categoryId,
+            publisher,
+            pages: parseInt(pages),
             variants,
             images,
+            isBlocked: isListed !== 'true'
         });
 
-        return res.redirect('/admin/listProducts/list?success=Product updated successfully');
+        return res.redirect('/admin/listProducts?success=' + encodeURIComponent('Product updated successfully'));
     } catch (error) {
         console.error('Edit Product error:', error);
-        return res.redirect('/admin/editProduct/list?error=Internal server error');
+        return res.redirect(`/admin/editProduct/${req.params.id}?error=` + encodeURIComponent('Internal server error'));
     }
 };
 
@@ -183,15 +236,22 @@ const deleteProduct = async (req, res) => {
     try {
         const { id } = req.body;
         if (!id) {
-            return res.redirect('/admin/product/list?error=Invalid product id');
+            return res.redirect('/admin/listProducts?error=' + encodeURIComponent('Invalid product id'));
         }
 
-        await Product.findByIdAndUpdate(id, { isBlocked: true });
+        const product = await Product.findById(id);
+        if (!product) {
+            return res.redirect('/admin/listProducts?error=' + encodeURIComponent('Product not found'));
+        }
 
-        return res.redirect('/admin/product/list?success=Product blocked successfully');
+        product.isBlocked = !product.isBlocked;
+        await product.save();
+
+        const message = product.isBlocked ? 'Product unlisted successfully' : 'Product listed successfully';
+        return res.redirect('/admin/listProducts?success=' + encodeURIComponent(message));
     } catch (error) {
-        console.error('Delete Product error:', error);
-        return res.redirect('/admin/product/list?error=Internal server error');
+        console.error('Toggle Product error:', error);
+        return res.redirect('/admin/listProducts?error=' + encodeURIComponent('Internal server error'));
     }
 };
 
@@ -199,6 +259,7 @@ module.exports = {
     getProductAddPage,
     getProductList,
     addProduct,
+    getEditProduct,
     editProduct,
     deleteProduct
 }

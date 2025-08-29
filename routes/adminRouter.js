@@ -30,7 +30,8 @@ router.post("/activateCategory",adminAuth, categoryController.activateCategory);
 router.get('/listProducts', adminAuth, productController.getProductList)
 router.get('/addProducts', adminAuth, productController.getProductAddPage)
 router.post('/addProducts', adminAuth, upload.array('images', 5), productController.addProduct)
-router.post('/editProduct', adminAuth, productController.editProduct)
+router.get('/editProduct/:id', adminAuth, productController.getEditProduct);
+router.post('/editProduct/:id', adminAuth, upload.array('images', 5), productController.editProduct)
 router.post('/deleteProduct', adminAuth, productController.deleteProduct)
 
 

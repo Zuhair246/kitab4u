@@ -125,7 +125,7 @@
                                 </label>
                             </div>
                         </div>
-
+                        <p>Please verify everything before submitting, Book name and author cannot be changed later</p>
                         <!-- Form Actions -->
                         <div class="d-flex gap-3 justify-content-end">
                             <button type="button" class="btn btn-outline-secondary px-4" onclick="window.location.href='/admin/listProducts'">
@@ -218,7 +218,7 @@ document.getElementById("images").addEventListener("change", function (event) {
     
     const cropImage = document.getElementById("cropImage");
     cropper = new Cropper(cropImage, {
-      aspectRatio: 1, // square crop, change as per need
+      aspectRatio: 2 / 3,
       viewMode: 1
     });
   };
@@ -230,18 +230,22 @@ function saveCroppedImage() {
   if (!cropper) return;
 
   cropper.getCroppedCanvas({
-    width: 800,
-    height: 800
+    width: 400,
+    height: 600
   }).toBlob((blob) => {
     croppedImages.push(blob); // Add the new cropped blob to the array
+    const index = croppedImages.length - 1; // Track position
 
     // Preview in UI
     const url = URL.createObjectURL(blob);
     const preview = document.getElementById("previewContainer");
     const div = document.createElement("div");
-    div.classList.add("col-md-4");
-    div.innerHTML = `<img src="${url}" class="img-fluid rounded" style="max-height:200px;">`;
-    preview.appendChild(div);
+    div.classList.add("col-md-4", "position-relative");
+ div.innerHTML = `
+      <img src="${url}" class="img-fluid rounded" style="max-height:200px;">
+      <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1"
+              onclick="removeCroppedImage(${index}, this)">×</button>`;  
+                preview.appendChild(div);
 
     // Reset cropper
     cropper.destroy();
@@ -249,6 +253,12 @@ function saveCroppedImage() {
     document.getElementById("cropContainer").innerHTML = "";
     document.getElementById("images").value = ""; // Reset file input
   }, "image/jpeg");
+}
+
+// Remove cropped image from array & UI
+function removeCroppedImage(index, btn) {
+  croppedImages.splice(index, 1); // Remove from array
+  btn.closest(".col-md-4").remove(); // Remove from UI
 }
 
 // Handle query params for error/success on page load

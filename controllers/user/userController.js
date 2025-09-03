@@ -1,29 +1,62 @@
 const User = require("../../models/userSchema")
+const Category = require('../../models/categorySchema')
+const Product = require('../../models/productSchema')
 const flash = require("connect-flash")
 const bcrypt = require("bcrypt")
 const nodemailer = require("nodemailer")
 const dotenv = require('dotenv')
 dotenv.config()
 const session = require("express-session")
-const { router } = require("../../app")
+// const { router } = require("../../app")
 
 const loadHomePage = async (req,res) => {
     try {
         const user = req.session.user || req.user;
+        const page = parseInt(req.query.page) || 1;
+        const limit = 3;
+        const skip = (page - 1)*limit;
+        const Categories = await Category.find({isListed: true});
+        let productData = await Product.find({
+          isBlocked: false,
+          categoryId:{$in: Categories.map(category => category._id)},
+          'variants.stock' : {$gt:0}
+        })
+        .sort({createdAt: -1})
+        .limit(6);
+
+        productData = productData.map(product => {
+        const paperback = product.variants.find(v => v.format === "Paperback");
+       const defaultPrice = paperback ? paperback.discountPrice : product.variants[0]?.discountPrice;
+
+  return {
+    ...product._doc,
+    defaultPrice
+  };
+});
+
+        const paginatedBooks = productData.slice(skip, skip+limit);
+        const totalPages = Math.ceil(productData.length / limit);
       
     if (user && user._id) {
       const userData = await User.findById(user._id); 
     console.log(`userData: ${userData}`);
       
-      
-      if (!userData) {
-        return res.render("homePage"); 
-      }
-      return res.render("homePage", { user: userData });
+      // if (!userData) {
+      //   return res.render("homePage", {books: productData}); 
+      // }
+      return res.render("homePage", { 
+                                                        user: userData, 
+                                                        books: paginatedBooks,
+                                                        currentPage: page,
+                                                        totalPages
+                                                      });
     }
 
-    // if no session user
-    res.render("homePage");
+    res.render("homePage", {
+                                              books: productData,
+                                            currentPage: page,
+                                            totalPages
+                                            });
     }catch (error) {
 
         console.log("Home Page Not Loading:", error)
@@ -268,6 +301,7 @@ const resendOtp = async (req, res) => {
 
     if (!req.session.otpAttempts) req.session.otpAttempts = 0;
     if (req.session.otpAttempts >= 3) {
+      req.session.userData = null;
       return res.json({
         success: false,
         message: "Too many OTP requests. Please try again later.",
@@ -524,6 +558,50 @@ const newPassword = async (req,res) => {
   }
 }
 
+const loadShoppingPage = async (req, res) => {
+  try {
+    const user = req.session.user;
+    const userData = await User.findById(user);
+
+    const categories = await Category.find({ isListed: true });
+    const categoryIds = categories.map(c => c._id);
+
+    const page = parseInt(req.query.page) || 1;
+    const limit = 9;
+    const skip = (page - 1) * limit;
+
+    const products = await Product.find({
+      isBlocked: false,
+      categoryId: { $in: categoryIds },
+      'variants.stock': { $gt: 0 }
+    })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const totalProductsCount = await Product.countDocuments({
+      isBlocked: false,
+      categoryId: { $in: categoryIds },
+      'variants.stock': { $gt: 0 }
+    });
+
+    const totalPages = Math.ceil(totalProductsCount / limit);
+
+    res.render("shop", {
+      user: userData,
+      books: products,
+      category: categories.map(c => ({ _id: c._id, name: c.name })),
+      totalProducts: totalProductsCount,
+      currentPage: page,
+      totalPages
+    });
+  } catch (error) {
+    console.log("Shop page error:", error);
+    res.redirect("/pageNotFound");
+  }
+};
+
+
 module.exports = {
     loadHomePage,
     pageNotFound,
@@ -538,6 +616,7 @@ module.exports = {
     verifyEmail,
     resetPasswordOtp,
     loadNewPassword,
-    newPassword
+    newPassword,
+    loadShoppingPage
 }
 

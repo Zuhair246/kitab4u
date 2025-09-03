@@ -1,6 +1,7 @@
 const express = require ('express')
 const router = express.Router()
 const userController = require('../controllers/user/userController')
+const {userAuth }= require('../middlewares/auth')
 const { route } = require('../app')
 const passport = require('passport')
 
@@ -18,6 +19,9 @@ router.post('/verifyEmail', userController.verifyEmail)
 router.post('/resetPasswordOtp', userController.resetPasswordOtp)
 router.get('/newPassword', userController.loadNewPassword)
 router.post('/newPassword', userController.newPassword)
+
+//shopping page
+router.get('/shop', userController.loadShoppingPage);
 
 router.get('/auth/google', passport.authenticate('google',{scope:['profile','email']}));
 

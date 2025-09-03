@@ -58,6 +58,11 @@ const addProduct = async (req, res) => {
             return res.redirect('/admin/addProducts?error=' + encodeURIComponent('All fields are required, including at least one valid variant'));
         }
 
+        const existingProduct = await Product.findOne({name})
+        if(existingProduct){
+            return res.redirect('/admin/addProducts?error=' + encodeURIComponent('This Book already exist '));
+        }
+
         // Handle images
         const images = [];
         if (req.files && req.files.length > 0) {
@@ -68,7 +73,7 @@ const addProduct = async (req, res) => {
                 const fileName = `${Date.now()}_${file.originalname}`;
                 const fullPath = path.join(uploadDir, fileName);
                 await sharp(file.buffer) // Use file.buffer if multer memoryStorage, or file.path if diskStorage
-                    .resize(800, 800, { fit: 'contain' })
+                    .resize(400, 600, { fit: 'contain' })
                     .toFile(fullPath);
                 // fs.unlinkSync(file.path); // Only if diskStorage
                 images.push(`/uploads/${fileName}`);
@@ -202,7 +207,7 @@ const editProduct = async (req, res) => {
                 const fileName = `${Date.now()}_${file.originalname}`;
                 const fullPath = path.join(uploadDir, fileName);
                 await sharp(file.buffer)
-                    .resize(800, 800, { fit: 'contain' })
+                    .resize(400, 600, { fit: 'contain' })
                     .toFile(fullPath);
                 images.push(`/uploads/${fileName}`);
             }

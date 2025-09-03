@@ -36,7 +36,7 @@ const userSchema = new mongoose.Schema({
     isVerified:{
         type:Boolean,
         default:false
-    }
+    },
     // cart: [{
     //     type: Schema.Types.ObjectId,
     //     ref: "Cart"

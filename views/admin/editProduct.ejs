@@ -21,21 +21,38 @@
                     <form id="productForm" action="<%= typeof product !== 'undefined' ? `/admin/editProduct/${product._id}` : '/admin/addProducts' %>" 
                           method="POST" enctype="multipart/form-data">
                         
-                        <!-- Book Name -->
-                        <div class="mb-4">
-                            <label for="bookName" class="form-label fw-semibold">Book Name *</label>
-                            <input type="text" class="form-control form-control-lg" id="bookName" name="name" 
-                                   placeholder="eg: Atomic Habits" 
-                                   value="<%= typeof product !== 'undefined' ? product.name : '' %>">
-                        </div>
+                       <!-- Book Name -->
+                                <div class="mb-4">
+                                <label for="bookName" class="form-label fw-semibold">Book Name *</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control form-control-lg" id="bookName" name="name" 
+                                        placeholder="eg: Atomic Habits"
+                                        value="<%= typeof product !== 'undefined' ? product.name : '' %>" 
+                                        <%= typeof product !== 'undefined' ? 'readonly' : '' %>>
+                                    <% if (typeof product !== 'undefined') { %>
+                                    <span class="input-group-text bg-light">
+                                        <i class="fas fa-lock text-muted"></i>
+                                    </span>
+                                    <% } %>
+                                </div>
+                                </div>
 
-                        <!-- Author -->
-                        <div class="mb-4">
-                            <label for="author" class="form-label fw-semibold">Author *</label>
-                            <input type="text" class="form-control form-control-lg" id="author" name="author" 
-                                   placeholder="eg: James Clear" 
-                                   value="<%= typeof product !== 'undefined' ? product.author : '' %>" >
-                        </div>
+                                <!-- Author -->
+                                <div class="mb-4">
+                                <label for="author" class="form-label fw-semibold">Author *</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control form-control-lg" id="author" name="author" 
+                                        placeholder="eg: James Clear"
+                                        value="<%= typeof product !== 'undefined' ? product.author : '' %>" 
+                                        <%= typeof product !== 'undefined' ? 'readonly' : '' %>>
+                                    <% if (typeof product !== 'undefined') { %>
+                                    <span class="input-group-text bg-light">
+                                        <i class="fas fa-lock text-muted"></i>
+                                    </span>
+                                    <% } %>
+                                </div>
+                                </div>
+
 
                         <!-- Publisher -->
                         <div class="mb-4">
@@ -64,16 +81,21 @@
                         <% if (typeof product !== 'undefined' && product.images && product.images.length > 0) { %>
                             <div class="mb-4">
                                 <label class="form-label fw-semibold">Existing Images</label>
-                                <div class="row g-3">
-                                    <% product.images.forEach((img, i) => { %>
-                                        <div class="col-md-4">
-                                            <img src="<%= img %>" alt="Existing Image" class="img-fluid rounded" style="max-height: 200px;">
-                                            <input type="hidden" name="existingImages[]" value="<%= img %>">
-                                        </div>
-                                    <% }); %>
+                                <div class="row g-3" id="existingImagesContainer">
+                                <% product.images.forEach((img, i) => { %>
+                                    <div class="col-md-4 position-relative" id="img-<%= i %>">
+                                    <img src="<%= img %>" alt="Existing Image" class="img-fluid rounded" style="max-height: 200px;">
+                                    <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1"
+                                            onclick="removeExistingImage('<%= i %>')">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                    <input type="hidden" name="existingImages[]" value="<%= img %>">
+                                    </div>
+                                <% }); %>
                                 </div>
                             </div>
-                        <% } %>
+                            <% } %>
+
 
                         <!-- Category and Pages Selection in the same row -->
                         <div class="row g-3 mb-4">
@@ -153,6 +175,12 @@ let coverTypeIndex = 0;
 let croppedImages = []; // Array of blobs for cropped images
 let cropper;
 
+function removeExistingImage(index) {
+  const imgDiv = document.getElementById(`img-${index}`);
+  if (imgDiv) imgDiv.remove();
+}
+
+
 // Add new cover type row dynamically
 function addCoverType(existing = null) {
     const container = document.getElementById("coverTypeContainer");
@@ -218,7 +246,7 @@ document.getElementById("images").addEventListener("change", function (event) {
     
     const cropImage = document.getElementById("cropImage");
     cropper = new Cropper(cropImage, {
-      aspectRatio: 1, // square crop, change as per need
+      aspectRatio: 2/3,
       viewMode: 1
     });
   };
@@ -230,8 +258,8 @@ function saveCroppedImage() {
   if (!cropper) return;
 
   cropper.getCroppedCanvas({
-    width: 800,
-    height: 800
+    width: 400,
+    height: 600
   }).toBlob((blob) => {
     croppedImages.push(blob); // Add the new cropped blob to the array
 

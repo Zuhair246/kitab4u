@@ -16,16 +16,16 @@ const productDetails = async (req, res) => {
       return res.redirect('/pageNotFound');
     }
 
-    // Category & Product offers
+   
     const findCategory = product.categoryId;
     const categoryOffer = (findCategory && findCategory.categoryOffer) || 0;
     const productOffer = product.productOffer || 0;
     const totalOffer = categoryOffer + productOffer;
 
-    // Stock calculation
+  
     const quantity = product.variants.reduce((sum, v) => sum + (v.stock || 0), 0);
 
-    // Similar products
+
     const similarProducts = await Product.find({
       _id: { $ne: productId },
       categoryId: product.categoryId,

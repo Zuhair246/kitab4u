@@ -612,9 +612,7 @@ const loadShoppingPage = async (req, res) => {
       }
     }
 
-
     const pipelineForCount = [{ $match: match }];
-
 
     pipelineForCount.push({
       $addFields: { minPrice: { $min: "$variants.discountPrice" } },
@@ -645,12 +643,9 @@ const loadShoppingPage = async (req, res) => {
     const totalProductsCount = (countResult[0] && countResult[0].count) ? countResult[0].count : 0;
     const totalPages = Math.ceil(totalProductsCount / limit);
 
-
     const pipeline = [{ $match: match }];
 
-
     pipeline.push({ $addFields: { minPrice: { $min: "$variants.discountPrice" } } });
-
 
     if (selectedPriceRange) {
       let minP = 0;

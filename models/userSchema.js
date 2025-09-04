@@ -38,7 +38,7 @@ const userSchema = new mongoose.Schema({
         default:false
     },
     // cart: [{
-    //     type: Schema.Types.ObjectId,
+    //     type: mongoose.Schema.Types.ObjectId,
     //     ref: "Cart"
     // }],
     // wallet: [{
@@ -46,11 +46,11 @@ const userSchema = new mongoose.Schema({
     //     default: 0
     // }],
     // wishlist: [{
-    //     type: Schema.Types.ObjectId,
+    //     type: mongoose.Schema.Types.ObjectId,
     //     ref: "Wishlist"
     // }],
     // orderHistory: [{
-    //     type: Schema.Types.ObjectId,
+    //     type: mongoose.Schema.Types.ObjectId,
     //     ref: "order"
     // }],
     // createdOn: {
@@ -64,19 +64,19 @@ const userSchema = new mongoose.Schema({
     //     type: Boolean
     // },
     // redeemedUsers: {
-    //     type: Schema.Types.ObjectId,
+    //     type: mongoose.Schema.Types.ObjectId,
     //     ref: "User"
     // },
-    // searchHistory: [{
-    //     category: {
-    //         type: Schema.Types.ObjectId,
-    //         ref: "Category"
-    //     },
-    //   searchOn: {
-    //     type: Date,
-    //     default: Date.now
-    //   }  
-    // }]
+    searchHistory: [{
+        category: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Category"
+        },
+      searchOn: {
+        type: Date,
+        default: Date.now
+      }  
+    }]
 })
 
 module.exports  = mongoose.model("User", userSchema)

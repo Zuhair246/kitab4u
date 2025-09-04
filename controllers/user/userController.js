@@ -37,9 +37,20 @@ const loadHomePage = async (req,res) => {
         const paginatedBooks = productData.slice(skip, skip+limit);
         const totalPages = Math.ceil(productData.length / limit);
       
+        const searchQuery = req.query.q ? req.query.q.trim() : "";
+
     if (user && user._id) {
       const userData = await User.findById(user._id); 
     console.log(`userData: ${userData}`);
+
+    
+
+        if (searchQuery) {
+      filter.$or = [
+        { name: { $regex: searchQuery, $options: "i" } },
+        { author: { $regex: searchQuery, $options: "i" } }
+      ];
+    }
       
       // if (!userData) {
       //   return res.render("homePage", {books: productData}); 
@@ -48,20 +59,22 @@ const loadHomePage = async (req,res) => {
                                                         user: userData, 
                                                         books: paginatedBooks,
                                                         currentPage: page,
-                                                        totalPages
+                                                        totalPages,
+                                                        searchQuery
                                                       });
     }
 
     res.render("homePage", {
                                               books: productData,
                                             currentPage: page,
-                                            totalPages
+                                            totalPages,
+                                            searchQuery
                                             });
     }catch (error) {
 
         console.log("Home Page Not Loading:", error)
         res.status(500).send("Server error")
-        
+        res.send('/pageNotFound')
     }
 }
 
@@ -288,20 +301,22 @@ const verifyOtp = async (req, res) => {
   }
 };
 
-
 const resendOtp = async (req, res) => {
   try {
     if (!req.session.userData) {
       return res.json({
         success: false,
-        message: "Session expired. Please try signing up again.",
-        redirect: "/signup",
+        message: "Session expired, Please try again",
+        redirect: "/login",
       });
     }
 
     if (!req.session.otpAttempts) req.session.otpAttempts = 0;
     if (req.session.otpAttempts >= 3) {
-      req.session.userData = null;
+          req.session.userData = null;
+          req.session.userOtp = null;
+          req.session.otpExpiry = null;
+      
       return res.json({
         success: false,
         message: "Too many OTP requests. Please try again later.",
@@ -332,7 +347,6 @@ const resendOtp = async (req, res) => {
     });
   }
 };
-
 
 const loadLogin = async (req,res) => {
     try {
@@ -444,12 +458,15 @@ const verifyEmail = async (req,res) => {
             const otp = generateOtp()
         const emailSent = await sendVerificationEmail(email,otp);
         if(!emailSent) {
-            req.flash('error', "User email doesn't exist")
+            req.flash('error', "OTP didn't send. Network issue..!")
             return res.redirect('/verifyEmail')
         }
         req.session.userOtp = otp;
         req.session.otpExpiry = Date.now() + 2 * 60 * 1000;
-        req.session.resetEmail = email;
+        req.session.userData = {email};
+        console.log(req.session.userData);
+        
+        
         console.log("Forgot password OTP:", otp);
         req.flash('success', "OTP sent to your email!");
             res.render("verify-otp",  {
@@ -487,8 +504,7 @@ const verifyEmail = async (req,res) => {
     }
 
     if (otp === req.session.userOtp) {
-      // req.session.resetEmail = req.session.userData.email;
-      // console.log(req.session.resetEmail);
+
       return res.json({ 
         success: true, 
         message: 'Email verified successfully ! Redirecting to reset password...', 
@@ -570,20 +586,27 @@ const loadShoppingPage = async (req, res) => {
     const limit = 9;
     const skip = (page - 1) * limit;
 
-    const products = await Product.find({
-      isBlocked: false,
-      categoryId: { $in: categoryIds },
-      'variants.stock': { $gt: 0 }
-    })
+    const searchQuery = req.query.q ? req.query.q.trim() : "";
+
+     const filter = {
+              isBlocked: false,
+              categoryId: { $in: categoryIds },
+              'variants.stock': { $gt: 0 }
+      }
+
+    if (searchQuery) {
+      filter.$or = [
+        { name: { $regex: searchQuery, $options: "i" } },
+        { author: { $regex: searchQuery, $options: "i" } }
+      ];
+    }
+
+    const products = await Product.find(filter)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
 
-    const totalProductsCount = await Product.countDocuments({
-      isBlocked: false,
-      categoryId: { $in: categoryIds },
-      'variants.stock': { $gt: 0 }
-    });
+    const totalProductsCount = await Product.countDocuments(filter);
 
     const totalPages = Math.ceil(totalProductsCount / limit);
 
@@ -593,7 +616,9 @@ const loadShoppingPage = async (req, res) => {
       category: categories.map(c => ({ _id: c._id, name: c.name })),
       totalProducts: totalProductsCount,
       currentPage: page,
-      totalPages
+      totalPages,
+      searchQuery,
+      selectedPriceRange: req.query.priceRange
     });
   } catch (error) {
     console.log("Shop page error:", error);

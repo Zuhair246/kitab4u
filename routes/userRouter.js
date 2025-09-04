@@ -1,6 +1,7 @@
 const express = require ('express')
 const router = express.Router()
 const userController = require('../controllers/user/userController')
+const productController = require('../controllers/user/productController')
 const {userAuth }= require('../middlewares/auth')
 const { route } = require('../app')
 const passport = require('passport')
@@ -22,6 +23,14 @@ router.post('/newPassword', userController.newPassword)
 
 //shopping page
 router.get('/shop', userController.loadShoppingPage);
+
+//Product Management
+router.get('/productDetails', productController.productDetails)
+router.get('/filter', productController.filterProducts)
+
+// Search products
+router.get("/search", productController.loadSearchResults);
+
 
 router.get('/auth/google', passport.authenticate('google',{scope:['profile','email']}));
 

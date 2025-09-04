@@ -1,0 +1,174 @@
+<%- include("../../views/partials/user/header") %>
+
+<div class="container my-5">
+
+  <!-- Breadcrumb -->
+  <nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/">Home</a></li>
+      <li class="breadcrumb-item"><a href="/shop">Shop</a></li>
+      <li class="breadcrumb-item active" aria-current="page"><%= product.name %></li>
+    </ol>
+  </nav>
+
+  <div class="row g-5">
+    <!-- Left: Images -->
+    <div class="col-md-5">
+      <div class="border p-3 mb-3 position-relative">
+        <img id="mainImage"
+             src="<%= (product.images && product.images.length > 0) ? product.images[0] : '/placeholder.svg?height=600&width=400' %>"
+             alt="<%= product.name %>"
+             class="img-fluid w-100"
+             style="cursor: zoom-in; object-fit: cover;">
+      </div>
+
+      <div class="d-flex gap-2">
+        <% product.images.forEach((img) => { %>
+          <img src="<%= img %>"
+               alt="thumbnail"
+               class="img-thumbnail"
+               style="width: 70px; height: 100px; object-fit: cover; cursor: pointer;"
+               onclick="document.getElementById('mainImage').src=this.src">
+        <% }) %>
+      </div>
+    </div>
+
+    <!-- Right: Details -->
+    <div class="col-md-7">
+      <h2><%= product.name %></h2>
+      <h5 class="text-muted mb-3"><%= product.author %></h5>
+
+      <!-- Ratings -->
+      <div class="d-flex align-items-center mb-2">
+        <div>
+          <% for(let i=1;i<=5;i++){ %>
+            <% if(i <= Math.round(product.averageRating || 0)){ %>
+              <i class="bi bi-star-fill text-warning"></i>
+            <% } else { %>
+              <i class="bi bi-star text-warning"></i>
+            <% } %>
+          <% } %>
+        </div>
+        <span class="ms-2 text-muted">(<%= product.totalReviews || 0 %> reviews)</span>
+      </div>
+
+      <!-- Price & Discount -->
+      <div class="mb-3">
+        <% const variant = product.variants && product.variants[0]; %>
+        <% if(variant && variant.discountPrice && variant.discountPrice < variant.originalPrice) { %>
+          <span class="fs-4 fw-bold text-danger">₹<%= variant.discountPrice %></span>
+          <span class="text-muted text-decoration-line-through ms-2">₹<%= variant.originalPrice %></span>
+          <span class="badge bg-success ms-2">Save ₹<%= variant.originalPrice - variant.discountPrice %></span>
+        <% } else if(variant) { %>
+          <span class="fs-4 fw-bold">₹<%= variant.originalPrice %></span>
+        <% } %>
+      </div>
+
+      <!-- Coupon -->
+      <% if(product.coupon) { %>
+        <div class="alert alert-warning py-2">
+          <i class="bi bi-tag"></i> Coupon Applied: <strong><%= product.coupon %></strong>
+        </div>
+      <% } %>
+
+      <!-- Stock -->
+      <% if(product.variants.some(v => v.stock > 0)) { %>
+        <span class="badge bg-success mb-3">In Stock</span>
+      <% } else { %>
+        <span class="badge bg-danger mb-3">Out of Stock</span>
+      <% } %>
+
+      <!-- Book Info -->
+      <ul class="list-unstyled mb-3">
+        <li><strong>Publisher:</strong> <%= product.publisher %></li>
+        <li><strong>Cover Type:</strong>
+          <% product.variants.forEach(variant => { %>
+            <button class="btn btn-sm btn-outline-primary me-2"><%= variant.coverType %></button>
+          <% }) %>
+        </li>
+        <li><strong>Pages:</strong> <%= product.pages %></li>
+      </ul>
+
+      <!-- Delivery -->
+      <p class="mb-1"><i class="bi bi-truck"></i> Estimated Delivery: Jul 30 - Aug 03</p>
+      <p class="mb-3"><i class="bi bi-box-seam"></i> Free Shipping & Returns on orders over ₹500</p>
+
+      <!-- Actions -->
+      <div class="d-flex align-items-center gap-3 mb-4">
+        <form action="/cart" method="post">
+          <input type="hidden" name="productId" value="<%= product._id %>">
+          <button class="btn btn-primary px-4" type="submit" <%= quantity <= 0 ? 'disabled' : '' %>>
+            <i class="bi bi-cart-plus me-2"></i>Add to Cart
+          </button>
+        </form>
+        <button class="btn btn-outline-secondary" type="button" data-wishlist="<%= product._id %>">
+          <i class="bi bi-heart"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Description & Ratings -->
+  <div class="row mt-5">
+    <div class="col-md-8">
+      <h4>Description</h4>
+      <p><%= product.description %></p>
+    </div>
+    <div class="col-md-4">
+      <h4>Ratings:</h4>
+      <% [5,4,3,2,1].forEach(star => { 
+        const count = product.ratingBreakdown ? product.ratingBreakdown[star] || 0 : 0;
+        const percent = product.totalReviews ? Math.round((count / product.totalReviews) * 100) : 0;
+      %>
+        <div class="d-flex align-items-center mb-1">
+          <span class="me-2"><%= star %> star</span>
+          <div class="progress flex-grow-1" style="height: 8px;">
+            <div class="progress-bar bg-warning" role="progressbar" style="width: <%= percent %>%"></div>
+          </div>
+          <span class="ms-2"><%= percent %>%</span>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+
+  <!-- Similar Products -->
+  <div class="mt-5">
+    <h4>Similar Books</h4>
+    <div class="row g-4">
+      <% similarProducts.forEach(book => { %>
+        <div class="col-md-3 col-sm-6">
+          <div class="card h-100 border-0 shadow-sm">
+            <a href="/productDetails?id=<%= book._id %>" style="aspect-ratio: 2/3;" class="d-block">
+              <img src="<%= (book.images && book.images[0]) ? book.images[0] : '/placeholder.svg?height=600&width=400' %>"
+                   class="card-img-top object-fit-cover w-100 h-100"
+                   style="object-fit: cover;">
+            </a>
+            <div class="card-body">
+              <h6 class="card-title"><%= book.name %></h6>
+              <p class="text-muted"><%= book.author %></p>
+              <span class="fw-bold">₹<%= (book.variants && book.variants[0] && book.variants[0].discountPrice) || (book.variants && book.variants[0].originalPrice) %></span>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+</div>
+
+<%- include("../../views/partials/user/footer") %>
+
+<!-- Image Zoom Script -->
+<script>
+  const mainImage = document.getElementById('mainImage');
+  mainImage.addEventListener('mousemove', function(e) {
+    const { left, top, width, height } = this.getBoundingClientRect();
+    const x = ((e.pageX - left) / width) * 100;
+    const y = ((e.pageY - top) / height) * 100;
+    this.style.transformOrigin = `${x}% ${y}%`;
+    this.style.transform = "scale(1.5)";
+  });
+  mainImage.addEventListener('mouseleave', function() {
+    this.style.transformOrigin = "center";
+    this.style.transform = "scale(1)";
+  });
+</script>

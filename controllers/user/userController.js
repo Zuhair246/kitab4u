@@ -1,6 +1,7 @@
 const User = require("../../models/userSchema")
 const Category = require('../../models/categorySchema')
 const Product = require('../../models/productSchema')
+const mongoose = require('mongoose')
 const flash = require("connect-flash")
 const bcrypt = require("bcrypt")
 const nodemailer = require("nodemailer")
@@ -577,54 +578,134 @@ const newPassword = async (req,res) => {
 const loadShoppingPage = async (req, res) => {
   try {
     const user = req.session.user;
-    const userData = await User.findById(user);
+    const userData = user ? await User.findById(user) : null;
 
     const categories = await Category.find({ isListed: true });
-    const categoryIds = categories.map(c => c._id);
+    const categoryIds = categories.map((c) => c._id);
 
     const page = parseInt(req.query.page) || 1;
     const limit = 9;
     const skip = (page - 1) * limit;
 
     const searchQuery = req.query.q ? req.query.q.trim() : "";
+    const selectedCategory = req.query.category || null;
+    const selectedPriceRange = req.query.priceRange || null;
+    const sortOption = req.query.sort || null;
 
-     const filter = {
-              isBlocked: false,
-              categoryId: { $in: categoryIds },
-              'variants.stock': { $gt: 0 }
-      }
+    const match = {
+      isBlocked: false,
+      categoryId: { $in: categoryIds },
+      "variants.stock": { $gt: 0 },
+    };
 
     if (searchQuery) {
-      filter.$or = [
+      match.$or = [
         { name: { $regex: searchQuery, $options: "i" } },
-        { author: { $regex: searchQuery, $options: "i" } }
+        { author: { $regex: searchQuery, $options: "i" } },
       ];
     }
 
-    const products = await Product.find(filter)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit);
+    if (selectedCategory) {
+      const findCategory = await Category.findOne({ name: selectedCategory });
+      if (findCategory) {
+        match.categoryId = findCategory._id;
+      }
+    }
 
-    const totalProductsCount = await Product.countDocuments(filter);
 
+    const pipelineForCount = [{ $match: match }];
+
+
+    pipelineForCount.push({
+      $addFields: { minPrice: { $min: "$variants.discountPrice" } },
+    });
+
+    if (selectedPriceRange) {
+      let minP = 0;
+      let maxP = Number.POSITIVE_INFINITY;
+      switch (selectedPriceRange) {
+        case "100-200":
+          minP = 100; maxP = 200; break;
+        case "200-400":
+          minP = 200; maxP = 400; break;
+        case "400-700":
+          minP = 400; maxP = 700; break;
+        case "700-1000":
+          minP = 700; maxP = 1000; break;
+        case "1000+":
+          minP = 1000; maxP = Number.POSITIVE_INFINITY; break;
+      }
+      const priceMatch = { minPrice: { $gte: minP } };
+      if (isFinite(maxP)) priceMatch.minPrice.$lte = maxP;
+      pipelineForCount.push({ $match: priceMatch });
+    }
+
+    pipelineForCount.push({ $count: "count" });
+    const countResult = await Product.aggregate(pipelineForCount);
+    const totalProductsCount = (countResult[0] && countResult[0].count) ? countResult[0].count : 0;
     const totalPages = Math.ceil(totalProductsCount / limit);
+
+
+    const pipeline = [{ $match: match }];
+
+
+    pipeline.push({ $addFields: { minPrice: { $min: "$variants.discountPrice" } } });
+
+
+    if (selectedPriceRange) {
+      let minP = 0;
+      let maxP = Number.POSITIVE_INFINITY;
+      switch (selectedPriceRange) {
+        case "100-200":
+          minP = 100; maxP = 200; break;
+        case "200-400":
+          minP = 200; maxP = 400; break;
+        case "400-700":
+          minP = 400; maxP = 700; break;
+        case "700-1000":
+          minP = 700; maxP = 1000; break;
+        case "1000+":
+          minP = 1000; maxP = Number.POSITIVE_INFINITY; break;
+      }
+      const priceMatch = { minPrice: { $gte: minP } };
+      if (isFinite(maxP)) priceMatch.minPrice.$lte = maxP;
+      pipeline.push({ $match: priceMatch });
+    }
+
+    if (sortOption === "low-high") {
+      pipeline.push({ $sort: { minPrice: 1, createdAt: -1 } });
+    } else if (sortOption === "high-low") {
+      pipeline.push({ $sort: { minPrice: -1, createdAt: -1 } });
+    } else if (sortOption === "az") {
+      pipeline.push({ $sort: { name: 1 } });
+    } else if (sortOption === "za") {
+      pipeline.push({ $sort: { name: -1 } });
+    } else {
+      pipeline.push({ $sort: { createdAt: -1 } });
+    }
+
+    pipeline.push({ $skip: skip }, { $limit: limit });
+
+    const products = await Product.aggregate(pipeline);
 
     res.render("shop", {
       user: userData,
       books: products,
-      category: categories.map(c => ({ _id: c._id, name: c.name })),
+      category: categories.map((c) => ({ _id: c._id, name: c.name })),
       totalProducts: totalProductsCount,
       currentPage: page,
       totalPages,
       searchQuery,
-      selectedPriceRange: req.query.priceRange
+      selectedCategory,
+      selectedPriceRange,
+      sortOption,
     });
   } catch (error) {
     console.log("Shop page error:", error);
     res.redirect("/pageNotFound");
   }
 };
+
 
 
 module.exports = {

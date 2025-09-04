@@ -8,50 +8,51 @@
       <div class="card shadow-sm border-0 p-3">
         <h5 class="mb-3">Filters</h5>
 
-        <form action="/filter" >
-        <!-- Category Filter -->
-        <h6 class="fw-semibold">Categories</h6>
-        <% for (let i=0; i<category.length; i++) { %>
+      <form action="/shop" method="get">
+  <!-- Categories -->
+  <% for (let i=0; i<category.length; i++) { %>
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" name="category" value="<%=category[i].name%>"
+        <%= selectedCategory === category[i].name ? "checked" : "" %>>
+      <label class="form-check-label"><%= category[i].name %></label>
+    </div>
+  <% } %>
+
+  <!-- Price Range -->
+  <h6 class="fw-semibold">Price Range</h6>
+  <div class="form-check">
+    <input class="form-check-input" type="radio" name="priceRange" value="100-200"
+      <%= selectedPriceRange === "100-200" ? "checked" : "" %>>
+    <label class="form-check-label">₹100 - ₹200</label>
+    </div>
+    <div class="form-check">
+        <input class="form-check-input" type="radio" name="priceRange" value="200-400"
+      <%= selectedPriceRange === "200-400" ? "checked" : "" %>>
+    <label class="form-check-label">₹200 - ₹400</label>
+  </div>
+      <div class="form-check">
+        <input class="form-check-input" type="radio" name="priceRange" value="400-700"
+      <%= selectedPriceRange === "400-700" ? "checked" : "" %>>
+    <label class="form-check-label">₹400 - ₹700</label>
+  </div>
         <div class="form-check">
-          <input class="form-check-input" type="checkbox" name="category" value="<%=category[i].name%>">
-          <label class="form-check-label" for="fiction"><%=category[i].name%></label>
-        </div>
-        <%}%>
+        <input class="form-check-input" type="radio" name="priceRange" value="700-1000"
+      <%= selectedPriceRange === "700-1000" ? "checked" : "" %>>
+    <label class="form-check-label">₹700 - ₹1000</label>
+  </div>
+      <div class="form-check">
+        <input class="form-check-input" type="radio" name="priceRange" value="1000+"
+      <%= selectedPriceRange === "1000+" ? "checked" : "" %>>
+    <label class="form-check-label">Above ₹1000</label>
+  </div>
 
-        <!-- Price Filter -->
-        <h6 class="fw-semibold">Price Range</h6>
-<div class="form-check">
-  <input class="form-check-input" type="radio" name="priceRange" value="100-200" id="p1"
-    <%= selectedPriceRange === "100-200" ? "checked" : "" %>>
-  <label class="form-check-label" for="p1">₹100 - ₹200</label>
-</div>
-<div class="form-check">
-  <input class="form-check-input" type="radio" name="priceRange" value="200-400" id="p2"
-    <%= selectedPriceRange === "200-400" ? "checked" : "" %>>
-  <label class="form-check-label" for="p2">₹200 - ₹400</label>
-</div>
-<div class="form-check">
-  <input class="form-check-input" type="radio" name="priceRange" value="400-700" id="p3"
-    <%= selectedPriceRange === "400-700" ? "checked" : "" %>>
-  <label class="form-check-label" for="p3">₹400 - ₹700</label>
-</div>
-<div class="form-check">
-  <input class="form-check-input" type="radio" name="priceRange" value="700-1000" id="p4"
-    <%= selectedPriceRange === "700-1000" ? "checked" : "" %>>
-  <label class="form-check-label" for="p4">₹700 - ₹1000</label>
-</div>
-<div class="form-check mb-3">
-  <input class="form-check-input" type="radio" name="priceRange" value="1000+" id="p5"
-    <%= selectedPriceRange === "1000+" ? "checked" : "" %>>
-  <label class="form-check-label" for="p5">Above ₹1000</label>
-</div>
+  <!-- Buttons -->
+  <div class="d-flex gap-2">
+    <button type="submit" class="btn btn-sm btn-primary">Apply</button>
+    <a href="/shop" class="btn btn-sm btn-outline-secondary">Clear</a>
+  </div>
+</form>
 
-        <!-- Buttons -->
-        <div class="d-flex gap-2">
-          <button type="submit" class="btn btn-sm btn-primary">Apply</button>
-          <button class="btn btn-sm btn-outline-secondary">Clear</button>
-        </div>
-        </form>
       </div>
     </aside>
 
@@ -59,15 +60,29 @@
     <main class="col-md-9 col-lg-10">
 
       <!-- Sort Options -->
-      <div class="d-flex justify-content-end mb-3">
-        <select class="form-select w-auto">
-          <option disabled selected>Sort by</option>
-          <option value="low-high">Price: Low to High</option>
-          <option value="high-low">Price: High to Low</option>
-          <option value="az">aA - zZ</option>
-          <option value="za">zZ - aA</option>
-        </select>
-      </div>
+      <!-- Sort Options -->
+<div class="d-flex justify-content-end mb-3">
+  <form id="sortForm" method="get" action="/shop" class="d-flex align-items-center">
+    <% if (searchQuery) { %>
+      <input type="hidden" name="q" value="<%= searchQuery %>">
+    <% } %>
+    <% if (selectedCategory) { %>
+      <input type="hidden" name="category" value="<%= selectedCategory %>">
+    <% } %>
+    <% if (selectedPriceRange) { %>
+      <input type="hidden" name="priceRange" value="<%= selectedPriceRange %>">
+    <% } %>
+
+    <select class="form-select w-auto" name="sort" onchange="document.getElementById('sortForm').submit()">
+      <option value="" disabled <%= !sortOption ? "selected" : "" %>>Sort by</option>
+      <option value="low-high" <%= sortOption === "low-high" ? "selected" : "" %>>Price: Low to High</option>
+      <option value="high-low" <%= sortOption === "high-low" ? "selected" : "" %>>Price: High to Low</option>
+      <option value="az" <%= sortOption === "az" ? "selected" : "" %>>Name: A - Z</option>
+      <option value="za" <%= sortOption === "za" ? "selected" : "" %>>Name: Z - A</option>
+    </select>
+  </form>
+</div>
+
 
       <!-- Search info -->
   <% if (searchQuery) { %>

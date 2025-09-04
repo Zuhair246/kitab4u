@@ -26,7 +26,6 @@ router.get('/shop', userController.loadShoppingPage);
 
 //Product Management
 router.get('/productDetails', productController.productDetails)
-router.get('/filter', productController.filterProducts)
 
 // Search products
 router.get("/search", productController.loadSearchResults);

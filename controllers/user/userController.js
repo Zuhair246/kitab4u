@@ -8,6 +8,8 @@ const nodemailer = require("nodemailer")
 const dotenv = require('dotenv')
 dotenv.config()
 const session = require("express-session")
+const { generateOtp, sendVerificationEmail, resendOtpVerification } = require("../../helpers/otpService");
+
 // const { router } = require("../../app")
 
 const loadHomePage = async (req,res) => {
@@ -87,68 +89,6 @@ const pageNotFound = async (req,res)=>  {
     }
 }
 
-function generateOtp(){
-    return Math.floor(100000 + Math.random() * 900000).toString();
-}
-
-async  function sendVerificationEmail (email,otp) {
-    try {
-        const transporter =  nodemailer.createTransport({
-            service: 'gmail',
-            port:587,
-            secure: false,
-            requireTLS: true,
-            auth: {
-                user: process.env.NODEMAILER_EMAIL,
-                pass: process.env.NODEMAILER_PASSWORD
-            }
-        })
-
-        const info = await transporter.sendMail({
-            from: process.env.NODEMAILER_EMAIL,
-            to: email,
-            subject: "Verify your account",
-            text: `Your OTP is ${otp}`,
-            html: `<b>Your OTP for verifying your Email entered in KITAB4U is: <br> ${otp} </b>`,
-        })
-
-        return info.accepted.length > 0
-        
-    } catch (error) {
-        console.error("Error sending OTP:",error)
-        return false;
-    }
-}
-
-async  function resendOtpVerification (email,otp) {
-    try {
-        const transporter =  nodemailer.createTransport({
-            service: 'gmail',
-            port:587,
-            secure: false,
-            requireTLS: true,
-            auth: {
-                user: process.env.NODEMAILER_EMAIL,
-                pass: process.env.NODEMAILER_PASSWORD
-            }
-        })
-        
-        const info = await transporter.sendMail({
-            from: process.env.NODEMAILER_EMAIL,
-            to: email,
-            subject: "Resent OTP for verifying your account",
-            text: `Your Re-sent OTP is ${otp}`,
-            html: `<b>Resent OTP for verifying your Email entered in KITAB4U is: <br> ${otp} </b>`,
-        })
-
-        return true;
-        
-    } catch (error) {
-        console.error("Error resending OTP:",error)
-        return false;
-    }
-}
-
 const loadSignup = async ( req,res) => {
     try{
         return res.render ('signup', {
@@ -181,7 +121,8 @@ const signup = async (req, res) => {
         return res.redirect("/signup");
     }
 
-    const checkEmail = /^[\w.-]+@[\w.-]+\.(com|in|org|net)$/;
+    const allowedDomains = 'com|in|org|net|co|gov|edu|co\\.in|ac\\.in|gov\\.in|io|ai|dev|app|shop|biz|info|me|tv|cloud';
+    const checkEmail = new RegExp(`^[\\w.-]+@[\\w.-]+\\.(${allowedDomains})$`);
     if (!checkEmail.test(email)) {
         req.flash("error", "Invalid Email");
         req.flash("formData", { name, email, password, phone });
@@ -216,6 +157,7 @@ if (!checkPhone.test(phone)) {
 
         if (existingUser && !existingUser.isBlocked) {
             req.flash("error", "User email already exists");
+            req.flash("formData", { name, email, password, phone });
             return res.redirect("/signup");
         }
 
@@ -702,7 +644,6 @@ const loadShoppingPage = async (req, res) => {
 };
 
 
-
 module.exports = {
     loadHomePage,
     pageNotFound,
@@ -718,6 +659,6 @@ module.exports = {
     resetPasswordOtp,
     loadNewPassword,
     newPassword,
-    loadShoppingPage
+    loadShoppingPage,
 }
 

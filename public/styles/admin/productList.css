@@ -1,0 +1,7 @@
+.product-name {
+  display: inline-block;
+  max-width: 20ch;   /* limit line to 20 characters */
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}

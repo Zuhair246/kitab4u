@@ -2,7 +2,7 @@ const Product = require("../models/productSchema");
 
 const checkProductAvailability = async (req, res, next) => {
   try {
-    const productId = req.params.id || req.body.productId;
+    const productId = req.params?.id || req.body?.id || req.query?.id;
 
     if (!productId) {
       return res.redirect("/shop");

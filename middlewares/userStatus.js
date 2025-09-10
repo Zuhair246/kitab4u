@@ -6,10 +6,10 @@ const checkUserStatus = async (req, res, next) => {
     const user = await User.findById(req.session.user._id);
 
     if (user.isBlocked) {
-      req.session.destroy((err) => {
-        if (err) console.error("Session destroy error:", err);
-        return res.redirect("/login?error=Your account has been blocked by admin");
-      });
+      req.session.user = null;
+      console.log("User Force Logged Out");
+      
+      res.redirect('/login')
     } else {
       next();
     }

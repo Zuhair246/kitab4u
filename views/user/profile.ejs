@@ -1,0 +1,74 @@
+<%- include("../../views/partials/user/header") %>
+
+<div class="container my-5">
+  <div class="row">
+    <!-- Sidebar -->
+    <%- include("../../views/partials/user/sidebar") %>
+
+    <!-- Main Body -->
+    <div class="col-md-8">
+      <div class="card shadow-sm rounded p-4">
+        <div class="card-body text-center">
+          <!-- Title -->
+          <h3 class="fw-bold mb-4">PROFILE</h3>
+
+          <% if (success && success.length > 0) { %>
+    <div class="alert alert-success" role="alert">
+        <% success.forEach(function(msg) { %>
+            <p class="mb-0"><%= msg %></p>
+        <% }); %>
+    </div>
+<% } %>
+
+                      <div class="col-sm-2 text-start">
+                        <a href="/profile/edit">
+                <i class="bi bi-pencil-square text-primary fs-3"></i></a>
+              </div>
+
+          <!-- Profile Picture -->
+          <div class="mb-4">
+            <img src="<%= user.image ? '/uploads/profile/' + user.image : '/images/default avatar.png' %>" 
+                 alt="Profile Picture" 
+                 class="rounded-circle border shadow-sm"
+                 style="width: 120px; height: 120px; object-fit: cover;">
+          </div>
+
+          <!-- Profile Details -->
+          <form>
+            <!-- Name -->
+            <div class="row align-items-center mb-3">
+            <label class="col-sm-2 col-form-label fw-semibold text-end">Name:</label>
+            <div class="col-sm-6">
+                <input type="text" class="form-control" value="<%=user.name %>"  readonly>
+            </div>
+            </div>
+
+
+            <!-- Email -->
+            <div class="row align-items-center mb-3">
+              <label class="col-sm-2 col-form-label fw-semibold text-end">Email:</label>
+              <div class="col-sm-6">
+                <input type="text" class="form-control" value="<%=user.email %>" readonly>
+              </div>
+            </div>
+
+            <!-- Phone -->
+            <div class="row align-items-center mb-3">
+              <label class="col-sm-2 col-form-label fw-semibold text-end">Phone:</label>
+              <div class="col-sm-6">
+                <input type="text" class="form-control" value="<%=user.phone%>" readonly>
+              </div>
+            </div>
+          </form>
+
+          <!-- Change Password -->
+          <div class="text-start ms-5 mt-3">
+            <a href="/profile/changePassword" class="text-primary fw-semibold">Change Password</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include("../../views/partials/user/footer") %>

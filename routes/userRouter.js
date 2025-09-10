@@ -2,9 +2,11 @@ const express = require ('express')
 const router = express.Router()
 const userController = require('../controllers/user/userController')
 const productController = require('../controllers/user/productController')
+const profileController = require('../controllers/user/profileController')
 const {userAuth }= require('../middlewares/auth')
 const checkProductAvailability = require('../middlewares/productAuth')
 const userStatus = require('../middlewares/userStatus')
+const upload = require('../middlewares/upload')
 const { route } = require('../app')
 const passport = require('passport')
 
@@ -27,14 +29,23 @@ router.post('/newPassword', userController.newPassword)
 
 
 //shopping page
-router.get('/shop', userController.loadShoppingPage);
+router.get('/shop', userStatus, userController.loadShoppingPage);
 
 //Product Management
-router.get('/productDetails',checkProductAvailability, productController.productDetails)
+router.get('/productDetails', checkProductAvailability, userStatus, productController.productDetails)
 
 // Search products
 router.get("/search", checkProductAvailability, productController.loadSearchResults);
 
+//User Profile Management
+router.get('/profile', profileController.profile)
+router.get('/profile/changePassword', profileController.loadChangePassword)
+router.post('/profile/changePassword', profileController.changePassword)
+router.get('/profile/edit', profileController.editProfile)
+router.post('/profile/edit', profileController.updateProfile)
+router.post('/profile/upload', upload.single('profileImage'), profileController.updateProfileImage);
+router.post('/profile/verifyOtp', profileController.verifyOtp)
+router.post('/resendOtp', profileController.resendOtp)
 
 router.get('/auth/google', passport.authenticate('google',{scope:['profile','email']}));
 

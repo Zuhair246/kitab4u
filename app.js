@@ -10,11 +10,15 @@ const adminRouter = require('./routes/adminRouter')
 const ejs = require('ejs')
 const flash = require('connect-flash')
 const passport = require("./config/passport");
+const nocache = require('nocache')
+
 
 db()
 
 app.use(express.json())
 app.use(express.urlencoded({extended:true}))
+
+app.use(nocache())
 
 app.use(session ({
     secret: process.env.SESSION_SECRET,

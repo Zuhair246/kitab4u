@@ -160,7 +160,6 @@ const getEditProduct = async (req, res) => {
     }
 };
 
-
 const editProduct = async (req, res) => {
     try {
         const id = req.params.id;

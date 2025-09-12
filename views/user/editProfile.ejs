@@ -2,16 +2,44 @@
 
 <div class="container my-5">
   <div class="row">
-    <!-- Sidebar -->
-    <%- include("../../views/partials/user/sidebar") %>
+  <!-- Sidebar (Desktop) -->
+    <div class="col-md-4 d-none d-md-block">
+      <%- include("../../views/partials/user/sidebar") %>
+    </div>
+
+    <!-- Sidebar Toggle Button (Mobile) -->
+    <div class="d-block d-md-none mb-3">
+      <button class="btn btn-outline-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarOffcanvas" aria-controls="sidebarOffcanvas">
+        <i class="bi bi-list"></i> Menu
+      </button>
+    </div>
+
+    <!-- Offcanvas Sidebar (Mobile) -->
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarOffcanvas" aria-labelledby="sidebarOffcanvasLabel">
+      <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="sidebarOffcanvasLabel">Your Account</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+      </div>
+      <div class="offcanvas-body">
+        <%- include("../../views/partials/user/sidebar") %>
+      </div>
+    </div>
 
     <!-- Main Body -->
     <div class="col-md-8">
+            <!-- Breadcrumb -->
+      <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="/profile" class="text-decoration-none">Your Account</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Edit Profile</li>
+        </ol>
+      </nav>
+
       <div class="card shadow-sm rounded">
         <div class="card-body text-center">
           <!-- Profile Picture -->
           <div class="mb-4">
-            <img src="<%= user.image ? '/uploads/profile' + user.image : '/images/default avatar.png' %>"
+            <img src="<%= user.image ? '/uploads/profile/' + user.image : '/images/default avatar.png' %>"
                     alt="Profile Picture"
                     class="rounded-circle border shadow-sm"
                     style="width: 120px; height: 120px; object-fit: cover;">

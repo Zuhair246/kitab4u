@@ -22,7 +22,7 @@
         <br>
 
         <!-- Google Sign In Button -->
-        <a href="/auth/google" class="btn btn-google w-100 mb-3"> 
+        <a href="/auth/google" class="btn btn-google w-100 mb-3 rounded-pill"> 
           <img src="https://www.svgrepo.com/show/355037/google.svg" alt="Google Logo">
           Log in or Sign up with Google 
         </a>
@@ -34,9 +34,9 @@
         <% } %>
 
         <form action="/login" method="POST">
-          <input type="text" class="form-control" name="email" placeholder="Email Address" id="email">
-          <input type="password" class="form-control" name="password" placeholder="Password" id="password">
-          <button type="submit" class="btn create-btn">Login</button>
+          <input type="text" class="form-control" name="email" value="savad@example.com" placeholder="Email Address" id="email">
+          <input type="password" class="form-control" name="password" value="Savad@222" placeholder="Password" id="password">
+          <button type="submit" class="btn create-btn rounded-pill">Login</button>
         </form>
 
         <div class="login-link">

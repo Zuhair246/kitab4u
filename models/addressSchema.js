@@ -2,7 +2,7 @@ const mongoose = require ("mongoose")
 
 const addressSchema = new mongoose.Schema({
     userId: {
-        type: Schema.Types.ObjectId,
+        type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
     },
@@ -37,7 +37,7 @@ const addressSchema = new mongoose.Schema({
         },
         altPhone: {
             type: Number,
-            required: true
+            required: false
         }
     }]
 })

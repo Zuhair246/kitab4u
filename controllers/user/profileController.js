@@ -1,4 +1,5 @@
 const User = require('../../models/userSchema')
+const Address = require('../../models/addressSchema');
 const sharp = require('sharp');
 const fs = require('fs');
 const path = require('path');
@@ -18,69 +19,6 @@ const profile = async (req,res) => {
   } catch (error) {
     console.error('User Profile load error:' ,error)
     res.redirect('/pageNotFound')
-  }
-}
-
-const loadChangePassword = async (req,res) => {
-  try {
-    res.render('changePassword', {
-       error: req.flash("error"),
-        success: req.flash("success"),
-        formData: req.flash("formData")[0] || {}
-    })
-  } catch (error) {
-    console.log("change load password error:" ,error);
-    
-  }
-}
-
-const changePassword = async (req,res) => {
-  try {
-    const {oldPassword, newPassword, confirmPassword} = req.body;
-    const userId = req.session.user;
-    const user = await User.findById(userId)
-    const passwordMatch = await bcrypt.compare(oldPassword, user.password)
-
-    if(!oldPassword) {
-      req.flash('error', "Enter old password");
-      return res.redirect('/profile/changePassword')
-    }
-
-    if(passwordMatch) {
-        if(newPassword===confirmPassword) {
-          if(!oldPassword || !newPassword) {
-                req.flash('error',"Enter old password and new password")
-                req.flash("formData", {newPassword, confirmPassword})
-                return res.redirect('/profile/changePassword')
-              }
-              const checkPassword = /^(?=.{7,}$)(?=.*[A-Za-z]|\d)[A-Za-z\d@._!#$%&*?-]+$/
-              if (!checkPassword.test(newPassword)) {
-                  req.flash("error", "Password must be 7 characters");
-                  req.flash("formData", { newPassword, confirmPassword });
-                  return res.redirect("/profile/changePassword");
-              }
-          
-              if(newPassword !== confirmPassword) {
-                req.flash('error', "Password miss-match")
-                req.flash("formData", {newPassword, confirmPassword})
-                return res.redirect('/profile/changePassword')
-              }
-                const hashedPassword = await bcrypt.hash(newPassword, 10);
-                user.password = hashedPassword;
-                await user.save();
-                console.log("Password updated");
-                req.session.user = null;
-                req.flash("message", "Password reset successful, Please login again");
-                return res.redirect("/login");
-        }
-    }else {
-              req.flash('error', "You have entered wrong password")
-              return res.redirect('/profile/changePassword')
-    }
-
-  } catch (error) {
-    console.log("Change password error:", error);
-    
   }
 }
 
@@ -178,6 +116,7 @@ const verifyOtp = async (req,res) => {
     if(otp === req.session.userOtp) {
       user.email = req.session.pendingEmail;
       await user.save();
+      req.session.otpAttempts = 0;
       delete req.session.userOtp;
       delete req.session.pendingEmail;
       return res.json({
@@ -200,7 +139,8 @@ const verifyOtp = async (req,res) => {
 
 const resendOtp = async (req, res) => {
   try {
-    if (!req.session.userData) {
+
+    if (!req.session.user) {
       return res.json({
         success: false,
         message: "Session expired, Please try again",
@@ -208,16 +148,20 @@ const resendOtp = async (req, res) => {
       });
     }
 
+    const userId = req.session.user;
+    const user = await User.findById(userId);
+    const email = user.email;
+
     if (!req.session.otpAttempts) req.session.otpAttempts = 0;
     if (req.session.otpAttempts >= 3) {
-          req.session.userData = null;
+          req.session.user = null;
           req.session.userOtp = null;
           req.session.otpExpiry = null;
       
       return res.json({
         success: false,
         message: "Too many OTP requests. Please try again later.",
-        redirect: "/verifyOtp",
+        redirect: "/profile/edit",
       });
     }
     req.session.otpAttempts++;
@@ -226,7 +170,7 @@ const resendOtp = async (req, res) => {
     req.session.userOtp = newOtp;
     req.session.otpExpiry = Date.now() + 2 * 60 * 1000;
 
-    await resendOtpVerification(req.session.userData.email, newOtp);
+    await resendOtpVerification(email, newOtp);
 
     console.log(`New OTP is ${newOtp}`);
 
@@ -244,6 +188,159 @@ const resendOtp = async (req, res) => {
     });
   }
 };
+
+const loadChangePassword = async (req,res) => {
+  try {
+    const userId = req.session.user;
+    const user = await User.findById(userId)
+    res.render('changePassword', {
+      user,
+       error: req.flash("error"),
+        success: req.flash("success"),
+        formData: req.flash("formData")[0] || {}
+    })
+  } catch (error) {
+    console.log("change load password error:" ,error);
+    
+  }
+}
+
+const changePassword = async (req,res) => {
+  try {
+    const {oldPassword, newPassword, confirmPassword} = req.body;
+    const userId = req.session.user;
+    const user = await User.findById(userId)
+    const passwordMatch = await bcrypt.compare(oldPassword, user.password)
+
+    if(!oldPassword) {
+      req.flash('error', "Enter old password");
+      return res.redirect('/profile/changePassword')
+    }
+
+    if(passwordMatch) {
+        if(newPassword===confirmPassword) {
+          if(!oldPassword || !newPassword) {
+                req.flash('error',"Enter old password and new password")
+                req.flash("formData", {newPassword, confirmPassword})
+                return res.redirect('/profile/changePassword')
+              }
+              const checkPassword = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).{7,}$/
+              if (!checkPassword.test(newPassword)) {
+                  req.flash("error", "Password must be 7 characters with atleast one alphabet, one number and non-alphanumeric character");
+                  req.flash("formData", { newPassword, confirmPassword });
+                  return res.redirect("/profile/changePassword");
+              }
+          
+              if(newPassword !== confirmPassword) {
+                req.flash('error', "Password miss-match")
+                req.flash("formData", {newPassword, confirmPassword})
+                return res.redirect('/profile/changePassword')
+              }
+
+              if(newPassword === oldPassword) {
+              req.flash('error', "New password should not be same as old password")
+              return res.redirect('/profile/changePassword')
+                }
+
+                const hashedPassword = await bcrypt.hash(newPassword, 10);
+                user.password = hashedPassword;
+                await user.save();
+                console.log("Password updated");
+                req.session.user = null;
+                res.render('/login', {'message': "Password reset successful, Please login again"})
+        }
+    }else {
+              req.flash('error', "You have entered wrong password")
+              return res.redirect('/profile/changePassword')
+    }
+
+  } catch (error) {
+    console.log("Change password error:", error);
+    
+  }
+}
+
+const loadForgotOldPassword = async (req, res) => {
+  try {
+    const userId = req.session.user;
+    const user = await User.findById(userId);
+    res.render('forgotOldPassword', {
+            user,
+            error: req.flash("error"),
+            success: req.flash("success"),
+            formData: req.flash("formData")[0] || {}
+    })
+  } catch (error) {
+    console.log("Load Forgot Password Page error: ", error);
+    
+  }
+}
+
+const forgotOldPassword = async (req,res) => {
+  try {
+    const userId = req.session.user;
+    const user = await User.findById(userId);
+    const email = user.email;
+    const otp = generateOtp();
+    await sendVerificationEmail(email,otp, "Password Reset Verification");
+
+    console.log(`OTP for for old password: ${otp}`);
+
+    req.session.userOtp = otp;
+      req.flash('success', "OTP sent to your email!");
+                res.render("forgotOldPassword",  {
+                  user,
+            error: req.flash("error"),
+            success: req.flash("success"),
+            formData: req.flash("formData")[0] || {}
+        });
+
+  } catch (error) {
+    console.error("forgot old password error:", error);
+    res.redirect('/pageNotFound');
+  }
+}
+
+const setNewPassword = async (req, res) => {
+  try {
+    const userId = req.session.user;
+    const user = await User.findById(userId);
+
+    const {otp, newPassword, confirmPassword} = req.body;
+
+    if(otp===req.session.userOtp) {
+
+          const checkPassword = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).{7,}$/
+      
+          if (!checkPassword.test(newPassword)) {
+              req.flash("error", "Password must be 7 characters with atleast one alphabet, one number and non-alphanumeric character");
+              req.flash("formData", {newPassword, confirmPassword});
+              return res.redirect("/profile/forgotOldPassword");
+          }
+      
+          if (newPassword !== confirmPassword) {
+              req.flash("error", "Passwords do not match");
+              req.flash("formData", { newPassword, confirmPassword});
+              return res.redirect("/profile/forgotOldPassword");
+          }
+
+      if(newPassword===confirmPassword) {
+        const hashedPassword = await bcrypt.hash(newPassword, 10)
+        user.password = hashedPassword;
+        await user.save();
+        req.session.user = null;
+        res.render('login', {'message':"Password updated login again"})
+      }
+    }else {
+      req.flash('error', "Invalid OTP")
+      return res.redirect('/profile/forgotOldPassword');
+    }
+
+    } catch (error) {
+    console.error("Set new password error:", error);
+    res.redirect("/profile/forgotOldPassword")
+  }
+}
 
 const updateProfileImage = async (req, res) => {
   try {
@@ -289,6 +386,67 @@ const updateProfileImage = async (req, res) => {
   }
 };
 
+ const address = async (req,res) => {
+  try {
+    const userId = req.session.user;
+    const user = await User.findById(userId)
+    const address = await Address.findOne({userId: userId})
+
+    res.render('address', {
+      user,
+      userAddress: address,
+      error: req.flash("error"),
+      success: req.flash("success"),
+    })
+
+  } catch (error) {
+    console.log("User Address load error:",error);
+    return res.redirect('/pageNotFound')
+  }
+ }
+
+ const loadAddAddress = async (req,res) => {
+  try {
+    const userId = req.session.user;
+    const user = await User.findById(userId);
+
+     res.render('addAddress', {
+      user,
+      error: req.flash("error"),
+      success: req.flash("success"),
+    })
+  } catch (error) {
+    console.log("Add address page load error:", error);
+    return res.redirect('/pageNotFound')
+    
+  }
+ }
+
+ const addAddress = async (req,res) => {
+  try {
+    const userId = req.session.user;
+    const userData = await User.findById(userId);
+    const {name, city, landMark, state, pinCode, phone, altPhone, addressType, } = req.body;
+    console.log(userData);
+    
+    const userAddress = await Address.findOne({userId: userData._id});
+    if(!userAddress) {
+      const newAddress = new Address({
+        userId: userData._id,
+        address: [{addressType, name, city, landMark, state, pinCode, phone, altPhone}]
+      })
+      await newAddress.save()
+    }else {
+      userAddress.address.push({addressType, name, city, landMark, state, pinCode, phone, altPhone});
+      await userAddress.save();
+    }
+    res.redirect('/profile/address')
+  } catch (error) {
+    console.log("Adding address error:",error);
+    res.redirect('/pageNotFound')
+  }
+ }
+
 module.exports = {
     profile,
     loadChangePassword,
@@ -298,4 +456,10 @@ module.exports = {
     verifyOtp,
     resendOtp,
     updateProfileImage,
+    loadForgotOldPassword,
+    forgotOldPassword,
+    setNewPassword,
+    address,
+    loadAddAddress,
+    addAddress
 }

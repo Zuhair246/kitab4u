@@ -35,17 +35,25 @@ router.get('/shop', userStatus, userController.loadShoppingPage);
 router.get('/productDetails', checkProductAvailability, userStatus, productController.productDetails)
 
 // Search products
-router.get("/search", checkProductAvailability, productController.loadSearchResults);
+router.get("/search", checkProductAvailability, userStatus,productController.loadSearchResults);
 
 //User Profile Management
-router.get('/profile', profileController.profile)
-router.get('/profile/changePassword', profileController.loadChangePassword)
-router.post('/profile/changePassword', profileController.changePassword)
-router.get('/profile/edit', profileController.editProfile)
-router.post('/profile/edit', profileController.updateProfile)
-router.post('/profile/upload', upload.single('profileImage'), profileController.updateProfileImage);
-router.post('/profile/verifyOtp', profileController.verifyOtp)
-router.post('/resendOtp', profileController.resendOtp)
+router.get('/profile', userStatus,profileController.profile)
+router.get('/profile/changePassword', userStatus,profileController.loadChangePassword)
+router.post('/profile/changePassword', userStatus,profileController.changePassword)
+router.get('/profile/edit', userStatus,profileController.editProfile)
+router.post('/profile/edit', userStatus,profileController.updateProfile)
+router.post('/profile/upload', upload.single('profileImage'), userStatus, profileController.updateProfileImage);
+router.post('/profile/verifyOtp', userStatus,profileController.verifyOtp)
+router.post('/resendOtp', userStatus,userController.resendOtp)
+router.get('/profile/forgotOldPassword', userStatus, profileController.loadForgotOldPassword)
+router.post('/profile/forgotOldPassword', userStatus,profileController.forgotOldPassword)
+router.post('/profile/setNewPassword', userStatus,profileController.setNewPassword)
+
+//User address Management
+router.get('/profile/address',profileController.address);
+router.get('/profile/address/add', profileController.loadAddAddress);
+router.post('/profile/address/add', profileController.addAddress)
 
 router.get('/auth/google', passport.authenticate('google',{scope:['profile','email']}));
 

@@ -1,0 +1,149 @@
+<%- include("../../views/partials/user/header") %>
+
+<div class="container my-5">
+  <div class="row">
+    <!-- Sidebar (Desktop) -->
+    <div class="col-md-4 d-none d-md-block">
+      <%- include("../../views/partials/user/sidebar") %>
+    </div>
+
+    <!-- Sidebar Toggle Button (Mobile) -->
+    <div class="d-block d-md-none mb-3">
+      <button class="btn btn-outline-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarOffcanvas" aria-controls="sidebarOffcanvas">
+        <i class="bi bi-list"></i> Menu
+      </button>
+    </div>
+
+    <!-- Offcanvas Sidebar (Mobile) -->
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarOffcanvas" aria-labelledby="sidebarOffcanvasLabel">
+      <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="sidebarOffcanvasLabel">Your Account</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+      </div>
+      <div class="offcanvas-body">
+        <%- include("../../views/partials/user/sidebar") %>
+      </div>
+    </div>
+
+    <!-- Main Body -->
+    <div class="col-md-8">
+      <!-- Breadcrumb -->
+      <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="/profile" class="text-decoration-none">Your Account</a></li>
+          <li class="breadcrumb-item"><a href="/profile/address" class="text-decoration-none">Your Addresses</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Add New Address</li>
+        </ol>
+      </nav>
+
+      <h2 class="mb-4">Add New Address</h2>
+
+      <!-- Flash Messages -->
+      <% if (error && error.length > 0) { %>
+        <div class="alert alert-danger" role="alert">
+          <% error.forEach(function(msg) { %>
+            <p class="mb-0"><%= msg %></p>
+          <% }); %>
+        </div>
+      <% } %>
+
+      <% if (success && success.length > 0) { %>
+        <div class="alert alert-success" role="alert">
+          <% success.forEach(function(msg) { %>
+            <p class="mb-0"><%= msg %></p>
+          <% }); %>
+        </div>
+      <% } %>
+
+      <!-- Add Address Form -->
+      <form action="/profile/address/add" method="POST" class="row g-3">
+        <!-- Name -->
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Name</label>
+          <input type="text" name="name" class="form-control" placeholder="Full Name" required>
+        </div>
+
+        <!-- City -->
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">City</label>
+          <input type="text" name="city" class="form-control" placeholder="City" required>
+        </div>
+
+        <!-- Landmark -->
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Landmark</label>
+          <input type="text" name="landMark" class="form-control" placeholder="Near Park, Mall, etc.">
+        </div>
+
+        <!-- State -->
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">State</label>
+          <input type="text" name="state" class="form-control" placeholder="State" required>
+        </div>
+
+        <!-- Pin Code -->
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Pin Code</label>
+          <input type="text" 
+                        name="pinCode"
+                        class="form-control" 
+                        pattern="[0-9]{6}" 
+                        maxlength="6" 
+                        placeholder="6-digit PIN"
+                        title="Pin code must be 6 digits">
+        </div>
+
+        <!-- Phone -->
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Phone</label>
+          <input type="text" 
+                      name="phone" 
+                      class="form-control" 
+                      placeholder="Mobile Number" 
+                      pattern="[0-9]{10}" 
+                      maxlength="10"
+                      >
+        </div>
+
+        <!-- Alternative Phone -->
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Alternative Phone</label>
+          <input type="tel" 
+                      name="altPhone" 
+                      class="form-control" 
+                      placeholder="Optional"
+                      pattern="[0-9]{10}" 
+                      maxlength="10">
+        </div>
+
+        <!-- Address Type -->
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Address Type</label>
+          <select name="addressType" class="form-select">
+            <option value="Home">Home</option>
+            <option value="Work">Work</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <!-- Default Address -->
+        <div class="col-md-12">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="isDefault" id="isDefault">
+            <label class="form-check-label" for="isDefault">
+              Set as default address
+            </label>
+          </div>
+        </div>
+
+        <!-- Submit -->
+        <div class="col-12">
+          <button type="submit" class="btn btn-primary px-4">+ Add Address</button>
+          <a href="/profile/address" class="btn btn-secondary ms-2">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<%- include("../../views/partials/user/footer") %>

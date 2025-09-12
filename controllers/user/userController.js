@@ -129,7 +129,7 @@ const signup = async (req, res) => {
         return res.redirect("/signup");
     }
 
-       const checkPassword = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).{7,}$/
+    const checkPassword = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).{7,}$/
 
     if (!checkPassword.test(password)) {
         req.flash("error", "Password must be 7 characters with atleast one alphabet, one number and non-alphanumeric character");

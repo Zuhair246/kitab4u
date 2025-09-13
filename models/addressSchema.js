@@ -9,7 +9,7 @@ const addressSchema = new mongoose.Schema({
     address : [{
         addressType:{
             type: String,
-            reuired: true
+            required: true
         },
         name: {
             type: String,
@@ -19,13 +19,13 @@ const addressSchema = new mongoose.Schema({
             type: String,
             required: true
         },
-        landMark: {
+       streetAddress: {
             type: String,
             required: true,
         },
         state: {
             type: String,
-            requied: true
+            required: true
         },
         pinCode: {
             type: Number,
@@ -38,6 +38,14 @@ const addressSchema = new mongoose.Schema({
         altPhone: {
             type: Number,
             required: false
+        },
+        isDeleted: {
+            type: Boolean,
+            default: false
+        },
+        createdAt: {
+            type: Date,
+            default: Date.now
         }
     }]
 })

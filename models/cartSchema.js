@@ -9,7 +9,7 @@ const cartSchema = mongoose.Schema ({
     items: [
         {
             productId: {
-            type:  Schema.Types.ObjectId,
+            type:  mongoose.Schema.Types.ObjectId,
             ref: "Product",
             required: true
             },
@@ -24,14 +24,6 @@ const cartSchema = mongoose.Schema ({
             totalPrice: {
                 type: Number,
                 required: true
-            },
-            status: {
-                type: String,
-                default: "Placed"
-            },
-            cancellationReason: {
-                type: String,
-                default: "none"
             },
         }
     ]

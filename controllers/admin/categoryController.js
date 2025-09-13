@@ -74,10 +74,9 @@ const editCategory = async (req, res) => {
             return res.redirect("/admin/category?error=" + encodeURIComponent("Invalid data for update"));
         }
 
-        // Check for duplicate name, but exclude the current category's ID
         const existingCategory = await Category.findOne({
             name: { $regex: new RegExp("^" + name + "$", "i") },
-            _id: { $ne: id }  // This is the key fix: ignore the category being edited
+            _id: { $ne: id }  //  ignore the category being edited
         });
 
         if (existingCategory) {

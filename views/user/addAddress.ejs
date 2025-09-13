@@ -60,61 +60,69 @@
         <!-- Name -->
         <div class="col-md-6">
           <label class="form-label fw-semibold">Name</label>
-          <input type="text" name="name" class="form-control" placeholder="Full Name" required>
+          <input type="text" name="name" class="form-control" placeholder="Full Name" value="<%= formData ? formData.name : '' %>" >
         </div>
 
         <!-- City -->
         <div class="col-md-6">
           <label class="form-label fw-semibold">City</label>
-          <input type="text" name="city" class="form-control" placeholder="City" required>
+          <input type="text" name="city" class="form-control" placeholder="City" value="<%= formData ? formData.city : '' %>">
         </div>
 
         <!-- Landmark -->
         <div class="col-md-6">
-          <label class="form-label fw-semibold">Landmark</label>
-          <input type="text" name="landMark" class="form-control" placeholder="Near Park, Mall, etc.">
+          <label class="form-label fw-semibold">Street address:</label>
+          <input type="text" name="streetAddress" class="form-control" placeholder="Street/Locality name" value="<%= formData ? formData.streetAddress : '' %>">
         </div>
 
         <!-- State -->
         <div class="col-md-6">
           <label class="form-label fw-semibold">State</label>
-          <input type="text" name="state" class="form-control" placeholder="State" required>
+          <input type="text" name="state" class="form-control" placeholder="State" value="<%= formData ? formData.state : '' %>">
         </div>
 
         <!-- Pin Code -->
-        <div class="col-md-6">
-          <label class="form-label fw-semibold">Pin Code</label>
-          <input type="text" 
-                        name="pinCode"
-                        class="form-control" 
-                        pattern="[0-9]{6}" 
-                        maxlength="6" 
-                        placeholder="6-digit PIN"
-                        title="Pin code must be 6 digits">
-        </div>
+<div class="col-md-6">
+  <label class="form-label fw-semibold">Pin Code</label>
+  <input type="text" 
+         name="pinCode"
+         class="form-control" 
+         placeholder="6-digit PIN"
+         value="<%= formData ? formData.pinCode : '' %>"
+         maxlength="6" 
+         pattern="[0-9]{6}" 
+         title="Pin code must be 6 digits"
+         oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,6)">
+</div>
 
-        <!-- Phone -->
-        <div class="col-md-6">
-          <label class="form-label fw-semibold">Phone</label>
-          <input type="text" 
-                      name="phone" 
-                      class="form-control" 
-                      placeholder="Mobile Number" 
-                      pattern="[0-9]{10}" 
-                      maxlength="10"
-                      >
-        </div>
+<!-- Phone -->
+<div class="col-md-6">
+  <label class="form-label fw-semibold">Phone</label>
+  <input type="text" 
+         name="phone" 
+         class="form-control" 
+         placeholder="Mobile Number" 
+         value="<%= formData ? formData.phone : '' %>"
+         maxlength="10"
+         pattern="[0-9]{10}" 
+         title="Phone number must be 10 digits"
+         oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,10)">
+</div>
 
-        <!-- Alternative Phone -->
-        <div class="col-md-6">
-          <label class="form-label fw-semibold">Alternative Phone</label>
-          <input type="tel" 
-                      name="altPhone" 
-                      class="form-control" 
-                      placeholder="Optional"
-                      pattern="[0-9]{10}" 
-                      maxlength="10">
-        </div>
+<!-- Alternative Phone -->
+<div class="col-md-6">
+  <label class="form-label fw-semibold">Alternative Phone</label>
+  <input type="text" 
+         name="altPhone" 
+         class="form-control" 
+         value="<%= formData ? formData.altPhone : '' %>"
+         placeholder="Optional"
+         maxlength="10"
+         pattern="[0-9]{10}" 
+         title="Alternative phone must be 10 digits"
+         oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,10)">
+</div>
+
 
         <!-- Address Type -->
         <div class="col-md-6">

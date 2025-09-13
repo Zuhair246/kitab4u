@@ -41,36 +41,36 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: false
     },
-    // cart: [{
-    //     type: mongoose.Schema.Types.ObjectId,
-    //     ref: "Cart"
-    // }],
-    // wallet: [{
-    //     type: Number,
-    //     default: 0
-    // }],
-    // wishlist: [{
-    //     type: mongoose.Schema.Types.ObjectId,
-    //     ref: "Wishlist"
-    // }],
-    // orderHistory: [{
-    //     type: mongoose.Schema.Types.ObjectId,
-    //     ref: "order"
-    // }],
-    // createdOn: {
-    //     type: Date,
-    //     default: Date.now,
-    // },
-    // referralCode: {
-    //     type: String,
-    // },
-    // redeemed: {
-    //     type: Boolean
-    // },
-    // redeemedUsers: {
-    //     type: mongoose.Schema.Types.ObjectId,
-    //     ref: "User"
-    // },
+    cart: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Cart"
+    }],
+    wallet: [{
+        type: Number,
+        default: 0
+    }],
+    wishlist: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Wishlist"
+    }],
+    orderHistory: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "order"
+    }],
+    createdOn: {
+        type: Date,
+        default: Date.now,
+    },
+    referralCode: {
+        type: String,
+    },
+    redeemed: {
+        type: Boolean
+    },
+    redeemedUsers: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User"
+    },
     searchHistory: [{
         category: {
             type: mongoose.Schema.Types.ObjectId,

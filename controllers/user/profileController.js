@@ -386,24 +386,40 @@ const updateProfileImage = async (req, res) => {
   }
 };
 
- const address = async (req,res) => {
+ const address = async (req, res) => {
   try {
     const userId = req.session.user;
-    const user = await User.findById(userId)
-    const address = await Address.findOne({userId: userId})
+    const user = await User.findById(userId);
+
+    const page = parseInt(req.query.page) || 1;
+    const limit = 3;
+    const skip = (page - 1) * limit;
+
+    const addressDoc = await Address.findOne({ userId: user._id }).lean();
+
+    let userAddress = addressDoc ? addressDoc.address.filter(addr => !addr.isDeleted) : [];
+
+    console.log(userAddress);
+
+    const paginatedAddress = userAddress.slice(skip, skip + limit);
+
+    const totalAddresses = userAddress.length;
+    const totalPages = Math.ceil(totalAddresses / limit);
 
     res.render('address', {
       user,
-      userAddress: address,
+      userAddress: paginatedAddress,
+      currentPage: page,
+      totalPages,
       error: req.flash("error"),
       success: req.flash("success"),
-    })
+    });
 
   } catch (error) {
-    console.log("User Address load error:",error);
-    return res.redirect('/pageNotFound')
+    console.log("User Address load error:", error);
+    return res.redirect('/pageNotFound');
   }
- }
+};
 
  const loadAddAddress = async (req,res) => {
   try {
@@ -412,6 +428,7 @@ const updateProfileImage = async (req, res) => {
 
      res.render('addAddress', {
       user,
+      formData: req.flash("formData")[0] || {},
       error: req.flash("error"),
       success: req.flash("success"),
     })
@@ -426,19 +443,77 @@ const updateProfileImage = async (req, res) => {
   try {
     const userId = req.session.user;
     const userData = await User.findById(userId);
-    const {name, city, landMark, state, pinCode, phone, altPhone, addressType, } = req.body;
-    console.log(userData);
+    const {name, city, streetAddress, state, pinCode, phone, altPhone, addressType} = req.body;
     
+    if(!name|| !city|| !streetAddress|| !state|| !pinCode ||!phone){
+      req.flash('error', "Name, City, Street address, State, Pincode, Phone number are required")
+      req.flash('formData', {name, city, streetAddress, state, pinCode, phone, altPhone, addressType});
+      return res.redirect('/profile/address/add')
+    } else if(!addressType){
+      req.flash('error', "Choose any address type.")
+      req.flash('formData', {name, city, streetAddress, state, pinCode, phone, altPhone});
+      return res.redirect('/profile/address/add')
+    }
+    
+  const nameRegex = /^(?!.*\s{2,})(?!\s)([A-Za-z]+(?:\s[A-Za-z]+)*)$/;
+    if (!nameRegex.test(name) || name.replace(/\s/g, '').length < 5) {
+        req.flash("error", "Name should be at least 5 letters and contain only alphabets with spaces only between words");
+       req.flash("formData", { name, city, streetAddress, state, pinCode, phone, altPhone, addressType });
+        return res.redirect("/profile/address/add");
+    }
+
+const checkPhone = /^(?!([0-9])\1{9})([6-9][0-9]{9})$/;
+if (!checkPhone.test(phone)) {
+    req.flash("error", "Invalid Phone number format");
+    req.flash("formData", { name, city, streetAddress, state, pinCode, phone, altPhone, addressType });
+    return res.redirect("/profile/address/add");
+}
+
+if (altPhone && !checkPhone.test(altPhone)) {
+    req.flash("error", "Invalid Alternative Phone number format");
+    req.flash("formData", { name, city, streetAddress, state, pinCode, phone, altPhone, addressType });
+    return res.redirect("/profile/address/add");
+}
+
+if (phone===altPhone){
+    req.flash('error', "Phone numbers should not be same")
+    req.flash('formData', { name, city, streetAddress, state, pinCode, phone, altPhone, addressType });
+    return res.redirect('/profile/address/add')
+  }
+
+  const stateRegex = /^(?!.*\s{2,})(?!\s)([A-Za-z]+(?:\s[A-Za-z]+)*)$/;
+    if (!stateRegex.test(state) || state.replace(/\s/g, '').length < 3) {
+       req.flash("error", "Please enter a proper state in India");
+       req.flash("formData", { name, city, streetAddress, state, pinCode, phone, altPhone, addressType });
+        return res.redirect("/profile/address/add");
+    }
+
+  const streetRegex = /^(?=.*[A-Za-z])[A-Za-z\/,\-.'#\s]+$/;
+  if(!streetRegex.test(streetAddress)) {
+      req.flash('error', "Invalid characters in street address");
+      req.flash("formData", { name, city, streetAddress, state, pinCode, phone, altPhone, addressType });
+      return res.redirect("/profile/address/add");
+  }
+
+if (!stateRegex.test(city) || city.replace(/\s/g, '').length < 3) {
+  req.flash('error', "City name should be at least 5 letters and contain only alphabets with spaces only between words");
+  req.flash("formData", { name, city, streetAddress, state, pinCode, phone, altPhone, addressType });
+  return res.redirect("/profile/address/add");
+}
+ 
     const userAddress = await Address.findOne({userId: userData._id});
     if(!userAddress) {
       const newAddress = new Address({
         userId: userData._id,
-        address: [{addressType, name, city, landMark, state, pinCode, phone, altPhone}]
+        address: [{addressType, name, city, streetAddress, state, pinCode, phone, isDeleted:false}]
       })
-      await newAddress.save()
+     const result = await newAddress.save()
+     console.log("first:",result);
     }else {
-      userAddress.address.push({addressType, name, city, landMark, state, pinCode, phone, altPhone});
-      await userAddress.save();
+      userAddress.address.push({addressType, name, city, streetAddress, state, pinCode, phone, altPhone, isDeleted: false});
+    const result2 =  await userAddress.save();
+    console.log("Second:",result2);
+    
     }
     res.redirect('/profile/address')
   } catch (error) {
@@ -446,6 +521,92 @@ const updateProfileImage = async (req, res) => {
     res.redirect('/pageNotFound')
   }
  }
+
+ const deleteAddress = async (req, res) => {
+  try {
+    const {id} = req.body;
+    if (!id) {
+    return res.redirect("/profile/address?error=Invalid adress id");
+  }
+  await Address.updateOne({'address._id':id},{$set:{'address.$.isDeleted':true}})
+  return res.redirect("/profile/address?success=Address deleted successfully");
+  } catch (error) {
+    console.log("Delete address error:", error);
+    res.redirect("/pageNotFound")
+  }
+ }
+
+const editAddress = async (req, res) => {
+  try {
+    const id = req.params.id; 
+    const { name, city, streetAddress, state, pinCode, phone, altPhone, addressType, isDefault } = req.body;
+
+    if (!id) {
+      return res.redirect('/profile/address?error=' + encodeURIComponent("Invalid data for update"));
+    }
+
+    if(!name|| !city|| !streetAddress|| !state|| !pinCode ||!phone){
+      return res.redirect('/profile/address?error=' + encodeURIComponent("Name, City, Street address, State, Pincode, Phone number are required"))
+    } else if(!addressType){
+      return res.redirect('/profile/address?error=' + encodeURIComponent("Choose an address type"))
+    }
+    
+  const nameRegex = /^(?!.*\s{2,})(?!\s)([A-Za-z]+(?:\s[A-Za-z]+)*)$/;
+    if (!nameRegex.test(name) || name.replace(/\s/g, '').length < 5) {
+        return res.redirect('/profile/address?error=' + encodeURIComponent("Invalid name"));
+    }
+
+const checkPhone = /^(?!([0-9])\1{9})([6-9][0-9]{9})$/;
+if (!checkPhone.test(phone)) {
+    return res.redirect('/profile/address?error=' + encodeURIComponent("Invalid phone number"));
+}
+
+if (altPhone && !checkPhone.test(altPhone)) {
+return res.redirect('/profile/address?error=' + encodeURIComponent("Invalid phone number"));
+}
+
+if (phone===altPhone){
+return res.redirect('/profile/address?error=' + encodeURIComponent("Both numbers should not be same"));
+  }
+
+  const stateRegex = /^(?!.*\s{2,})(?!\s)([A-Za-z]+(?:\s[A-Za-z]+)*)$/;
+    if (!stateRegex.test(state) || state.replace(/\s/g, '').length < 3) {
+return res.redirect('/profile/address?error=' + encodeURIComponent("Invalid state"));
+    }
+
+  const streetRegex = /^(?=.*[A-Za-z])[A-Za-z\/,\-.'#\s]+$/;
+  if(!streetRegex.test(streetAddress)) {
+return res.redirect('/profile/address?error=' + encodeURIComponent("Invalid street name"));
+  }
+
+if (!stateRegex.test(city) || city.replace(/\s/g, '').length < 3) {
+return res.redirect('/profile/address?error=' + encodeURIComponent("Invalid city name"));
+}
+
+    await Address.updateOne(
+      { "address._id": id },
+      {
+        $set: {
+          "address.$.name": name,
+          "address.$.city": city,
+          "address.$.streetAddress": streetAddress,
+          "address.$.state": state,
+          "address.$.pinCode": pinCode,
+          "address.$.phone": phone,
+          "address.$.altPhone": altPhone,
+          "address.$.addressType": addressType,
+          "address.$.isDefault": isDefault === "on" // checkbox value
+        }
+      }
+    );
+
+    return res.redirect("/profile/address?success=" + encodeURIComponent("Address updated successfully"));
+  } catch (error) {
+    console.log("Edit address error:", error);
+    res.redirect('/pageNotFound');
+  }
+};
+
 
 module.exports = {
     profile,
@@ -461,5 +622,7 @@ module.exports = {
     setNewPassword,
     address,
     loadAddAddress,
-    addAddress
+    addAddress,
+    deleteAddress,
+    editAddress
 }

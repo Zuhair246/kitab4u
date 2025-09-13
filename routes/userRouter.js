@@ -54,6 +54,8 @@ router.post('/profile/setNewPassword', userStatus,profileController.setNewPasswo
 router.get('/profile/address',profileController.address);
 router.get('/profile/address/add', profileController.loadAddAddress);
 router.post('/profile/address/add', profileController.addAddress)
+router.post('/profile/address/delete', profileController.deleteAddress)
+router.post('/profile/address/edit/:id', profileController.editAddress)
 
 router.get('/auth/google', passport.authenticate('google',{scope:['profile','email']}));
 

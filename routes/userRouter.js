@@ -1,14 +1,15 @@
-const express = require ('express')
-const router = express.Router()
-const userController = require('../controllers/user/userController')
-const productController = require('../controllers/user/productController')
-const profileController = require('../controllers/user/profileController')
-const {userAuth }= require('../middlewares/auth')
-const checkProductAvailability = require('../middlewares/productAuth')
-const userStatus = require('../middlewares/userStatus')
-const upload = require('../middlewares/upload')
-const { route } = require('../app')
-const passport = require('passport')
+const express = require ('express');
+const router = express.Router();
+const userController = require('../controllers/user/userController');
+const productController = require('../controllers/user/productController');
+const profileController = require('../controllers/user/profileController');
+const cartController = require('../controllers/user/cartController')
+const {userAuth }= require('../middlewares/auth');
+const checkProductAvailability = require('../middlewares/productAuth');
+const userStatus = require('../middlewares/userStatus');
+const upload = require('../middlewares/upload');
+const { route } = require('../app');
+const passport = require('passport');
 
 router.get('/pageNotFound',userController.pageNotFound)
 
@@ -45,17 +46,24 @@ router.get('/profile/edit', userStatus,profileController.editProfile)
 router.post('/profile/edit', userStatus,profileController.updateProfile)
 router.post('/profile/upload', upload.single('profileImage'), userStatus, profileController.updateProfileImage);
 router.post('/profile/verifyOtp', userStatus,profileController.verifyOtp)
-router.post('/resendOtp', userStatus,userController.resendOtp)
+router.post('/profile/resendOtp', userStatus,profileController.resendOtp)
 router.get('/profile/forgotOldPassword', userStatus, profileController.loadForgotOldPassword)
 router.post('/profile/forgotOldPassword', userStatus,profileController.forgotOldPassword)
 router.post('/profile/setNewPassword', userStatus,profileController.setNewPassword)
 
 //User address Management
-router.get('/profile/address',profileController.address);
-router.get('/profile/address/add', profileController.loadAddAddress);
-router.post('/profile/address/add', profileController.addAddress)
-router.post('/profile/address/delete', profileController.deleteAddress)
-router.post('/profile/address/edit/:id', profileController.editAddress)
+router.get('/profile/address', userStatus, profileController.address);
+router.get('/profile/address/add', userStatus, profileController.loadAddAddress);
+router.post('/profile/address/add', userStatus, profileController.addAddress);
+router.post('/profile/address/delete', userStatus, profileController.deleteAddress);
+router.post('/profile/address/edit/:id', userStatus, profileController.editAddress);
+
+//Cart Management
+router.get('/cart', cartController.loadCart);
+router.post('/cart', userStatus, checkProductAvailability, cartController.addTocart);
+router.post('/cart/remove' ,cartController.removeFromCart)
+router.post('/cart/update', cartController.updateQuantity);
+
 
 router.get('/auth/google', passport.authenticate('google',{scope:['profile','email']}));
 

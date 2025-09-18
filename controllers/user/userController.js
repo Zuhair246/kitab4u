@@ -44,10 +44,7 @@ const loadHomePage = async (req,res) => {
 
     if (user && user._id) {
       const userData = await User.findById(user._id); 
-    console.log(`userData: ${userData}`);
-
     
-
         if (searchQuery) {
       filter.$or = [
         { name: { $regex: searchQuery, $options: "i" } },
@@ -447,7 +444,8 @@ const verifyEmail = async (req,res) => {
     }
 
     if (otp === req.session.userOtp) {
-
+      req.session.resetEmail = req.session.userData.email;
+      delete req.session.userOtp;
       return res.json({ 
         success: true, 
         message: 'Email verified successfully ! Redirecting to reset password...', 
@@ -500,6 +498,7 @@ const newPassword = async (req,res) => {
     }
       const email = req.session.resetEmail;
       console.log(email);
+      console.log(newPassword);
       
       const user = await User.findOne({email});
       const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -636,6 +635,7 @@ const loadShoppingPage = async (req, res) => {
       selectedCategory,
       selectedPriceRange,
       sortOption,
+      error: req.query.error || null
     });
   } catch (error) {
     console.log("Shop page error:", error);

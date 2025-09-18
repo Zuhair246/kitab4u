@@ -1,0 +1,221 @@
+<%-include("../../views/partials/user/header")%>
+<main class="container my-5">
+  <!-- Page Title and Breadcrumb -->
+  <div class="text-center mb-4">
+
+    <h1 class="display-6 fw-bold">Shopping Cart</h1>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb justify-content-center">
+        <li class="breadcrumb-item"><a href="/" class="text-decoration-none">Home</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Your Shopping Cart</li>
+      </ol>
+    </nav>
+  </div>
+
+  <!-- Cart Content -->
+  <div class="row">
+    <div class="col-12">
+      <!-- Cart Table -->
+      <div class="table-responsive">
+        <table class="table table-borderless">
+          <thead class="border-bottom">
+            <tr>
+              <th scope="col" class="fw-semibold">Product</th>
+              <th scope="col" class="fw-semibold">Price</th>
+              <th scope="col" class="fw-semibold">Quantity</th>
+              <th scope="col" class="fw-semibold">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (cartItems && cartItems.length > 0) { %>
+              <% cartItems.forEach(item => { %>
+  <tr class="border-bottom">
+    <td class="py-4">
+      <div class="d-flex align-items-center">
+        <img src="<%= item.productId.images[0] || '/images/placeholder-book.jpg' %>" 
+             alt="<%= item.productId.name %>" 
+             class="me-3" 
+             style="width: 80px; height: 120px; object-fit: cover;">
+        <div>
+          <h6 class="mb-1 fw-semibold"><%= item.productId.name %></h6>
+          <p class="mb-1 text-muted small"><%= item.productId.coverType %></p>
+          <p class="mb-1 text-muted small">by <%= item.productId.author %></p>
+          <% if (item.productId.format) { %>
+            <span class="badge bg-dark small"><%= item.productId.format %></span>
+          <% } %>
+          <% if (item.productId.inStock) { %>
+            <span class="badge bg-success small ms-1">In Stock</span>
+          <% } %>
+          <br>
+          <button class="btn btn-link text-muted p-0 mt-2 small text-decoration-none" 
+                  onclick="removeItem('<%= item.productId._id %>', '<%= item.variantId %>')">
+            Remove
+          </button>
+        </div>
+      </div>
+    </td>
+    <td class="py-4 align-middle">
+      <span class="fw-semibold">₹<%= item.price %>/-</span>
+    </td>
+    <td class="py-4 align-middle">
+      <div class="input-group" style="width: 120px;">
+        <button class="btn btn-outline-secondary" type="button" 
+                onclick="updateQuantity('<%= item.productId._id %>', '<%= item.variantId %>', -1)">-</button>
+        <input type="text" class="form-control text-center" 
+               value="<%= item.quantity %>" 
+               id="qty-<%= item._id %>" 
+               readonly>
+        <button class="btn btn-outline-secondary" type="button" 
+                onclick="updateQuantity('<%= item.productId._id %>', '<%= item.variantId %>', 1)">+</button>
+      </div>
+    </td>
+    <td class="py-4 align-middle">
+      <span class="fw-semibold">₹<%= item.totalPrice %>/-</span>
+    </td>
+  </tr>
+<% }) %>
+
+            <% } else { %>
+              <tr>
+                <td colspan="4" class="text-center py-5">
+                  <div class="text-muted">
+                    <i class="fas fa-shopping-cart fa-3x mb-3"></i>
+                    <h5>Your cart is empty</h5>
+                    <p>Add some books to get started!</p>
+                    <a href="/shop" class="btn btn-primary">Continue Shopping</a>
+                  </div>
+                </td>
+              </tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+
+      <% if (cartItems && cartItems.length > 0) { %>
+        <!-- Cart Summary -->
+        <div class="row justify-content-end mt-4">
+          <div class="col-md-4">
+            <div class="card border-0">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+                  <span class="fw-semibold">Subtotal</span>
+                  <span class="fw-bold fs-5">₹<%= subtotal %>/-</span>
+                </div>
+                
+                <!-- Checkout Button -->
+                <div class="d-grid">
+                  <button type="button" class="btn btn-dark btn-lg py-3" onclick="proceedToCheckout()">
+                    Checkout
+                  </button>
+                </div>
+                
+                <!-- Continue Shopping Link -->
+                <div class="text-center mt-3 text-primary">
+                  <a href="/shop" class="text-decoration-none">
+                    <i class="fas fa-arrow-left me-1"></i>
+                    Continue Shopping
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</main>
+
+<%-include("../../views/partials/user/footer")%>
+
+<!-- JavaScript for Cart Functionality -->
+ <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+
+document.addEventListener("DOMContentLoaded", function() {
+  <% if (error) { %>
+    Swal.fire({
+      icon: "error",
+      title: "Oops...",
+      text: "<%= error %>",
+      confirmButtonColor: "#3085d6"
+    }).then(() => {
+      // Remove ?error=... from URL without reload
+      const url = new URL(window.location.href);
+      url.searchParams.delete("error");
+      window.history.replaceState({}, document.title, url.pathname);
+    });
+  <% } %>
+});
+
+function updateQuantity(productId, variantId, change) {
+let action = change === 1 ? "inc" : "dec";
+
+  // Send AJAX request to update cart
+  fetch('/cart/update', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({productId, variantId, action})
+  })
+  .then(response => {
+    if(response.redirected) {
+      window.location.href = response.url;
+    }
+  })
+
+  .catch(error => {
+    console.error('Error updating quantity:', error);
+  });
+}
+
+function removeItem(productId, variantId) {
+  Swal.fire({
+    title: "Are you sure?",
+    text: "Do you want to remove this item from your cart?",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#3085d6",
+    confirmButtonText: "Yes, remove it",
+    cancelButtonText: "Cancel"
+  }).then((result) => {
+    if (result.isConfirmed) {
+      fetch('/cart/remove', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ productId, variantId })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          Swal.fire({
+            icon: "success",
+            title: "Removed!",
+            text: "The item has been removed from your cart.",
+            confirmButtonColor: "#3085d6"
+          }).then(() => {
+            window.location.reload();
+          });
+        }
+      })
+      .catch(error => {
+        console.error('Error removing item:', error);
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: "Something went wrong while removing the item.",
+          confirmButtonColor: "#3085d6"
+        });
+      });
+    }
+  });
+}
+
+function proceedToCheckout() {
+  window.location.href = '/checkout';
+}
+
+</script>

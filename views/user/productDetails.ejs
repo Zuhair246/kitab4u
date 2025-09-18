@@ -1,3 +1,5 @@
+<link rel="stylesheet" href="../../styles/user/productDetails.css">
+
 <%- include("../../views/partials/user/header") %>
 
 <div class="container my-5">
@@ -53,16 +55,17 @@
       </div>
 
       <!-- Price & Discount -->
-      <div class="mb-3">
-        <% const variant = product.variants && product.variants[0]; %>
-        <% if(variant && variant.discountPrice && variant.discountPrice < variant.originalPrice) { %>
-          <span class="fs-4 fw-bold text-danger">₹<%= variant.discountPrice %></span>
-          <span class="text-muted text-decoration-line-through ms-2">₹<%= variant.originalPrice %></span>
-          <span class="badge bg-success ms-2">Save ₹<%= variant.originalPrice - variant.discountPrice %></span>
-        <% } else if(variant) { %>
-          <span class="fs-4 fw-bold">₹<%= variant.originalPrice %></span>
-        <% } %>
-      </div>
+<div id="priceSection" class="mb-3">
+  <% const variant = product.variants && product.variants[0]; %>
+  <% if(variant && variant.discountPrice && variant.discountPrice < variant.originalPrice) { %>
+    <span id="discountPrice" class="fs-4 fw-bold text-danger">₹<%= variant.discountPrice %></span>
+    <span id="originalPrice" class="text-muted text-decoration-line-through ms-2">₹<%= variant.originalPrice %></span>
+    <span id="savings" class="badge bg-success ms-2">Save ₹<%= variant.originalPrice - variant.discountPrice %></span>
+  <% } else if(variant) { %>
+    <span id="originalPriceOnly" class="fs-4 fw-bold">₹<%= variant.originalPrice %></span>
+  <% } %>
+</div>
+
 
       <!-- Coupon -->
       <% if(product.coupon) { %>
@@ -82,9 +85,16 @@
       <ul class="list-unstyled mb-3">
         <li><strong>Publisher:</strong> <%= product.publisher %></li>
         <li><strong>Cover Type:</strong>
-          <% product.variants.forEach(variant => { %>
-            <button class="btn btn-sm btn-outline-primary me-2"><%= variant.coverType %></button>
-          <% }) %>
+          <% product.variants.forEach((variant, index) => { %>
+              <button class="btn btn-sm btn-outline-primary me-2 variant-btn"
+                          data-original="<%= variant.originalPrice %>"
+                          data-discount="<%= variant.discountPrice %>"
+                          data-stock="<%= variant.stock %>"
+                          data-variantid="<%= variant._id %>">
+                          
+                    <%= variant.coverType %>
+                  </button>
+              <% }) %>
         </li>
         <li><strong>Pages:</strong> <%= product.pages %></li>
       </ul>
@@ -95,12 +105,14 @@
 
       <!-- Actions -->
       <div class="d-flex align-items-center gap-3 mb-4">
-        <form action="/cart" method="post">
-          <input type="hidden" name="productId" value="<%= product._id %>">
-          <button class="btn btn-primary px-4" type="submit" <%= quantity <= 0 ? 'disabled' : '' %>>
-            <i class="bi bi-cart-plus me-2"></i>Add to Cart
-          </button>
-        </form>
+        <form action="/cart" method="post" id="cartForm">
+        <input type="hidden" name="productId" value="<%= product._id %>">
+        <input type="hidden" name="variantId" id="variantId" >
+
+        <button class="btn btn-primary px-4" type="submit" <%= quantity <= 0 ? 'disabled' : '' %>>
+          <i class="bi bi-cart-plus me-2"></i>Add to Cart
+        </button>
+      </form>
         <button class="btn btn-outline-secondary" type="button" data-wishlist="<%= product._id %>">
           <i class="bi bi-heart"></i>
         </button>
@@ -157,8 +169,10 @@
 
 <%- include("../../views/partials/user/footer") %>
 
-<!-- Image Zoom Script -->
+
 <script>
+//  Image Zoom Script
+
   const mainImage = document.getElementById('mainImage');
   mainImage.addEventListener('mousemove', function(e) {
     const { left, top, width, height } = this.getBoundingClientRect();
@@ -171,4 +185,50 @@
     this.style.transformOrigin = "center";
     this.style.transform = "scale(1)";
   });
+
+//Switch Variants - Price + variantId
+document.querySelectorAll('.variant-btn').forEach((button) => {
+    button.addEventListener('click', function() {
+      const original = this.dataset.original;
+      const discount = this.dataset.discount;
+      const stock = this.dataset.stock;
+      const variantId = this.dataset.variantid;
+
+      const priceSection = document.getElementById('priceSection');
+      priceSection.innerHTML = ''; // clear old content
+
+      if (discount && discount < original) {
+        priceSection.innerHTML = `
+          <span class="fs-4 fw-bold text-danger">₹${discount}</span>
+          <span class="text-muted text-decoration-line-through ms-2">₹${original}</span>
+          <span class="badge bg-success ms-2">Save ₹${original - discount}</span>
+        `;
+      } else {
+        priceSection.innerHTML = `
+          <span class="fs-4 fw-bold">₹${original}</span>
+        `;
+      }
+
+      // ✅ Update stock badge dynamically
+      const stockBadge = document.querySelector('.badge.mb-3');
+      if (stock > 0) {
+        stockBadge.className = "badge bg-success mb-3";
+        stockBadge.textContent = "In Stock";
+      } else {
+        stockBadge.className = "badge bg-danger mb-3";
+        stockBadge.textContent = "Out of Stock";
+      }
+
+      document.getElementById('variantId').value = variantId;
+
+      document.querySelectorAll('.variant-btn').forEach(btn => btn.classList.remove('active'));
+    this.classList.add('active');
+
+    });
+  });
+const firstVariant = document.querySelector('.variant-btn');
+if (firstVariant) {
+  firstVariant.classList.add('active');
+  document.getElementById('variantId').value = firstVariant.dataset.variantid;
+}
 </script>

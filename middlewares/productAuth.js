@@ -2,7 +2,7 @@ const Product = require("../models/productSchema");
 
 const checkProductAvailability = async (req, res, next) => {
   try {
-    const productId = req.params?.id || req.body?.id || req.query?.id;
+    const productId = req.params?.id || req.body?.productId || req.query?.id;
 
     if (!productId) {
       return res.redirect("/shop");
@@ -15,8 +15,8 @@ const checkProductAvailability = async (req, res, next) => {
     }
 
     if (product.isBlocked) {
-      return res.redirect("/shop");
-    }
+      return res.redirect("/shop?error="+ encodeURIComponent("Product has been removed by the admin"));
+    } 
 
     const hasStock = product.variants.some((variant) => variant.stock > 0);
 

@@ -1,0 +1,44 @@
+
+  .filter-form .list-group-item {
+    border: none;
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+    cursor: pointer;
+  }
+
+  .filter-form .list-group-item:hover {
+    background-color: #f8f9fa;
+  }
+
+  .filter-form input[type="checkbox"],
+  .filter-form input[type="radio"] {
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+  }
+
+  .filter-form .form-check-input:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+  }
+  
+  input[type="radio"].form-check-input {
+  border-radius: 50%;
+}
+
+/* Checkbox square but sharp */
+input[type="checkbox"].form-check-input {
+  border-radius: 4px;
+}
+
+/* Add hover effect on inputs */
+.form-check-input:hover {
+  border-color: #0d6efd;
+  box-shadow: 0 0 3px rgba(13, 110, 253, 0.4);
+}
+
+/* Active label highlight (Flipkart-like) */
+.form-check-input:checked + .form-check-label {
+  color: #0d6efd;
+  font-weight: 600;
+}

@@ -2,7 +2,7 @@ const mongoose = require ('mongoose')
 
 const cartSchema = mongoose.Schema ({
     userId: {
-        type: Schema.Types.ObjectId,
+        type: mongoose.Schema.Types.ObjectId,
         ref:"User",
         required: true
     },
@@ -13,9 +13,13 @@ const cartSchema = mongoose.Schema ({
             ref: "Product",
             required: true
             },
+            variantId: {
+                type: mongoose.Schema.Types.ObjectId,
+                required: true
+            },
             quantity: {
                 type: Number,
-                dafault: 1
+                default: 1
             },
             price: {
                 type: Number,

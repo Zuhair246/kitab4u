@@ -1,0 +1,148 @@
+/* ---------- General Container ---------- */
+.container.my-5 {
+  font-family: "Poppins", sans-serif;
+  color: #333;
+}
+
+/* ---------- Breadcrumb ---------- */
+.breadcrumb {
+  background: none;
+  padding: 0;
+  font-size: 0.9rem;
+}
+.breadcrumb a {
+  text-decoration: none;
+  color: #0d6efd;
+}
+.breadcrumb a:hover {
+  text-decoration: underline;
+}
+
+/* ---------- Main Image & Thumbnails ---------- */
+#mainImage {
+  border-radius: 12px;
+  transition: transform 0.2s ease-in-out;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+.img-thumbnail {
+  border-radius: 8px;
+  border: 2px solid transparent;
+  transition: border-color 0.2s ease;
+}
+.img-thumbnail:hover {
+  border-color: #0d6efd;
+}
+
+/* ---------- Product Title & Author ---------- */
+h2 {
+  font-weight: 600;
+}
+h5.text-muted {
+  font-weight: 400;
+  font-size: 1rem;
+}
+
+/* ---------- Ratings ---------- */
+.bi-star-fill, .bi-star {
+  font-size: 1.1rem;
+}
+.text-muted {
+  font-size: 0.9rem;
+}
+
+/* ---------- Price Section ---------- */
+#priceSection {
+  font-size: 1.2rem;
+}
+#discountPrice {
+  font-size: 1.6rem;
+}
+#savings {
+  border-radius: 8px;
+  font-size: 0.8rem;
+}
+
+/* ---------- Variant Buttons ---------- */
+.variant-btn {
+  border-radius: 12px;
+  padding: 6px 16px;
+  transition: all 0.2s ease-in-out;
+}
+.variant-btn:hover {
+  background-color: #f0f8ff;
+  border-color: #0d6efd;
+}
+.variant-btn.active {
+  background-color: #0d6efd !important;
+  color: #fff !important;
+  border-color: #0d6efd !important;
+  box-shadow: 0 0 10px rgba(13, 110, 253, 0.4);
+}
+
+/* ---------- Stock Badges ---------- */
+.badge {
+  font-size: 0.8rem;
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+
+/* ---------- Action Buttons ---------- */
+#cartForm .btn-primary {
+  font-weight: 500;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(13,110,253,0.2);
+  transition: transform 0.2s ease;
+}
+#cartForm .btn-primary:hover {
+  transform: scale(1.05);
+}
+.btn-outline-secondary {
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
+.btn-outline-secondary:hover {
+  background-color: #f8f9fa;
+}
+
+/* ---------- Description ---------- */
+h4 {
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+/* ---------- Ratings Breakdown ---------- */
+.progress {
+  border-radius: 20px;
+  overflow: hidden;
+}
+.progress-bar {
+  transition: width 0.3s ease;
+}
+
+/* ---------- Similar Products ---------- */
+.card {
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+}
+.card img {
+  transition: transform 0.3s ease;
+}
+.card:hover img {
+  transform: scale(1.05);
+}
+.card-body {
+  text-align: center;
+}
+.card-title {
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+.card .fw-bold {
+  font-size: 1rem;
+  color: #0d6efd;
+}

@@ -11,6 +11,9 @@ const { generateOtp, sendVerificationEmail, resendOtpVerification } = require(".
 const profile = async (req,res) => {
   try {
     const userId = req.session.user;
+    if(!userId) {
+      return res.redirect('/login')
+    }
     const userData = await User.findById(userId)
     res.render('profile', {
       user: userData,
@@ -41,7 +44,7 @@ const editProfile = async (req,res) => {
 
 const updateProfile = async (req,res) => {
   try {
-        const userId = req.session.user;
+    const userId = req.session.user;
     const {name, email, phone} = req.body;
 
     const user = await User.findById(userId)
@@ -86,8 +89,8 @@ req.session.pendingEmail = email;
 const otp = generateOtp();
 await sendVerificationEmail(email, otp);
 req.session.userOtp = otp;
-
 console.log(`OTP for updating email: ${otp}`);
+req.session.otpPurpose = "emailUpdate";
 
 req.flash('info', "OTP sent to new email, Please verify...");
  res.render("verify-otp",  {
@@ -139,7 +142,6 @@ const verifyOtp = async (req,res) => {
 
 const resendOtp = async (req, res) => {
   try {
-
     if (!req.session.user) {
       return res.json({
         success: false,
@@ -148,16 +150,10 @@ const resendOtp = async (req, res) => {
       });
     }
 
-    const userId = req.session.user;
-    const user = await User.findById(userId);
-    const email = user.email;
-
     if (!req.session.otpAttempts) req.session.otpAttempts = 0;
     if (req.session.otpAttempts >= 3) {
-          req.session.user = null;
-          req.session.userOtp = null;
-          req.session.otpExpiry = null;
-      
+      req.session.userOtp = null;
+      req.session.otpExpiry = null;
       return res.json({
         success: false,
         message: "Too many OTP requests. Please try again later.",
@@ -170,13 +166,28 @@ const resendOtp = async (req, res) => {
     req.session.userOtp = newOtp;
     req.session.otpExpiry = Date.now() + 2 * 60 * 1000;
 
+    let email;
+
+    if (req.session.otpPurpose === "emailUpdate") {
+      email = req.session.pendingEmail; // use new email
+    } else if (req.session.otpPurpose === "passwordReset") {
+      const user = await User.findById(req.session.user);
+      email = user.email; // use current email
+    } else {
+      return res.json({
+        success: false,
+        message: "Unknown OTP purpose",
+        redirect: "/profile/edit",
+      });
+    }
+
     await resendOtpVerification(email, newOtp);
 
-    console.log(`New OTP is ${newOtp}`);
+    console.log(`Resent OTP (${req.session.otpPurpose}): ${newOtp}`);
 
     return res.json({
       success: true,
-      message: "New OTP sent successfully.",
+      message: `New OTP sent to ${email}`,
     });
 
   } catch (error) {
@@ -184,7 +195,7 @@ const resendOtp = async (req, res) => {
     return res.json({
       success: false,
       message: "Failed to resend OTP. Please try again.",
-      redirect: "/verifyOtp",
+      redirect: "/profile/verifyOtp",
     });
   }
 };
@@ -283,8 +294,9 @@ const forgotOldPassword = async (req,res) => {
     const email = user.email;
     const otp = generateOtp();
     await sendVerificationEmail(email,otp, "Password Reset Verification");
+    console.log(`OTP for old password: ${otp}`);
+    req.session.otpPurpose = "passwordReset";
 
-    console.log(`OTP for for old password: ${otp}`);
 
     req.session.userOtp = otp;
       req.flash('success', "OTP sent to your email!");

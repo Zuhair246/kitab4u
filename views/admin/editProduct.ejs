@@ -195,14 +195,15 @@ function addCoverType(existing = null) {
             <button type="button" class="btn btn-sm btn-danger" onclick="this.closest('.border').remove()">Remove</button>
         </div>
         <div class="row g-3">
+            <input type="hidden" name="variants[${index}][_id]" value="${existing ? existing._id || '' : ''}">
             <div class="col-md-3">
                 <input type="text" class="form-control" name="variants[${index}][coverType]" 
-                       placeholder="e.g. Paperback" required
+                       placeholder="e.g. Paperback"
                        value="${existing ? existing.coverType : ''}">
             </div>
             <div class="col-md-3">
                 <input type="number" class="form-control" name="variants[${index}][originalPrice]" 
-                       placeholder="Original Price" min="0" step="0.01" required
+                       placeholder="Original Price" min="0" step="0.01"
                        value="${existing ? existing.originalPrice : ''}">
             </div>
             <div class="col-md-3">
@@ -225,6 +226,7 @@ function addCoverType(existing = null) {
 <% if (typeof product !== 'undefined' && product.variants) { %>
     <% product.variants.forEach(function(v){ %>
         addCoverType({
+            _id: "<%= v._id %>",
             coverType: "<%= v.coverType %>",
             originalPrice: "<%= v.originalPrice %>",
             discountPrice: "<%= v.discountPrice %>",

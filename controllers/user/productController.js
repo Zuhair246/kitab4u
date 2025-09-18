@@ -8,6 +8,7 @@ const productDetails = async (req, res) => {
     const userData = await User.findById(userId);
 
     const productId = req.query.id;
+
     const product = await Product.findById(productId)
       .populate('categoryId')
       .lean();
@@ -15,16 +16,13 @@ const productDetails = async (req, res) => {
     if (!product) {
       return res.redirect('/pageNotFound');
     }
-
    
     const findCategory = product.categoryId;
     const categoryOffer = (findCategory && findCategory.categoryOffer) || 0;
     const productOffer = product.productOffer || 0;
     const totalOffer = categoryOffer + productOffer;
 
-  
     const quantity = product.variants.reduce((sum, v) => sum + (v.stock || 0), 0);
-
 
     const similarProducts = await Product.find({
       _id: { $ne: productId },

@@ -3,13 +3,22 @@ const User = require("../models/userSchema");
 const checkUserStatus = async (req, res, next) => {
   try {
 
+    if(!req.session.user) {
+      return next();
+    }
+
     const user = await User.findById(req.session.user._id);
+
+    if(!user) {
+      req.session.user = null;
+      return res.redirect('/login');
+    }
 
     if (user.isBlocked) {
       req.session.user = null;
-      console.log("User Force Logged Out");
+      console.log("Blocked User Forcefully Logged Out");
       
-      res.redirect('/login')
+     return res.redirect("/login?error=" + encodeURIComponent("Your account has been blocked"));
     } else {
       next();
     }

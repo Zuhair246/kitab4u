@@ -112,6 +112,7 @@
         <button class="btn btn-primary px-4" type="submit" <%= quantity <= 0 ? 'disabled' : '' %>>
           <i class="bi bi-cart-plus me-2"></i>Add to Cart
         </button>
+
       </form>
         <button class="btn btn-outline-secondary" type="button" data-wishlist="<%= product._id %>">
           <i class="bi bi-heart"></i>
@@ -171,64 +172,65 @@
 
 
 <script>
-//  Image Zoom Script
-
+ // 🔍 Image Zoom Script
   const mainImage = document.getElementById('mainImage');
-  mainImage.addEventListener('mousemove', function(e) {
-    const { left, top, width, height } = this.getBoundingClientRect();
-    const x = ((e.pageX - left) / width) * 100;
-    const y = ((e.pageY - top) / height) * 100;
-    this.style.transformOrigin = `${x}% ${y}%`;
-    this.style.transform = "scale(1.5)";
-  });
-  mainImage.addEventListener('mouseleave', function() {
-    this.style.transformOrigin = "center";
-    this.style.transform = "scale(1)";
-  });
+  if (mainImage) {
+    mainImage.addEventListener('mousemove', function(e) {
+      const { left, top, width, height } = this.getBoundingClientRect();
+      const x = ((e.pageX - left) / width) * 100;
+      const y = ((e.pageY - top) / height) * 100;
+      this.style.transformOrigin = `${x}% ${y}%`;
+      this.style.transform = "scale(1.5)";
+    });
 
-//Switch Variants - Price + variantId
-document.querySelectorAll('.variant-btn').forEach((button) => {
+    mainImage.addEventListener('mouseleave', function() {
+      this.style.transformOrigin = "center";
+      this.style.transform = "scale(1)";
+    });
+  }
+
+  function updateVariant(button) {
+    const original = button.dataset.original;
+    const discount = button.dataset.discount;
+    const stock = button.dataset.stock;
+    const variantId = button.dataset.variantid;
+
+    const priceSection = document.getElementById('priceSection');
+    priceSection.innerHTML = '';
+
+    if (discount && discount < original) {
+      priceSection.innerHTML = `
+        <span class="fs-4 fw-bold text-danger">₹${discount}</span>
+        <span class="text-muted text-decoration-line-through ms-2">₹${original}</span>
+        <span class="badge bg-success ms-2">Save ₹${original - discount}</span>
+      `;
+    } else {
+      priceSection.innerHTML = `<span class="fs-4 fw-bold">₹${original}</span>`;
+    }
+
+    const stockBadge = document.querySelector('.badge.mb-3');
+    if (stock > 0) {
+      stockBadge.className = "badge bg-success mb-3";
+      stockBadge.textContent = "In Stock";
+    } else {
+      stockBadge.className = "badge bg-danger mb-3";
+      stockBadge.textContent = "Out of Stock";
+    }
+
+    document.getElementById('variantId').value = variantId;
+
+    document.querySelectorAll('.variant-btn').forEach(btn => btn.classList.remove('active'));
+    button.classList.add('active');
+  }
+
+  document.querySelectorAll('.variant-btn').forEach((button) => {
     button.addEventListener('click', function() {
-      const original = this.dataset.original;
-      const discount = this.dataset.discount;
-      const stock = this.dataset.stock;
-      const variantId = this.dataset.variantid;
-
-      const priceSection = document.getElementById('priceSection');
-      priceSection.innerHTML = ''; // clear old content
-
-      if (discount && discount < original) {
-        priceSection.innerHTML = `
-          <span class="fs-4 fw-bold text-danger">₹${discount}</span>
-          <span class="text-muted text-decoration-line-through ms-2">₹${original}</span>
-          <span class="badge bg-success ms-2">Save ₹${original - discount}</span>
-        `;
-      } else {
-        priceSection.innerHTML = `
-          <span class="fs-4 fw-bold">₹${original}</span>
-        `;
-      }
-
-      // ✅ Update stock badge dynamically
-      const stockBadge = document.querySelector('.badge.mb-3');
-      if (stock > 0) {
-        stockBadge.className = "badge bg-success mb-3";
-        stockBadge.textContent = "In Stock";
-      } else {
-        stockBadge.className = "badge bg-danger mb-3";
-        stockBadge.textContent = "Out of Stock";
-      }
-
-      document.getElementById('variantId').value = variantId;
-
-      document.querySelectorAll('.variant-btn').forEach(btn => btn.classList.remove('active'));
-    this.classList.add('active');
-
+      updateVariant(this);
     });
   });
-const firstVariant = document.querySelector('.variant-btn');
-if (firstVariant) {
-  firstVariant.classList.add('active');
-  document.getElementById('variantId').value = firstVariant.dataset.variantid;
-}
+
+  const firstVariant = document.querySelector('.variant-btn');
+  if (firstVariant) {
+    updateVariant(firstVariant);
+  }
 </script>

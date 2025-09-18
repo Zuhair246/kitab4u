@@ -61,11 +61,16 @@ const addTocart = async (req, res) => {
     }
 
     const variant = product.variants.id(variantId);
-    console.log(5, variant);
 
     if (!variant) {
       return res.redirect(
         "/cart?error=" + encodeURIComponent("Variant not found")
+      );
+    }
+
+    if(variant.stock===0) {
+        return res.redirect(
+        "/cart?error=" + encodeURIComponent("Out of stock")
       );
     }
 
@@ -171,21 +176,16 @@ const updateQuantity = async (req, res) => {
 
     const product = await Product.findOne({ _id: cartItem.productId._id });
 
-console.log("Product variants:", product.variants);
-console.log("cartItem.variantId:", cartItem.variantId);
-
 const variant = product.variants.find(
   v => v._id.toString() === cartItem.variantId.toString()
 );
-
-console.log('variant:', variant);
 
     if (action === "inc") {
       if (cartItem.quantity < variant.stock && cartItem.quantity < 5) {
         cartItem.quantity += 1;
       } else {
         return res.redirect(
-          "/cart?error=" + encodeURIComponent("Maximum limit reached")
+          "/cart?error=" + encodeURIComponent("Maximum limit/stock reached")
         );
       }
     } else if (action === "dec") {

@@ -64,6 +64,9 @@ router.post('/cart', userStatus, checkProductAvailability, cartController.addToc
 router.post('/cart/remove' ,cartController.removeFromCart)
 router.post('/cart/update', cartController.updateQuantity);
 
+//Order Management
+
+
 
 router.get('/auth/google', passport.authenticate('google',{scope:['profile','email']}));
 

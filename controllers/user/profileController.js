@@ -10,7 +10,7 @@ const { generateOtp, sendVerificationEmail, resendOtpVerification } = require(".
 
 const profile = async (req,res) => {
   try {
-    const userId = req.session.user;
+    const userId = req.session.user || req.user;
     if(!userId) {
       return res.redirect('/login')
     }
@@ -27,7 +27,7 @@ const profile = async (req,res) => {
 
 const editProfile = async (req,res) => {
   try {
-    const userId = req.session.user;
+    const userId = req.session.user || req.user;
     const userData = await User.findById(userId)
     res.render('editProfile', {
         user: userData,
@@ -44,7 +44,7 @@ const editProfile = async (req,res) => {
 
 const updateProfile = async (req,res) => {
   try {
-    const userId = req.session.user;
+    const userId = req.session.user || req.user;
     const {name, email, phone} = req.body;
 
     const user = await User.findById(userId)
@@ -361,7 +361,7 @@ const updateProfileImage = async (req, res) => {
       return res.redirect("/profile/edit");
     }
 
-    const userId = req.session.user;
+    const userId = req.session.user || req.user;
     const user = await User.findById(userId);
 
     const uploadDir = path.resolve(__dirname, "../../public/uploads/profile");
@@ -400,7 +400,7 @@ const updateProfileImage = async (req, res) => {
 
  const address = async (req, res) => {
   try {
-    const userId = req.session.user;
+    const userId = req.session.user || req.user;
     const user = await User.findById(userId);
 
     const page = parseInt(req.query.page) || 1;
@@ -435,7 +435,7 @@ const updateProfileImage = async (req, res) => {
 
  const loadAddAddress = async (req,res) => {
   try {
-    const userId = req.session.user;
+    const userId = req.session.user || req.user;
     const user = await User.findById(userId);
 
      res.render('addAddress', {
@@ -453,7 +453,7 @@ const updateProfileImage = async (req, res) => {
 
  const addAddress = async (req,res) => {
   try {
-    const userId = req.session.user;
+    const userId = req.session.user || req.user;
     const userData = await User.findById(userId);
     const {name, city, streetAddress, state, pinCode, phone, altPhone, addressType} = req.body;
     

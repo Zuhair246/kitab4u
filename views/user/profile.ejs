@@ -82,9 +82,11 @@
           </form>
 
           <!-- Change Password -->
+           <%if(!user.googleId){%>
           <div class="text-start ms-5 mt-3">
             <a href="/profile/changePassword" class="text-primary fw-semibold">Change Password</a>
           </div>
+          <%}%>
         </div>
       </div>
     </div>

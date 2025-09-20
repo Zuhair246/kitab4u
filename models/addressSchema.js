@@ -28,16 +28,23 @@ const addressSchema = new mongoose.Schema({
             required: true
         },
         pinCode: {
-            type: Number,
-            required: true
+            type: String,
+            required: true,
+            match: /^[0-9]{6}$/
         },
         phone: {
-            type: Number,
-            required: true
+            type: String,
+            required: true,
+            match: /^[0-9]{10}$/
         },
         altPhone: {
-            type: Number,
-            required: false
+            type: String,
+            required: false,
+            match: /^[0-9]{10}$/
+        },
+        isDefault: {
+            type: Boolean,
+            default: false
         },
         isDeleted: {
             type: Boolean,

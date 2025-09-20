@@ -517,12 +517,12 @@ if (!stateRegex.test(city) || city.replace(/\s/g, '').length < 3) {
     if(!userAddress) {
       const newAddress = new Address({
         userId: userData._id,
-        address: [{addressType, name, city, streetAddress, state, pinCode, phone, isDeleted:false}]
+        address: [{addressType, name, city, streetAddress, state, pinCode, phone, isDeleted:false, isDefault:true}]
       })
      const result = await newAddress.save()
      console.log("first:",result);
     }else {
-      userAddress.address.push({addressType, name, city, streetAddress, state, pinCode, phone, altPhone, isDeleted: false});
+      userAddress.address.push({addressType, name, city, streetAddress, state, pinCode, phone, altPhone, isDeleted: false, isDefault:false});
     const result2 =  await userAddress.save();
     console.log("Second:",result2);
     
@@ -595,6 +595,12 @@ if (!stateRegex.test(city) || city.replace(/\s/g, '').length < 3) {
 return res.redirect('/profile/address?error=' + encodeURIComponent("Invalid city name"));
 }
 
+if (isDefault === "on") {
+  await Address.updateOne(
+    { "address.isDefault": true, userId: req.session.user },
+    { $set: { "address.$.isDefault": false } }
+  );
+
     await Address.updateOne(
       { "address._id": id },
       {
@@ -607,10 +613,28 @@ return res.redirect('/profile/address?error=' + encodeURIComponent("Invalid city
           "address.$.phone": phone,
           "address.$.altPhone": altPhone,
           "address.$.addressType": addressType,
-          "address.$.isDefault": isDefault === "on" // checkbox value
+          "address.$.isDefault": true
         }
       }
     );
+  } else {
+     await Address.updateOne(
+      { "address._id": id },
+      {
+        $set: {
+          "address.$.name": name,
+          "address.$.city": city,
+          "address.$.streetAddress": streetAddress,
+          "address.$.state": state,
+          "address.$.pinCode": pinCode,
+          "address.$.phone": phone,
+          "address.$.altPhone": altPhone,
+          "address.$.addressType": addressType,
+          "address.$.isDefault": false
+        }
+      }
+    );
+  }
 
     return res.redirect("/profile/address?success=" + encodeURIComponent("Address updated successfully"));
   } catch (error) {

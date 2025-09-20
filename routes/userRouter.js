@@ -3,7 +3,8 @@ const router = express.Router();
 const userController = require('../controllers/user/userController');
 const productController = require('../controllers/user/productController');
 const profileController = require('../controllers/user/profileController');
-const cartController = require('../controllers/user/cartController')
+const cartController = require('../controllers/user/cartController');
+const orderController = require('../controllers/user/orderCotroller')
 const {userAuth }= require('../middlewares/auth');
 const checkProductAvailability = require('../middlewares/productAuth');
 const userStatus = require('../middlewares/userStatus');
@@ -65,7 +66,7 @@ router.post('/cart/remove' ,cartController.removeFromCart)
 router.post('/cart/update', cartController.updateQuantity);
 
 //Order Management
-
+router.get('/orders', orderController.loadOrderPage);
 
 
 router.get('/auth/google', passport.authenticate('google',{scope:['profile','email']}));

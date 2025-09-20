@@ -5,7 +5,8 @@ const customerController = require('../controllers/admin/customerController')
 const categoryController = require('../controllers/admin/categoryController')
 const productController = require('../controllers/admin/productController')
 const {userAuth, adminAuth} = require('../middlewares/auth');
-const upload = require('../middlewares/upload')
+const uploadImages = require('../middlewares/imgValid')
+// const upload = require('../middlewares/upload')
 
 //admin authentication
 router.get('/', adminController.loadLogin);
@@ -29,9 +30,9 @@ router.post("/activateCategory",adminAuth, categoryController.activateCategory);
 //Product Management
 router.get('/listProducts', adminAuth, productController.getProductList)
 router.get('/addProducts', adminAuth, productController.getProductAddPage)
-router.post('/addProducts', adminAuth, upload.array('images', 5), productController.addProduct)
+router.post('/addProducts', adminAuth, uploadImages, productController.addProduct)
 router.get('/editProduct/:id', adminAuth, productController.getEditProduct);
-router.post('/editProduct/:id', adminAuth, upload.array('images', 5), productController.editProduct)
+router.post('/editProduct/:id', adminAuth, uploadImages, productController.editProduct)
 router.post('/deleteProduct', adminAuth, productController.deleteProduct)
 
 

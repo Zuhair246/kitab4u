@@ -7,6 +7,7 @@ const nodemailer = require('nodemailer')
 const flash = require('connect-flash');
 const bcrypt = require('bcrypt');
 const { generateOtp, sendVerificationEmail, resendOtpVerification } = require("../../helpers/otpService");
+const { isatty } = require('tty');
 
 const profile = async (req,res) => {
   try {
@@ -410,8 +411,7 @@ const updateProfileImage = async (req, res) => {
     const addressDoc = await Address.findOne({ userId: user._id }).lean();
 
     let userAddress = addressDoc ? addressDoc.address.filter(addr => !addr.isDeleted) : [];
-
-    console.log(userAddress);
+    userAddress.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     const paginatedAddress = userAddress.slice(skip, skip + limit);
 
@@ -455,63 +455,67 @@ const updateProfileImage = async (req, res) => {
   try {
     const userId = req.session.user || req.user;
     const userData = await User.findById(userId);
-    const {name, city, streetAddress, state, pinCode, phone, altPhone, addressType} = req.body;
+    const {name, city, streetAddress, state, pinCode, phone, altPhone, addressType, isDefault} = req.body;
     
+    const isAjax = req.headers['content-type'] === 'application/json';
+
     if(!name|| !city|| !streetAddress|| !state|| !pinCode ||!phone){
-      req.flash('error', "Name, City, Street address, State, Pincode, Phone number are required")
       req.flash('formData', {name, city, streetAddress, state, pinCode, phone, altPhone, addressType});
-      return res.redirect('/profile/address/add')
+      const msg = 'Name, City, Street address, State, Pincode, Phone number are required'
+      if(isAjax) return res.json({success: false, message: msg});
     } else if(!addressType){
-      req.flash('error', "Choose any address type.")
       req.flash('formData', {name, city, streetAddress, state, pinCode, phone, altPhone});
-      return res.redirect('/profile/address/add')
+      const msg = 'Choose any address type'
+      if(isAjax) return res.json({success: false, message: msg});
     }
     
   const nameRegex = /^(?!.*\s{2,})(?!\s)([A-Za-z]+(?:\s[A-Za-z]+)*)$/;
     if (!nameRegex.test(name) || name.replace(/\s/g, '').length < 5) {
-        req.flash("error", "Name should be at least 5 letters and contain only alphabets with spaces only between words");
        req.flash("formData", { name, city, streetAddress, state, pinCode, phone, altPhone, addressType });
-        return res.redirect("/profile/address/add");
-    }
+      const msg = ' Name should be at least 5 letters and contain only alphabets with spaces only between words';
+      if(isAjax) return res.json({success: false, message: msg})
+      }
 
 const checkPhone = /^(?!([0-9])\1{9})([6-9][0-9]{9})$/;
 if (!checkPhone.test(phone)) {
-    req.flash("error", "Invalid Phone number format");
     req.flash("formData", { name, city, streetAddress, state, pinCode, phone, altPhone, addressType });
-    return res.redirect("/profile/address/add");
-}
+    const msg = 'Invalid Phone number format.';
+    if(isAjax) return res.json({success: true, message: msg})
+    }
 
 if (altPhone && !checkPhone.test(altPhone)) {
-    req.flash("error", "Invalid Alternative Phone number format");
     req.flash("formData", { name, city, streetAddress, state, pinCode, phone, altPhone, addressType });
-    return res.redirect("/profile/address/add");
+    const msg = 'Invalid Alternative Phone number format';
+    if(isAjax) return res.json({success: false, message: msg})
 }
 
 if (phone===altPhone){
-    req.flash('error', "Phone numbers should not be same")
     req.flash('formData', { name, city, streetAddress, state, pinCode, phone, altPhone, addressType });
-    return res.redirect('/profile/address/add')
+    const msg = 'Phone numbers should not be same';
+    if(isAjax) return res.json({success: true, message: msg})
   }
 
   const stateRegex = /^(?!.*\s{2,})(?!\s)([A-Za-z]+(?:\s[A-Za-z]+)*)$/;
     if (!stateRegex.test(state) || state.replace(/\s/g, '').length < 3) {
-       req.flash("error", "Please enter a proper state in India");
        req.flash("formData", { name, city, streetAddress, state, pinCode, phone, altPhone, addressType });
-        return res.redirect("/profile/address/add");
+        const msg = 'Please enter a proper state in India';
+        if(isAjax) return res.json({success: true, message: msg})
     }
 
   const streetRegex = /^(?=.*[A-Za-z])[A-Za-z\/,\-.'#\s]+$/;
   if(!streetRegex.test(streetAddress)) {
-      req.flash('error', "Invalid characters in street address");
       req.flash("formData", { name, city, streetAddress, state, pinCode, phone, altPhone, addressType });
-      return res.redirect("/profile/address/add");
+      const msg = 'Invalid characters in street address';
+      if(isAjax) return res.json({success: true, message: msg});
   }
 
 if (!stateRegex.test(city) || city.replace(/\s/g, '').length < 3) {
-  req.flash('error', "City name should be at least 5 letters and contain only alphabets with spaces only between words");
   req.flash("formData", { name, city, streetAddress, state, pinCode, phone, altPhone, addressType });
-  return res.redirect("/profile/address/add");
+  const msg = 'City name should be at least 5 letters and contain only alphabets with spaces only between words.'
+  if(isAjax) return res.json({success: true, message: msg})
 }
+
+const defaultFlag = isDefault === 'on';
  
     const userAddress = await Address.findOne({userId: userData._id});
     if(!userAddress) {
@@ -522,13 +526,26 @@ if (!stateRegex.test(city) || city.replace(/\s/g, '').length < 3) {
      const result = await newAddress.save()
      console.log("first:",result);
     }else {
-      userAddress.address.push({addressType, name, city, streetAddress, state, pinCode, phone, altPhone, isDeleted: false, isDefault:false});
+
+       if (defaultFlag) {
+        await Address.updateOne(
+          { userId: userData._id, "address.isDefault": true },
+          { $set: { "address.$.isDefault": false } }
+        );
+      }
+
+      userAddress.address.push({addressType, name, city, streetAddress, state, pinCode, phone, altPhone, isDeleted: false, isDefault: defaultFlag});
     const result2 =  await userAddress.save();
     console.log("Second:",result2);
     
     }
-    res.redirect('/profile/address')
+
+    if(isAjax) return res.json({success: true, message: 'Address added successfully !'})
+    res.redirect('/profile/address?success=Address added successfully')
   } catch (error) {
+    if(req.headers['content- type'] = 'application/json') {
+      return res.json({success: false, message: "Server Error"})
+    }
     console.log("Adding address error:",error);
     res.redirect('/pageNotFound')
   }
@@ -551,58 +568,71 @@ if (!stateRegex.test(city) || city.replace(/\s/g, '').length < 3) {
 const editAddress = async (req, res) => {
   try {
     const id = req.params.id; 
+    const userId = req.session.user || req.user;
     const { name, city, streetAddress, state, pinCode, phone, altPhone, addressType, isDefault } = req.body;
 
+    const isAjax = req.headers['content-type'] === 'application/json';
+
     if (!id) {
-      return res.redirect('/profile/address?error=' + encodeURIComponent("Invalid data for update"));
+      const msg = "Invalid address id";
+      return isAjax ? res.json({ success: false, message: msg }) : res.redirect('/profile/address?error=' + encodeURIComponent(msg));
     }
 
     if(!name|| !city|| !streetAddress|| !state|| !pinCode ||!phone){
-      return res.redirect('/profile/address?error=' + encodeURIComponent("Name, City, Street address, State, Pincode, Phone number are required"))
-    } else if(!addressType){
-      return res.redirect('/profile/address?error=' + encodeURIComponent("Choose an address type"))
+      const msg = "Name, City, Street, State, Pincode, Phone are required";
+      return isAjax ? res.json({ success: false, message: msg }) : res.redirect('/profile/address?error=' + encodeURIComponent(msg));
     }
-    
-  const nameRegex = /^(?!.*\s{2,})(?!\s)([A-Za-z]+(?:\s[A-Za-z]+)*)$/;
+    if(!addressType){
+      const msg = "Choose an address type";
+      return isAjax ? res.json({ success: false, message: msg }) : res.redirect('/profile/address?error=' + encodeURIComponent(msg));
+    }
+
+    const nameRegex = /^(?!.*\s{2,})(?!\s)([A-Za-z]+(?:\s[A-Za-z]+)*)$/;
     if (!nameRegex.test(name) || name.replace(/\s/g, '').length < 5) {
-        return res.redirect('/profile/address?error=' + encodeURIComponent("Invalid name"));
+      const msg = "Name should be at least 5 letters (alphabets only)";
+      return isAjax ? res.json({ success: false, message: msg }) : res.redirect('/profile/address?error=' + encodeURIComponent(msg));
     }
 
-const checkPhone = /^(?!([0-9])\1{9})([6-9][0-9]{9})$/;
-if (!checkPhone.test(phone)) {
-    return res.redirect('/profile/address?error=' + encodeURIComponent("Invalid phone number"));
-}
+    const checkPhone = /^(?!([0-9])\1{9})([6-9][0-9]{9})$/;
+    if (!checkPhone.test(phone)) {
+      const msg = "Invalid phone number";
+      return isAjax ? res.json({ success: false, message: msg }) : res.redirect('/profile/address?error=' + encodeURIComponent(msg));
+    }
+    if (altPhone && !checkPhone.test(altPhone)) {
+      const msg = "Invalid alternative phone number";
+      return isAjax ? res.json({ success: false, message: msg }) : res.redirect('/profile/address?error=' + encodeURIComponent(msg));
+    }
+    if (phone === altPhone) {
+      const msg = "Phone numbers should not be same";
+      return isAjax ? res.json({ success: false, message: msg }) : res.redirect('/profile/address?error=' + encodeURIComponent(msg));
+    }
 
-if (altPhone && !checkPhone.test(altPhone)) {
-return res.redirect('/profile/address?error=' + encodeURIComponent("Invalid phone number"));
-}
-
-if (phone===altPhone){
-return res.redirect('/profile/address?error=' + encodeURIComponent("Both numbers should not be same"));
-  }
-
-  const stateRegex = /^(?!.*\s{2,})(?!\s)([A-Za-z]+(?:\s[A-Za-z]+)*)$/;
+    const stateRegex = /^(?!.*\s{2,})(?!\s)([A-Za-z]+(?:\s[A-Za-z]+)*)$/;
     if (!stateRegex.test(state) || state.replace(/\s/g, '').length < 3) {
-return res.redirect('/profile/address?error=' + encodeURIComponent("Invalid state"));
+      const msg = "Invalid state name";
+      return isAjax ? res.json({ success: false, message: msg }) : res.redirect('/profile/address?error=' + encodeURIComponent(msg));
     }
 
-  const streetRegex = /^(?=.*[A-Za-z])[A-Za-z\/,\-.'#\s]+$/;
-  if(!streetRegex.test(streetAddress)) {
-return res.redirect('/profile/address?error=' + encodeURIComponent("Invalid street name"));
-  }
+    if (!stateRegex.test(city) || city.replace(/\s/g, '').length < 3) {
+      const msg = "Invalid city name";
+      return isAjax ? res.json({ success: false, message: msg }) : res.redirect('/profile/address?error=' + encodeURIComponent(msg));
+    }
 
-if (!stateRegex.test(city) || city.replace(/\s/g, '').length < 3) {
-return res.redirect('/profile/address?error=' + encodeURIComponent("Invalid city name"));
-}
+    const streetRegex = /^(?=.*[A-Za-z])[A-Za-z\/,\-.'#\s]+$/;
+    if(!streetRegex.test(streetAddress)) {
+      const msg = "Invalid street name";
+      return isAjax ? res.json({ success: false, message: msg }) : res.redirect('/profile/address?error=' + encodeURIComponent(msg));
+    }
 
-if (isDefault === "on") {
-  await Address.updateOne(
-    { "address.isDefault": true, userId: req.session.user },
-    { $set: { "address.$.isDefault": false } }
-  );
+    if (isDefault === "on") {
+      await Address.updateOne(
+        { "address.isDefault": true, userId },
+        { $set: { "address.$.isDefault": false } }
+      );
+    }
 
     await Address.updateOne(
-      { "address._id": id },
+      { "address._id": id, userId },
       {
         $set: {
           "address.$.name": name,
@@ -613,35 +643,23 @@ if (isDefault === "on") {
           "address.$.phone": phone,
           "address.$.altPhone": altPhone,
           "address.$.addressType": addressType,
-          "address.$.isDefault": true
+          "address.$.isDefault": isDefault === "on"
         }
       }
     );
-  } else {
-     await Address.updateOne(
-      { "address._id": id },
-      {
-        $set: {
-          "address.$.name": name,
-          "address.$.city": city,
-          "address.$.streetAddress": streetAddress,
-          "address.$.state": state,
-          "address.$.pinCode": pinCode,
-          "address.$.phone": phone,
-          "address.$.altPhone": altPhone,
-          "address.$.addressType": addressType,
-          "address.$.isDefault": false
-        }
-      }
-    );
-  }
 
-    return res.redirect("/profile/address?success=" + encodeURIComponent("Address updated successfully"));
+    const msg = "Address updated successfully";
+    return isAjax ? res.json({ success: true, message: msg }) : res.redirect('/profile/address?success=' + encodeURIComponent(msg));
+    
   } catch (error) {
     console.log("Edit address error:", error);
+    if (req.headers['content-type'] === 'application/json') {
+      return res.json({ success: false, message: "Server Error" });
+    }
     res.redirect('/pageNotFound');
   }
 };
+
 
 
 module.exports = {

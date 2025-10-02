@@ -9,7 +9,7 @@ const { model } = require('mongoose');
 const loadOrderPage = async (req, res) => {
     try {
         const userId = req.session.user || req.user;
-        if(userId) {
+        if(!userId) {
             return res.redirect('/login');
         }
 
@@ -18,11 +18,23 @@ const loadOrderPage = async (req, res) => {
             return res.redirect('/login');
         }
 
-        const address = await Address.find({userId})
+        const addressDocs = await Address.find({userId: user._id})
+        .sort({createdAt: -1})
+        .limit(2)
+        .lean();
 
+        const addresses = addressDocs.reduce((acc, doc) => {
+            if(Array.isArray(doc.address)) {
+                acc.push(...doc.address)
+            }
+            return acc;
+        },[]);
+        console.log(addresses);
+        const sortedAddresses = addresses.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+        const recentAddresses = sortedAddresses.slice(0,2);
+        
         const cart = await Cart.findOne({userId}).populate({
-            path: 'itmes.productId',
-            model: "Product"
+            path: 'items.productId'
         });
 
         if(!cart || cart.items.length === 0) {
@@ -47,7 +59,7 @@ const loadOrderPage = async (req, res) => {
              }
         });
 
-        const subtotal = items.reduce((sum, item) => sum + it.totalPrice, 0);
+        const subtotal = items.reduce((sum, item) => sum + item.totalPrice, 0);
         
         const discount = 0;
         const shippingCharge = 0;
@@ -60,7 +72,7 @@ const loadOrderPage = async (req, res) => {
             discount,
             shippingCharge,
             finalAmount,
-            addresses: address,
+            addresses: recentAddresses,
 
         })
         

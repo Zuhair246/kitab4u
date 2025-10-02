@@ -18,6 +18,8 @@
       <!-- Cart Table -->
       <div class="table-responsive">
         <table class="table table-borderless">
+                      <% if (cartItems && cartItems.length > 0) { %>
+              <% cartItems.forEach(item => { %>
           <thead class="border-bottom">
             <tr>
               <th scope="col" class="fw-semibold">Product</th>
@@ -27,8 +29,6 @@
             </tr>
           </thead>
           <tbody>
-            <% if (cartItems && cartItems.length > 0) { %>
-              <% cartItems.forEach(item => { %>
   <tr class="border-bottom">
     <td class="py-4">
       <div class="d-flex align-items-center">

@@ -1,0 +1,67 @@
+<%-include("../../views/partials/user/header")%>
+
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <!-- Address Selection -->
+    <div class="col-lg-7 mb-4">
+      <div class="bg-white p-4 rounded shadow-sm">
+        <h4 class="mb-4">Please Select Address:</h4>
+        
+        <!-- Address List -->
+        <form>
+          <div class="mb-3">
+                <% if(addresses && addresses.length >0) { %>
+                <% addresses.forEach(function(address) { %>
+            <div class="border rounded p-3 mb-3 position-relative" style="border-width:2px; border-color:#edc2ba; border-style:solid;">
+              <div>
+                <strong><%=address.name%></strong><br>
+                <%=address.phone %><br>
+                <%=address.streetAddress %> <br>
+                <%= address.city%> <br>
+                <%=address.state%>
+              </div>
+              <span class="badge bg-secondary position-absolute top-0 end-0 mt-2 me-2"><%=address.addressType%></span>
+              <button type="button" class="btn btn-sm btn-dark position-absolute top-0 end-0 mt-2 me-2" style="transform:translateY(1.8rem);">Edit</button>
+            </div>
+                      <% }); %>
+        <% } %>
+
+          </div>
+          <a href="/address">
+            <button type="button" class="btn btn-outline-primary w-40">View more Addresses</button>
+</a>
+          <button type="button" class="btn btn-outline-primary w-50 me-1">+ Add New Address</button>
+        </form>
+      </div>
+    </div>
+    <!-- Order Summary -->
+    <div class="col-lg-5">
+      <div class="bg-white p-4 rounded shadow-sm">
+        <h4 class="mb-4">Order Summary</h4>
+        <ul class="list-group mb-3">
+          <li class="list-group-item d-flex justify-content-between align-items-center border-0 px-0 pb-0">
+            <div>
+              <strong>Atomic Habits</strong><br>
+              <small class="text-muted">By James Clear</small>
+            </div>
+            <span>₹558.0/-</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between border-0 px-0">
+            <span>Delivery Charge</span>
+            <span class="text-success fw-bold">₹Free</span>
+          </li>
+        </ul>
+        <div class="d-flex justify-content-between mb-3 px-1">
+          <div>
+            <span class="fw-bold">Total</span><br>
+            <small class="text-muted">In Rupees</small>
+          </div>
+          <span class="h5 fw-bold">₹558.0/-</span>
+        </div>
+        <button class="btn btn-danger w-100 fw-bold" type="button">Continue</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%-include("../../views/partials/user/footer")%>

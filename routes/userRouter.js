@@ -54,7 +54,7 @@ router.post('/profile/setNewPassword', userStatus,profileController.setNewPasswo
 
 //User address Management
 router.get('/profile/address', userStatus, profileController.address);
-router.get('/profile/address/add', userStatus, profileController.loadAddAddress);
+// router.get('/profile/address/add', userStatus, profileController.loadAddAddress);
 router.post('/profile/address/add', userStatus, profileController.addAddress);
 router.post('/profile/address/delete', userStatus, profileController.deleteAddress);
 router.post('/profile/address/edit/:id', userStatus, profileController.editAddress);

@@ -18,20 +18,12 @@ const loadOrderPage = async (req, res) => {
             return res.redirect('/login');
         }
 
-        const addressDocs = await Address.find({userId: user._id})
-        .sort({createdAt: -1})
-        .limit(2)
-        .lean();
-
-        const addresses = addressDocs.reduce((acc, doc) => {
-            if(Array.isArray(doc.address)) {
-                acc.push(...doc.address)
-            }
-            return acc;
-        },[]);
-        console.log(addresses);
-        const sortedAddresses = addresses.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
-        const recentAddresses = sortedAddresses.slice(0,2);
+        const addressDocs = await Address.find({userId: user._id}).lean();
+        const existingAddress = addressDocs.map(doc => doc.address ? doc.address.filter(addr => !addr.isDeleted) : []).flat();
+        const allAddresses = existingAddress;
+       
+        const sortedAddresses = allAddresses.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+        const recentAddresses = sortedAddresses.slice(0,1);
         
         const cart = await Cart.findOne({userId}).populate({
             path: 'items.productId'
@@ -60,9 +52,11 @@ const loadOrderPage = async (req, res) => {
         });
 
         const subtotal = items.reduce((sum, item) => sum + item.totalPrice, 0);
-        
-        const discount = 0;
-        const shippingCharge = 0;
+        let shippingCharge = 0;
+        let discount = 0;
+        if((subtotal - discount)<1000){
+            shippingCharge = 50;
+        }
         const finalAmount = subtotal - discount + shippingCharge;
 
         res.render('checkout', {
@@ -73,6 +67,7 @@ const loadOrderPage = async (req, res) => {
             shippingCharge,
             finalAmount,
             addresses: recentAddresses,
+            allAddresses,
 
         })
         
@@ -82,7 +77,56 @@ const loadOrderPage = async (req, res) => {
     }
 }
 
+const checkout = async (req,res) => {
+    try {
+        const { selectedAddressId } = req.body;
+        console.log(`selectedAddressId: ${selectedAddressId}`);
+        
+
+        const userId = req.session.user || req.user;
+        const user = await User.findById(userId);
+        if(!user){
+            return res.redirect('/login')
+        }
+
+        const cart = await Cart.findOne({userId}).populate({
+            path: 'items.productId'
+        })
+        
+         if(!cart || cart.items.length === 0) {
+            return res.redirect ('/cart?error='+encodeURIComponent('Cart is empty'));
+        }
+
+        let items = cart.items.map(item => {
+            const product = item.productId;
+            const variant = product.variants.id(item.variantId);
+            const price = variant.discountPrice || variant.originalPrice;
+
+             return {
+                productId: product._id,
+                variantId: variant._id,
+                name: product.name,
+                coverType: variant.coverType,
+                quantity: item.quantity,
+                price: price,
+                totalPrice: item.quantity * price
+             }
+        });
+
+        const subtotal = items.reduce((sum, item) => sum + item.totalPrice, 0);
+        let shippingCharge = 0;
+        let discount = 0;
+        if((subtotal - discount)<1000){
+            shippingCharge = 50;
+        }
+        const finalAmount = subtotal - discount + shippingCharge;
+        
+    } catch (error) {
+        console.error('Order checkout error:',error)
+    }
+}
 
 module.exports = {
-    loadOrderPage
+    loadOrderPage,
+    checkout
 }

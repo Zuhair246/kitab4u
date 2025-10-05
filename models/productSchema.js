@@ -5,8 +5,9 @@ const variantSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  originalPrice: { type: Number, 
-  required: true 
+  originalPrice: { 
+    type: Number,
+    required: true 
 },
   discountPrice: {
     type: Number,

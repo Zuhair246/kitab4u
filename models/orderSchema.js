@@ -57,6 +57,20 @@ const orderSchema = new mongoose.Schema({
     type: Address.schema,
     required: true,
   },
+  paymentMethod: {
+    type: String,
+    enum: ['COD' , 'Online'],
+    required: true
+  },
+  paymentStatus: {
+    type: String,
+    enum: ['Pending' , 'Paid' , 'Failed' , 'Refunded'],
+    default: 'Pending'
+  },
+  payementId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Payment'
+  },
   invoiceDate: {
     type: Date,
     default: Date.now

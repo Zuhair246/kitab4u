@@ -480,7 +480,7 @@ const checkPhone = /^(?!([0-9])\1{9})([6-9][0-9]{9})$/;
 if (!checkPhone.test(phone)) {
     req.flash("formData", { name, city, streetAddress, state, pinCode, phone, altPhone, addressType });
     const msg = 'Invalid Phone number format.';
-    if(isAjax) return res.json({success: true, message: msg})
+    if(isAjax) return res.json({success: false, message: msg})
     }
 
 if (altPhone && !checkPhone.test(altPhone)) {
@@ -492,27 +492,27 @@ if (altPhone && !checkPhone.test(altPhone)) {
 if (phone===altPhone){
     req.flash('formData', { name, city, streetAddress, state, pinCode, phone, altPhone, addressType });
     const msg = 'Phone numbers should not be same';
-    if(isAjax) return res.json({success: true, message: msg})
+    if(isAjax) return res.json({success: false, message: msg})
   }
 
   const stateRegex = /^(?!.*\s{2,})(?!\s)([A-Za-z]+(?:\s[A-Za-z]+)*)$/;
     if (!stateRegex.test(state) || state.replace(/\s/g, '').length < 3) {
        req.flash("formData", { name, city, streetAddress, state, pinCode, phone, altPhone, addressType });
         const msg = 'Please enter a proper state in India';
-        if(isAjax) return res.json({success: true, message: msg})
+        if(isAjax) return res.json({success: false, message: msg})
     }
 
   const streetRegex = /^(?=.*[A-Za-z])[A-Za-z\/,\-.'#\s]+$/;
   if(!streetRegex.test(streetAddress)) {
       req.flash("formData", { name, city, streetAddress, state, pinCode, phone, altPhone, addressType });
       const msg = 'Invalid characters in street address';
-      if(isAjax) return res.json({success: true, message: msg});
+      if(isAjax) return res.json({success: false, message: msg});
   }
 
 if (!stateRegex.test(city) || city.replace(/\s/g, '').length < 3) {
   req.flash("formData", { name, city, streetAddress, state, pinCode, phone, altPhone, addressType });
   const msg = 'City name should be at least 5 letters and contain only alphabets with spaces only between words.'
-  if(isAjax) return res.json({success: true, message: msg})
+  if(isAjax) return res.json({success: false, message: msg})
 }
 
 const defaultFlag = isDefault === 'on';
@@ -540,10 +540,16 @@ const defaultFlag = isDefault === 'on';
     
     }
 
-    if(isAjax) return res.json({success: true, message: 'Address added successfully !'})
+    if(isAjax) {
+      const newAddress = userAddress
+            ? userAddress.address[userAddress.address.length - 1] 
+            : result.address[0];
+      return res.json({success: true, message: 'Address added successfully !', addressId: newAddress._id})
+    }
     res.redirect('/profile/address?success=Address added successfully')
+    
   } catch (error) {
-    if(req.headers['content- type'] = 'application/json') {
+    if(req.headers['content- type'] === 'application/json') {
       return res.json({success: false, message: "Server Error"})
     }
     console.log("Adding address error:",error);
@@ -659,7 +665,6 @@ const editAddress = async (req, res) => {
     res.redirect('/pageNotFound');
   }
 };
-
 
 
 module.exports = {

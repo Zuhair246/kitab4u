@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const { v4: uuidv4 } = require("uuid");
-const Address = require("../models/addressSchema");
+const Address = require('../models/addressSchema');
+const { address } = require("../controllers/user/profileController");
 
 const orderSchema = new mongoose.Schema({
   orderId: {
@@ -39,6 +40,22 @@ const orderSchema = new mongoose.Schema({
         type: String,
         required: true,
       },
+      itemStatus: {
+        type: String,
+        enum: [      
+          "Pending",
+          "Packed",
+          "Shipped",
+          "Delivered",
+          "Cancelled",
+          "Return Request",
+          "Returned",
+        ],
+        default: 'Pending'
+      },
+      returnReason: {
+        type: String
+      }
     },
   ],
   totalPrice: {
@@ -53,18 +70,60 @@ const orderSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
-  address: {
-    type: Address.schema,
-    required: true,
-  },
+  shippingAddress: {
+      name: {
+            type: String,
+            required: true
+        },
+        city: {
+            type: String,
+            required: true
+        },
+       streetAddress: {
+            type: String,
+            required: true,
+        },
+        state: {
+            type: String,
+            required: true
+        },
+        pinCode: {
+            type: String,
+            required: true,
+        },
+        phone: {
+            type: String,
+            required: true,
+        },
+        altPhone: {
+            type: String,
+            required: false,
+        },
+       addressType: {
+          type: String,
+          required: true
+      },
+        createdAt: {
+            type: Date,
+            default: Date.now
+        }
+    },
   paymentMethod: {
     type: String,
-    enum: ['COD' , 'Online'],
+    enum: [
+                  'COD' , 
+                  'Online'
+                ],
     required: true
   },
   paymentStatus: {
     type: String,
-    enum: ['Pending' , 'Paid' , 'Failed' , 'Refunded'],
+    enum: [
+                  'Pending' , 
+                  'Paid' , 
+                  'Failed' , 
+                  'Refunded'
+                ],
     default: 'Pending'
   },
   payementId: {
@@ -80,15 +139,16 @@ const orderSchema = new mongoose.Schema({
     required: true,
     enum: [
       "Pending",
-      "Processing",
+      "Packed",
       "Shipped",
       "Delivered",
       "Cancelled",
       "Return Request",
       "Returned",
     ],
+    default: 'Pending'
   },
-  createdOn: {
+  createdAt: {
     type: Date,
     default: Date.now,
     required: true,

@@ -174,8 +174,6 @@ const updateQuantity = async (req, res) => {
         "/cart?error=" + encodeURIComponent("Item not in cart")
       );
 
-    const product = await Product.findOne({ _id: cartItem.productId._id });
-
 const variant = product.variants.find(
   v => v._id.toString() === cartItem.variantId.toString()
 );

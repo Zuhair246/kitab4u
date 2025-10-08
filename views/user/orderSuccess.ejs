@@ -1,0 +1,12 @@
+<%-include('../../views/partials/user/header')%>
+<div class="container text-center my-5">
+  <img src="/images/success.svg" alt="Success" class="mb-4" style="width:150px;">
+  <h2 class="text-success">🎉 Thank You for Your Order!</h2>
+  <p>Your order <strong><%= orderId %></strong> has been placed successfully.</p>
+
+  <div class="mt-4">
+    <a href="/orders/<%= orderId %>" class="btn btn-primary me-3">View Order Details</a>
+    <a href="/shop" class="btn btn-outline-secondary">Continue Shopping</a>
+  </div>
+</div>
+<%-include('../../views/partials/user/footer')%>

@@ -84,7 +84,6 @@
                                 <% } %>
                                 <small class="text-muted ms-2">(3.6k Customer Reviews)</small>
                                 </div>
-
                                 <div class="mt-auto d-flex justify-content-between align-items-center">
                                 <span class="price fw-bold">₹<%= book.defaultPrice %></span>
                                 <button class="btn btn-primary btn-sm">Add to Cart</button>
@@ -93,20 +92,18 @@
                             </div>
                         </div>
                         <% }); %>
-
                                     </div>
 
                                         <!-- Pagination -->
                                 <div class="d-flex justify-content-center mt-4">
                                 <nav aria-label="Page navigation">
                                     <ul class="pagination">
-
+                                        
                                     <% if (currentPage > 1) { %>
                                         <li class="page-item">
                                         <a class="page-link" href="?page=<%= currentPage - 1 %>">&lt;</a>
                                         </li>
                                     <% } %>
-
                                     <% for (let i = 1; i <= totalPages; i++) { %>
                                         <li class="page-item <%= i === currentPage ? 'active' : '' %>">
                                         <a class="page-link" href="?page=<%= i %>"><%= i %></a>

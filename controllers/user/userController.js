@@ -16,7 +16,7 @@ const loadHomePage = async (req,res) => {
     try {
         const user = req.session.user || req.user;
         const page = parseInt(req.query.page) || 1;
-        const limit = 3;
+        const limit = 6;
         const skip = (page - 1)*limit;
         const Categories = await Category.find({isListed: true});
         let productData = await Product.find({
@@ -25,7 +25,8 @@ const loadHomePage = async (req,res) => {
           'variants.stock' : {$gt:0}
         })
         .sort({createdAt: -1})
-        .limit(6);
+        .skip(skip)
+        .limit(limit);
 
         productData = productData.map(product => {
         const paperback = product.variants.find(v => v.format === "Paperback");
@@ -37,8 +38,14 @@ const loadHomePage = async (req,res) => {
   };
 });
 
-        const paginatedBooks = productData.slice(skip, skip+limit);
-        const totalPages = Math.ceil(productData.length / limit);
+ const totalProducts = await Product.countDocuments({
+      isBlocked: false,
+      categoryId: { $in: Categories.map(category => category._id) },
+      'variants.stock': { $gt: 0 },
+    });
+
+
+        const totalPages = Math.ceil(totalProducts /  limit);
       
         const searchQuery = req.query.q ? req.query.q.trim() : "";
 
@@ -57,7 +64,7 @@ const loadHomePage = async (req,res) => {
       // }
       return res.render("homePage", { 
                                                         user: userData, 
-                                                        books: paginatedBooks,
+                                                        books: productData,
                                                         currentPage: page,
                                                         totalPages,
                                                         searchQuery
@@ -65,7 +72,7 @@ const loadHomePage = async (req,res) => {
     }
 
     res.render("homePage", {
-                                              books: productData,
+                                            books: productData,
                                             currentPage: page,
                                             totalPages,
                                             searchQuery

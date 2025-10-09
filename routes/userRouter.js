@@ -61,14 +61,16 @@ router.post('/profile/address/edit/:id', userStatus, profileController.editAddre
 //Cart Management
 router.get('/cart', cartController.loadCart);
 router.post('/cart', userStatus, checkProductAvailability, cartController.addTocart);
-router.post('/cart/remove' ,cartController.removeFromCart)
-router.post('/cart/update', cartController.updateQuantity);
+router.post('/cart/remove' , userStatus, checkProductAvailability, cartController.removeFromCart)
+router.post('/cart/update', userStatus, checkProductAvailability, cartController.updateQuantity);
 
 //Order Management
-router.get('/orders', orderController.loadOrderPage);
-router.post('/orders', orderController.checkout);
-router.get('/myOrders', orderController.orderHistory);
-router.get('/myOrders/:id', orderController.orderDetails)
+router.get('/orders', userStatus, checkProductAvailability, orderController.loadOrderPage);
+router.post('/orders', userStatus, checkProductAvailability, orderController.checkout);
+router.get('/myOrders', userStatus, orderController.orderHistory);
+router.get('/myOrders/:id', userStatus, orderController.orderDetails);
+router.post('/myOrders/:id/cancel', userStatus, orderController.cancelOrder);
+router.post('/myOrders/:id/return', userStatus, orderController.returnOrder);
 
 
 router.get('/auth/google', passport.authenticate('google',{scope:['profile','email']}));

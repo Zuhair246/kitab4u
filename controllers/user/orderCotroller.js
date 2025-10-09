@@ -189,7 +189,22 @@ const orderHistory = async (req,res) => {
             return res.redirect('/login');
         }
 
-        const orders = await Order.find({ userId })
+        const search = req.query.search ? req.query.search.trim() : null;
+
+        let query = { userId };
+
+        if(search) {
+            query = {
+                userId,
+                $or: [
+                    { orderId: { $regex: `^${search}`, $options: 'i'} },
+                    { status: { $regex: `^${search}`, $options: 'i' } },
+                    { 'orderedItems.name': { $regex: `^${search}` ,$options: 'i'} }
+                ]
+            }
+        }
+
+        const orders = await Order.find( query )
                                 .sort({ createdAt: -1 })
                                 .lean();
         
@@ -201,8 +216,6 @@ const orderHistory = async (req,res) => {
                 ...order,
                 items: order.orderedItems,
                 statusIndex: statusIndex === -1 ? 0 : statusIndex,
-                canCancel: order.status === 'Pending' || order.status === 'Packed',
-                canReturn: order.status === 'Delivered',
                 expectedDeliveryDateFormatted: new Date(
                     order.createdAt.getTime() + 7 * 24 * 60 * 60 * 1000
                 ).toLocaleDateString("en-IN", {
@@ -215,7 +228,8 @@ const orderHistory = async (req,res) => {
 
         res.render('orderHistory', { 
             orders: formattedOrders,
-            user
+            user,
+            search
         })
         
     } catch (error) {
@@ -254,9 +268,13 @@ const orderDetails = async (req, res) => {
             totalPrice: item.price * item.quantity
         }) );
 
+        order.canCancel = ['Pending', 'Packed'].includes(order.status);
+        order.canReturn = order.status === 'Delivered';
+
         order.address = order.shippingAddress;
         order.subtotal = order.totalPrice;
         order.shippingCharge = order.shippingCharge;
+
         res.render('orderDetails', {
             user,
             order
@@ -267,9 +285,76 @@ const orderDetails = async (req, res) => {
         return res.redirect('/pageNotFound');
     }
 }
+
+const cancelOrder = async (req, res) => {
+    try {
+        const userId = req.session.user || req.user;
+        const orderId = req.params.id;
+
+        const order = await Order.findOne({ _id: orderId, userId });
+        if(!order) {
+            return res.status(404).json({ success: false, message: "Order not found" });
+        }
+
+        if(![ 'Pending', 'Packed' ].includes(order.status)) {
+            return res.status(400).json({ success: false, message: "Cannot cancel the order after shipping"});
+        }
+
+        order.status = "Cancel Requested";
+        order.orderedItems.forEach(item => {
+            item.itemStatus = 'Cancel Requested';
+        });
+        
+        await order.save();
+        
+        return res.json({ success: true, message: "Cancellation request submitted successfully"});
+
+    } catch (error) {
+        console.error("Order cancelling error: ",error);
+        return res.redirect("/pageNotFound")
+    }
+};
+
+const returnOrder = async (req, res) => {
+    try {
+        const userId = req.session.user || req.user;
+        const orderId = req.params.id;
+
+        const order = await Order.findOne({_id: orderId, userId});
+        if(!order) {
+            return res.status(404).json({ success: false, message: "Order not found" });
+        }
+
+        const returnLimit = new Date(order.createdAt.getTime() + 14 * 24 * 60 * 60 * 1000);
+
+        if(!order.status !== "Delivered") {
+            return res.status(400).json({success: false, message: "Cannot return the order now"})
+        }
+
+        if(Date.now > returnLimit) {
+            return res.status(400).json({success: false, message: "Return date over"})
+        }
+
+        order.status = "Return Requested";
+        order.orderedItems.forEach(item => {
+            item.itemStatus = "Return Requested";
+        })
+
+        await order.save();
+
+        return res.status(200).json({ message: "Return requested successfully"});
+        
+    } catch (error) {
+        console.log("Order returning error:" ,error);
+        return res.redirect("/pageNotFound")
+    }
+}
 module.exports = {
     loadOrderPage,
     checkout,
     orderHistory,
-    orderDetails
+    orderDetails,
+    cancelOrder,
+    returnOrder
+
 }

@@ -4,6 +4,11 @@ const Address = require('../models/addressSchema');
 const { address } = require("../controllers/user/profileController");
 
 const orderSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true
+  },
   orderId: {
     type: String,
     default: () => uuidv4(),
@@ -47,8 +52,9 @@ const orderSchema = new mongoose.Schema({
           "Packed",
           "Shipped",
           "Delivered",
+          'Cancel Requested',
           "Cancelled",
-          "Return Request",
+          "Return Requested",
           "Returned",
         ],
         default: 'Pending'
@@ -65,6 +71,11 @@ const orderSchema = new mongoose.Schema({
   discount: {
     type: Number,
     default: 0,
+  },
+  shippingCharge: {
+    type: Number,
+    default: 0,
+    required: true
   },
   finalAmount: {
     type: Number,
@@ -141,9 +152,11 @@ const orderSchema = new mongoose.Schema({
       "Pending",
       "Packed",
       "Shipped",
+      "Out for Delivery",
       "Delivered",
+      'Cancel Requested',
       "Cancelled",
-      "Return Request",
+      "Return Requested",
       "Returned",
     ],
     default: 'Pending'

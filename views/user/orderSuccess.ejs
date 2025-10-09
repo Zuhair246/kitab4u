@@ -1,12 +1,34 @@
 <%-include('../../views/partials/user/header')%>
-<div class="container text-center my-5">
-  <img src="/images/success.svg" alt="Success" class="mb-4" style="width:150px;">
-  <h2 class="text-success">🎉 Thank You for Your Order!</h2>
-  <p>Your order <strong><%= orderId %></strong> has been placed successfully.</p>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+<link rel="stylesheet" href="../../styles/user/orderSuccess.css">
 
-  <div class="mt-4">
-    <a href="/orders/<%= orderId %>" class="btn btn-primary me-3">View Order Details</a>
-    <a href="/shop" class="btn btn-outline-secondary">Continue Shopping</a>
+<div class="confirmation-section">
+  <!-- Floating shapes for background -->
+  <div class="shape"></div>
+  <div class="shape"></div>
+  <div class="shape"></div>
+  <div class="shape"></div>
+  <div class="shape"></div>
+
+  <div class="container text-center">
+    <div class="checkmark-container">
+      <i class="fa-solid fa-check checkmark"></i>
+    </div>
+
+    <h2 class="confirmation-title">YOUR ORDER IS PLACED</h2>
+    <p class="confirmation-subtitle">
+      Thank you for shopping with KITAB4U.<br>
+      We wish you a wonderful reading journey with us.
+    </p>
+    <p class="order-info">
+      Your order <strong><%= orderId %></strong> has been placed successfully.
+    </p>
+
+    <div class="mt-4">
+      <a href="/myOrders/<%= orders._id %>" class="btn btn-primary btn-ux"><i class="fas fa-shopping-bag me-2"></i>View Order Details</a>
+      <a href="/shop" class="btn btn-outline-secondary btn-ux"><i class="fa-solid fa-shop me-2"></i>Continue Shopping</a>
+    </div>
   </div>
 </div>
+
 <%-include('../../views/partials/user/footer')%>

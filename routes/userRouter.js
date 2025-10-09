@@ -67,6 +67,8 @@ router.post('/cart/update', cartController.updateQuantity);
 //Order Management
 router.get('/orders', orderController.loadOrderPage);
 router.post('/orders', orderController.checkout);
+router.get('/myOrders', orderController.orderHistory);
+router.get('/myOrders/:id', orderController.orderDetails)
 
 
 router.get('/auth/google', passport.authenticate('google',{scope:['profile','email']}));

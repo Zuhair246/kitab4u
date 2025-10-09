@@ -1,0 +1,126 @@
+.confirmation-section {
+  background: linear-gradient(135deg, #3a5a40 0%, #82b366 100%);
+  min-height: 70vh;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #f0f0f0;
+  font-family: 'Poppins', sans-serif;
+  padding: 2rem;
+}
+
+.confirmation-section::before {
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><circle id="a" cx="10" cy="10" r="2" fill="%23f8f5ec" opacity="0.05"/></defs><use href="%23a" x="20" y="30"/><use href="%23a" x="40" y="70"/><use href="%23a" x="60" y="20"/><use href="%23a" x="80" y="50"/><use href="%23a" x="10" y="60"/><use href="%23a" x="30" y="10"/><use href="%23a" x="50" y="40"/><use href="%23a" x="70" y="80"/></svg>') repeat;
+  animation: sparkle 3s infinite;
+}
+
+  @keyframes sparkle {
+    0%, 100% { opacity: 0.1; }
+    50% { opacity: 0.3; }
+  }
+  .shape {
+    position: absolute;
+    animation: float 6s ease-in-out infinite;
+  }
+  .shape:nth-child(1) { top: 10%; right: 15%; background: #e91e63; width: 15px; height: 15px; clip-path: polygon(50% 0%, 0% 100%, 100% 100%); animation-delay: 1s; }
+  .shape:nth-child(2) { bottom: 20%; left: 20%; background: #2196f3; width: 25px; height: 25px; transform: rotate(45deg); animation-delay: 2s; }
+  .shape:nth-child(3) { top: 60%; right: 20%; background: #4caf50; width: 18px; height: 18px; border-radius: 30%; animation-delay: 3s; }
+  .shape:nth-child(4) { bottom: 30%; left: 70%; background: #ff9800; width: 22px; height: 22px; clip-path: circle(); animation-delay: 4s; }
+  .shape:nth-child(5) { bottom: 70%; left: 30%; background: #a8e6cf; width: 22px; height: 22px; border-radius: 30%; animation-delay: 4s; }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-20px) rotate(180deg); }
+  }
+ .checkmark-container {
+  background: #f4f1ea;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  animation: bounce 1s ease-out;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.checkmark {
+  font-size: 60px;
+  color: #4a6e4e;
+}
+
+.confirmation-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.8rem;
+  font-weight: 700;
+  margin-bottom: 15px;
+  text-shadow: 2px 2px 6px rgba(0,0,0,0.15);
+  color: #f4f1ea;
+}
+
+.confirmation-subtitle {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 400;
+  opacity: 0.95;
+  margin-bottom: 25px;
+  line-height: 1.7;
+  color: #e2dfd7;
+}
+
+.order-info {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+  opacity: 0.95;
+  color: #dcd9d0;
+  font-weight: 600;
+}
+
+.btn-ux {
+  transition: all 0.3s ease;
+  border-radius: 50px;
+  padding: 14px 36px;
+  font-weight: 700;
+  font-family: 'Poppins', sans-serif;
+  text-decoration: none;
+  display: inline-block;
+  margin: 0 12px;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.15);
+  border: none;
+  cursor: pointer;
+}
+
+.btn-primary.btn-ux {
+  background-color: #4a6e4e;
+  color: #f4f1ea;
+}
+
+.btn-primary.btn-ux:hover {
+  background-color: #3b563b;
+  box-shadow: 0 8px 25px rgba(58, 88, 58, 0.5);
+  color: #fff;
+  transform: translateY(-3px);
+}
+
+.btn-outline-secondary.btn-ux {
+  background-color: transparent;
+  border: 2px solid #dcd9d0;
+  color: #dcd9d0;
+}
+
+.btn-outline-secondary.btn-ux:hover {
+  background-color: #dcd9d0;
+  color: #4a6e4e;
+  box-shadow: 0 8px 25px rgba(220, 217, 208, 0.5);
+  transform: translateY(-3px);
+}
+
+.confirmation-section .container {
+  padding: 0 1.5rem;
+  max-width: 600px;
+  width: 100%;
+}

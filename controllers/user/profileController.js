@@ -577,7 +577,7 @@ const editAddress = async (req, res) => {
     const userId = req.session.user || req.user;
     const { name, city, streetAddress, state, pinCode, phone, altPhone, addressType, isDefault } = req.body;
 
-    const isAjax = req.headers['content-type'] === 'application/json';
+    const isAjax = req.headers['content-type']?.includes('application/json');
 
     if (!id) {
       const msg = "Invalid address id";

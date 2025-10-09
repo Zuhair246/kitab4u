@@ -127,20 +127,26 @@ const checkout = async (req,res) => {
         ).lean();
 
         if(!addressDoc || !addressDoc.address[0]) {
-            return res.redirect('/order?error=' + encodeURIComponent("Invalid Address Selection"));
+            return res.redirect('/orders?error=' + encodeURIComponent("Invalid Address Selection"));
         }
         const selectedAddress = addressDoc.address[0];
         selectedAddress.userId = userId;
 
+        const orders = await Order.find({ userId })
+                                .sort({ createdAt: -1 })
+                                .lean();
+
         if(!paymentMethod) {
-            return res.redirect('/order?error=' + encodeURIComponent("Please Select a Payment Method"));
+            return res.redirect('/orders?error=' + encodeURIComponent("Please Select a Payment Method"));
         }
 
         if(paymentMethod === 'COD'){
             const newOrder = new Order({
+            userId,
             orderedItems: items,
             totalPrice: subtotal,
             discount,
+            shippingCharge,
             finalAmount,
             shippingAddress: selectedAddress,
             paymentMethod: "COD",
@@ -161,7 +167,8 @@ const checkout = async (req,res) => {
 
         return res.render('orderSuccess', {
             orderId: newOrder.orderId,
-            user
+            user,
+            orders
         });
         } else if( paymentMethod ==='Online') {
             console.log("Online Payment - We will set in Next Week")
@@ -174,7 +181,95 @@ const checkout = async (req,res) => {
     }
 }
 
+const orderHistory = async (req,res) => {
+    try {
+        const userId = req.session.user || req.user;
+        const user = await User.findById(userId);
+        if(!user) {
+            return res.redirect('/login');
+        }
+
+        const orders = await Order.find({ userId })
+                                .sort({ createdAt: -1 })
+                                .lean();
+        
+        const formattedOrders = orders.map(order => {
+            const orderStatus = [ 'Pending', 'Packed', 'Shipped', 'Out for Delivery','Delivered', 'Cancel Requested', 'Cancelled', 'Return Requested', 'Returned' ];
+            const statusIndex = orderStatus.indexOf(order.status);
+
+            return {
+                ...order,
+                items: order.orderedItems,
+                statusIndex: statusIndex === -1 ? 0 : statusIndex,
+                canCancel: order.status === 'Pending' || order.status === 'Packed',
+                canReturn: order.status === 'Delivered',
+                expectedDeliveryDateFormatted: new Date(
+                    order.createdAt.getTime() + 7 * 24 * 60 * 60 * 1000
+                ).toLocaleDateString("en-IN", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric"
+                })
+            }
+        });
+
+        res.render('orderHistory', { 
+            orders: formattedOrders,
+            user
+        })
+        
+    } catch (error) {
+        console.log('order history page load error:', error);
+        return res.redirect('/pageNotFound')
+    }
+}
+
+const orderDetails = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.session.user || req.user;
+        const user = await User.findById(userId);
+        if(!user) {
+            return res.redirect('/login');
+        }
+
+        const order = await Order.findOne({ _id: id, userId}).lean();
+        if(!order) {
+            return res.redirect('/myOrders')
+        }
+
+        const orderDate = new Date(order.createdAt);
+        const expectedDelivery = new Date(order.createdAt.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+        const formatDate = (date) => date.toLocaleDateString('en-IN', { day: '2-digit' , month: 'short' , year: 'numeric'});
+
+        order.orderDateFormatted = formatDate(orderDate);
+        order.expectedDeliveryDateFormatted = formatDate(expectedDelivery);
+
+        const statusStages = ['Pending', 'Packed', 'Shipped', 'Out for Delivery', 'Delivered'];
+        order.statusIndex = statusStages.indexOf(order.status);
+
+        order.items = order.orderedItems.map(item => ({
+            ...item,
+            totalPrice: item.price * item.quantity
+        }) );
+
+        order.address = order.shippingAddress;
+        order.subtotal = order.totalPrice;
+        order.shippingCharge = order.shippingCharge;
+        res.render('orderDetails', {
+            user,
+            order
+        })
+        
+    } catch (error) {
+        console.log("Order details page error: ", error);
+        return res.redirect('/pageNotFound');
+    }
+}
 module.exports = {
     loadOrderPage,
-    checkout
+    checkout,
+    orderHistory,
+    orderDetails
 }

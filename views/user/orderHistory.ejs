@@ -46,9 +46,13 @@
         <!-- Progress bar (order status) -->
 <hr>
 <!-- Dynamic Progress Bar -->
-<% if (order.status === 'Cancelled' || order.status === 'Cancel Requested') { %>
+<% if (order.status === 'Cancelled') { %>
   <div class="text-center my-4">
     <h5 class="text-danger fw-bold">Order Cancelled</h5>
+  </div>
+  <% } else if (order.status === 'Cancel Requested') { %>
+     <div class="text-center my-4">
+    <h5 class="text-danger fw-bold">Order requested for Cancelling</h5>
   </div>
 <% } else { %>
   <% 

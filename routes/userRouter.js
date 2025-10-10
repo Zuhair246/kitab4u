@@ -70,7 +70,9 @@ router.post('/orders', userStatus, checkProductAvailability, orderController.che
 router.get('/myOrders', userStatus, orderController.orderHistory);
 router.get('/myOrders/:id', userStatus, orderController.orderDetails);
 router.post('/myOrders/:id/cancel', userStatus, orderController.cancelOrder);
+router.post('/myOrders/:orderId/item/:itemId/cancel', userStatus, orderController.cancelSingleItem)
 router.post('/myOrders/:id/return', userStatus, orderController.returnOrder);
+router.get('/myOrders/:id/invoice', userStatus, orderController.downloadInvoice)
 
 
 router.get('/auth/google', passport.authenticate('google',{scope:['profile','email']}));

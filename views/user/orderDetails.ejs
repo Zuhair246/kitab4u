@@ -9,9 +9,20 @@
       <strong>Order ID:</strong> <%= order.orderId %><br>
       <strong>Order Date:</strong> <%= order.orderDateFormatted %><br>
       <strong>Expected Delivery:</strong> <%= order.expectedDeliveryDateFormatted %>
+      <% if(order.status==='Delivered' || order.status==='Returned') { %>
+      <div class="mt-3 ms-3 text-end">
+        <a href="/myOrders/<%= order._id %>/invoice" class="btn btn-success">
+          <i class="bi bi-file-earmark-arrow-down"></i> Download Invoice
+        </a>
+      </div>
+      <% } %>
       <hr>
 <!-- Dynamic Progress Bar -->
-<% if (order.status === 'Cancelled' || order.status === 'Cancel Requested') { %>
+<% if (order.status === 'Cancel Requested') { %>
+  <div class="text-center my-4">
+    <h5 class="text-danger fw-bold">Order requested for Cancelling</h5>
+  </div>
+  <% }else if (order.status === 'Cancelled') { %>
   <div class="text-center my-4">
     <h5 class="text-danger fw-bold">Order Cancelled</h5>
   </div>
@@ -20,7 +31,11 @@
     // Include 'Returned' if the order is returned
     let stages = ['Order Placed','Packed','Shipped','Out for Delivery','Delivered'];
     if (['Return Requested', 'Returned'].includes(order.status)) {
-      stages.push('Returned');
+      if(order.status==='Return Requested') {
+        stages.push('Return Requested');
+      }else{
+        stages.push('Returned');
+      }
     }
   %>
 
@@ -54,7 +69,23 @@
             <span class="badge bg-dark"><%= item.coverType %></span>
             <div class="small">Qty: <%= item.quantity %></div>
           </div>
-          <div class="col-auto text-end fs-5 fw-bold">₹ <%= item.totalPrice %>/-</div>
+          <div class="col-auto text-end fs-5 fw-bold">
+            ₹ <%= item.totalPrice %>/-
+            <br>
+             <% if(['Pending','Packed'].includes(item.itemStatus)) { %>
+        <button class="btn btn-sm btn-outline-danger cancel-item-btn mt-2 fw-bold" data-order-id="<%= order._id %>" data-item-id="<%= item._id %>">
+          Cancel Item
+        </button>
+      <% } else if (item.itemStatus==='Cancel Requested'){ %>
+          <span class="badge text-warning">Item Cancellation Requested</span>
+        <% } else if (item.itemStatus==='Cancelled') {%>
+           <div class="badge text-danger">Item Cancelled</div>
+          <% } else if (item.itemStatus==='Delivered') { %>
+            <button class="btn btn-sm btn-outline-dark return-item-btn mt-2 fw-bold" data-order-id="<%= order._id %>" data-item-id="<%= item._id %>">
+          Return Item
+        </button>
+            <% } %>
+          </div>
         </div>
       <% }) %>
       <hr>
@@ -83,7 +114,9 @@
     </div>
       <div class="mt-3 text-center">
             <% if(order.canCancel) { %>
-              <form action="/myOrders/<%= order._id %>/cancel" method="post"><button class="btn btn-danger btn" id="cancelBtn">Cancel Order</button></form>
+              <form action="/myOrders/<%= order._id %>/cancel" method="post">
+                <button class="btn btn-danger btn" data-bs-toggle="modal" data-bs-target="#returnModal" data-order-id="<%= order._id %>" id="cancelBtn">
+                  Cancel Order </button></form>
             <% } %>
             <% if(order.canReturn) { %>
               <form action="/myOrders/<%= order._id %>/return" method="post"><button class="btn btn-dark btn" id="returnBtn">Return</button></form>
@@ -91,6 +124,41 @@
           </div>
   </div>
 </div>
+
+<!-- Return Modal -->
+<div class="modal fade" id="returnModal" tabindex="-1" aria-labelledby="returnModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      
+      <div class="modal-header">
+        <h5 class="modal-title" id="returnModalLabel">Return Order</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <form id="returnForm" method="post">
+        <div class="modal-body">
+          
+          <div class="mb-3">
+            <label class="form-label">Order ID</label>
+            <input type="text" class="form-control" id="orderIdInput" name="orderId" readonly>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Reason for Return</label>
+            <textarea class="form-control" name="reason" id="returnReason" rows="3" required></textarea>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-dark">Submit</button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+</div>
+
 <%- include('../../views/partials/user/footer') %>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -166,5 +234,50 @@
         }
       });
     }
+  });
+
+  document.querySelectorAll('.cancel-item-btn').forEach(btn => {
+  btn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    const itemId = btn.dataset.itemId;
+    const orderId = btn.dataset.orderId;
+
+    const confirm = await Swal.fire({
+      title: 'Cancel this item?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, cancel it!',
+      cancelButtonText: 'No',
+    });
+
+    if (confirm.isConfirmed) {
+      try {
+        const res = await fetch(`/myOrders/${orderId}/item/${itemId}/cancel`, { method: 'POST' });
+        const data = await res.json();
+        Swal.fire({
+          icon: data.success ? 'success' : 'error',
+          title: data.success ? 'Cancelled!' : 'Oops...',
+          text: data.message,
+          timer: 2000,
+          showConfirmButton: false
+        });
+        if (data.success) setTimeout(() => location.reload(), 2000);
+      } catch (err) {
+        Swal.fire('Error', 'Something went wrong while cancelling!', 'error');
+      }
+    }
+  });
+});
+
+const returnModal = document.getElementById('returnModal');
+  returnModal.addEventListener('show.bs.modal', event => {
+    const button = event.relatedTarget; 
+    const orderId = button.getAttribute('data-order-id');
+
+    document.getElementById('orderIdInput').value = orderId;
+
+    // Update form action dynamically
+    const form = document.getElementById('returnForm');
+    form.action = `/myOrders/${orderId}/return`;
   });
 </script>

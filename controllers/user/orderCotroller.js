@@ -3,7 +3,8 @@ const Product = require('../../models/productSchema');
 const Cart = require('../../models/cartSchema');
 const Address = require('../../models/addressSchema');
 const Order = require('../../models/orderSchema');
-const { path } = require('../../app');
+const path = require('path')
+const PDFDocument = require('pdfkit');
 const { model } = require('mongoose');
 
 const loadOrderPage = async (req, res) => {
@@ -315,6 +316,43 @@ const cancelOrder = async (req, res) => {
     }
 };
 
+const cancelSingleItem = async (req, res) => {
+    try {
+        const userId = req.session.user || req.user;
+        const { orderId, itemId } = req.params;
+console.log(`${orderId}, ${itemId}`);
+
+        const order = await Order.findOne({ _id: orderId, userId });
+        if(!order) {
+            return res.status(404).json({success: false, message: "Order not found"})
+        }
+
+        const item = order.orderedItems.id(itemId);
+        if(!item) {
+            return res.status(404).json({success: false, message: "Item not found"})
+        }
+
+         if (!['Pending', 'Packed'].includes(item.itemStatus)) {
+      return res.status(400).json({ success: false, message: "This item cannot be cancelled after shipping" });
+    }
+
+    item.itemStatus = 'Cancel Requested';
+
+    const allCancelled = order.orderedItems.every(it => it.itemStatus === 'Cancel Requested');
+    if (allCancelled) {
+      order.status = 'Cancel Requested';
+    }
+
+    await order.save();
+
+    return res.json({ success: true, message: `Cancellation requested for "${item.name}"` });
+
+    } catch (error) {
+        console.log("Single item cancel error:", error);
+        return res.redirect('/pageNotFound')
+    }
+}
+
 const returnOrder = async (req, res) => {
     try {
         const userId = req.session.user || req.user;
@@ -349,12 +387,173 @@ const returnOrder = async (req, res) => {
         return res.redirect("/pageNotFound")
     }
 }
+
+const downloadInvoice = async (req, res) => {
+    try {
+        const userId = req.session.user || req.user;
+        const { id } = req.params;
+
+        const order= await Order.findOne({_id: id, userId }).lean();
+        if(!order) {
+            return res.redirect('/myOrders');
+        }
+
+        res.setHeader('Content-Disposition' , `attachement; filename=Invoice-${order.orderId}.pdf`);
+        res.setHeader('Content-Type' , 'application/pdf');
+
+        const doc = new PDFDocument({ margin: 50 });
+        doc.pipe(res);
+
+        doc
+        .fillColor('#c93f1c')
+        .fontSize(25)
+        .font('Times-BoldItalic')
+        .text('INVOICE', { align: 'center' , underline: true});
+        doc.moveDown(1.5);
+
+        doc
+      .fontSize(14)
+      .fillColor('#34495e')
+      .font('Times-Bold')
+      .text('Order Details:', { underline: true })
+      .moveDown(0.5);
+
+        doc.fontSize(12).fillColor('#091fe3')
+                .font('Times-Italic')
+                .text(`Order ID: ${order.orderId}`)
+                .text(`Order Date: ${new Date(order.createdAt).toLocaleDateString('en-IN')}`)
+                .text(`Expected Delivery: ${new Date(order.createdAt.getTime()  + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN')}`)
+                // .text(`Invoice date: ${new Date.now().getTime().toLocaleDateString('en-IN')}`, 350, doc.y, { width: 100, align: 'right' })
+
+        doc.fontSize(12).fillColor("#f90000ff").text(`Order Status: ${order.status}`)
+              .moveDown(1);
+
+        doc
+            .fontSize(14)
+            .fillColor('#34495e')
+            .font('Times-Bold')
+            .text('Customer Information:', { underline: true })
+            .moveDown(0.5);
+
+        doc
+            .fontSize(12)
+            .fillColor('#091fe3')
+            .font('Times-Italic')
+            .text(`Customer Name: ${order.shippingAddress.name}`)
+            .text(`Phone: ${order.shippingAddress.phone}, ${order.shippingAddress.altPhone}`)
+            .text(`Address: ${order.shippingAddress.streetAddress}, ${order.shippingAddress.city} 
+                ${order.shippingAddress.state}, ${order.shippingAddress.pinCode}`)
+            .moveDown(1);
+
+        doc
+            .font('Times-Bold')
+            .fillColor('#34495e')
+            .fontSize(14)
+            .text('Ordered Items: ', {underline: true})
+            .moveDown(0.5);
+
+
+       // Table Header
+    doc
+      .fontSize(12)
+      .fillColor('#2c3e50')
+      .font('Times-Bold')
+      .text('Item', 50, doc.y, { continued: true })
+      .text('Qty', 280, doc.y, { continued: true })
+      .text('Price', 350, doc.y, { continued: true })
+      .text('Total', 450);
+
+    doc.moveDown(0.3);
+    doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke('#aaa');
+    doc.moveDown(0.5);
+
+    // Items
+    doc.font('Times-Roman').fillColor('#000');
+    order.orderedItems.forEach(item => {
+        const itemY = doc.y;
+        const total = item.price * item.quantity;
+
+   doc.text(`${item.name} (${item.coverType})`, 50, itemY, { width: 200 });
+  doc.text(`${item.quantity}`, 300, itemY, { width: 50 });
+  doc.text(`Rs: ${item.price}`, 400, itemY, { width: 80 });
+  doc.text(`Rs: ${total}`, 500, itemY, { width: 100 })
+        .moveDown(0.3);
+    });
+
+    doc.moveDown(1);
+
+    // === Totals ===
+    let currenY = doc.y;
+    doc
+  .fontSize(12)
+  .font('Times-Bold')
+  .fillColor('#2c3e50')
+  .text('Subtotal:', 350, currenY, { continued: true, width: 100, align: 'left' })
+  .font('Times-Roman')
+  .fillColor('#000')
+  .text(`Rs: ${order.totalPrice}`, 450, currenY, { align: 'right' })
+  .moveDown(0.3);
+
+  currenY = doc.y;
+doc
+  .font('Times-Bold')
+  .fillColor('#2c3e50')
+  .text('Shipping Charge:', 350, currenY, { continued: true, width: 100, align: 'left' })
+  .font('Times-Roman')
+  .fillColor('#000')
+  .text(`Rs: ${order.shippingCharge || 0}`, 450, currenY, { align: 'right' })
+  .moveDown(0.3);
+
+  currenY = doc.y;
+doc
+  .font('Times-Bold')
+  .fillColor('#2c3e50')
+  .text('Discount:', 350, currenY, { continued: true, width: 100, align: 'left' })
+  .font('Times-Roman')
+  .fillColor('#fb0000ff')
+  .text(`- Rs: ${order.discount || 0}`, 450, currenY, { align: 'right' })
+  .moveDown(0.3);
+
+doc
+  .moveTo(350, doc.y)
+  .lineTo(550, doc.y)
+  .stroke('#aaa')
+  .moveDown(0.3);
+
+doc
+  .fontSize(14)
+  .font('Times-Bold')
+  .fillColor('#2c3e50')
+  .text('Total Amount:', 350, doc.y, { continued: true, width: 100, align: 'left' })
+  .font('Times-Bold')
+  .fillColor('#000')
+  .text(`Rs: ${order.finalAmount}`, 450, doc.y, { align: 'right' })
+  .moveDown(2);
+
+    // === Footer ===
+    doc
+      .fontSize(10)
+      .fillColor('#c93f1c')
+      .font('Times-Italic')
+      .text('Thank you for shopping with Kitab4U!', { align: 'center' })
+      .text('For queries, contact: support@kitab4u.com', { align: 'center' });
+
+    doc.end();
+
+    } catch (error) {
+        console.log("Invoice download error:", error);
+        return res.redirect('/myOrders')
+    }
+}
+
 module.exports = {
     loadOrderPage,
     checkout,
     orderHistory,
     orderDetails,
     cancelOrder,
-    returnOrder
+    cancelSingleItem,
+    returnOrder,
+    downloadInvoice
 
 }

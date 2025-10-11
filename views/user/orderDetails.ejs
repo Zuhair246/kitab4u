@@ -112,16 +112,66 @@
         <div class="col text-end fw-bold">₹ <%= order.finalAmount %>/-</div>
       </div>
     </div>
-      <div class="mt-3 text-center">
-            <% if(order.canCancel) { %>
-              <form action="/myOrders/<%= order._id %>/cancel" method="post">
-                <button class="btn btn-danger btn" data-bs-toggle="modal" data-bs-target="#returnModal" data-order-id="<%= order._id %>" id="cancelBtn">
-                  Cancel Order </button></form>
-            <% } %>
-            <% if(order.canReturn) { %>
-              <form action="/myOrders/<%= order._id %>/return" method="post"><button class="btn btn-dark btn" id="returnBtn">Return</button></form>
-            <% } %>
-          </div>
+<div class="mt-3 text-center">
+  <% if(order.canCancel) { %>
+    <!-- Cancel Button Trigger -->
+    <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#cancelModal-<%= order._id %>">
+      Cancel Order
+    </button>
+  <% } %>
+
+  <% if(order.canReturn) { %>
+    <!-- Return Button Trigger -->
+    <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#returnModal-<%= order._id %>">
+      Return
+    </button>
+  <% } %>
+</div>
+
+<!-- Cancel Modal -->
+<div class="modal fade" id="cancelModal-<%= order._id %>" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form action="/myOrders/<%= order._id %>/cancel" method="POST">
+        <div class="modal-header">
+          <h5 class="modal-title">Cancel Order - <%= order.orderId %></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <label for="cancelReason-<%= order._id %>" class="form-label">Reason for cancellation</label>
+          <textarea name="reason" id="cancelReason-<%= order._id %>" class="form-control" rows="3" required></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-danger">Confirm Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Return Modal -->
+<div class="modal fade" id="returnModal-<%= order._id %>" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form action="/myOrders/<%= order._id %>/return" method="POST">
+        <div class="modal-header">
+          <h5 class="modal-title">Return Order - <%= order.orderId %></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <label for="returnReason-<%= order._id %>" class="form-label">Reason for return</label>
+          <textarea name="reason" id="returnReason-<%= order._id %>" class="form-control" rows="3" required></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-dark">Confirm Return</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
   </div>
 </div>
 

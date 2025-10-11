@@ -65,8 +65,8 @@ router.post('/cart/remove' , userStatus, checkProductAvailability, cartControlle
 router.post('/cart/update', userStatus, checkProductAvailability, cartController.updateQuantity);
 
 //Order Management
-router.get('/orders', userStatus, checkProductAvailability, orderController.loadOrderPage);
-router.post('/orders', userStatus, checkProductAvailability, orderController.checkout);
+router.get('/orders', orderController.loadOrderPage);
+router.post('/orders', userStatus, orderController.checkout);
 router.get('/myOrders', userStatus, orderController.orderHistory);
 router.get('/myOrders/:id', userStatus, orderController.orderDetails);
 router.post('/myOrders/:id/cancel', userStatus, orderController.cancelOrder);

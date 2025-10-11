@@ -1,0 +1,377 @@
+<%- include('../../views/partials/admin/header') %>
+
+  <div class="col-md-10 p-4" style="background-color: #f8f9fa; min-height: 100vh;">
+  <!-- Page Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2">
+    <h3 class="fw-semibold mb-0">Order Details - <%= order.orderId %></h3>
+    <a href="/admin/userOrders" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left"></i> Back to Orders
+    </a>
+  </div>
+
+  <div class="row g-4">
+    <!-- LEFT COLUMN -->
+    <div class="col-lg-8">
+      <!-- Order Items -->
+      <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-header bg-light">
+          <h5 class="fw-semibold mb-0">Order Items</h5>
+        </div>
+        <div class="card-body">
+          <% if (order.orderedItems && order.orderedItems.length > 0) { %>
+            <% order.orderedItems.forEach(item => { %>
+              <div class="row align-items-center py-3 border-bottom">
+                <div class="col-md-2 text-center">
+                  <img src="<%= item.image || '/images/placeholder-book.jpg' %>" 
+                       class="img-fluid rounded shadow-sm"
+                       style="width: 80px; height: 120px; object-fit: cover;" 
+                       alt="<%= item.name %>">
+                </div>
+                <div class="col-md-3">
+                  <h6 class="fw-semibold mb-1"><%= item.name %></h6>
+                </div>
+                <div class="col-md-2 text-center fw-semibold">
+                  Qty: <%= item.quantity %>
+                </div>
+                <div class="col-md-2 text-center fw-semibold">
+                  ₹<%= item.price %>
+                </div>
+
+                  <!-- Item-Level Status Update --> 
+  <div class="col-md-3 text-center">  
+  <form class="d-inline-block">
+    <select name="status" id="statusSelect-<%= item._id %>" class="form-select form-select-sm mb-2 itemStatus-select" 
+            data-itemid = "<%= item._id %>"
+            data-orderid = "<%= order._id %>"
+            onchange="this.style.backgroundColor=this.options[this.selectedIndex].dataset.color;">
+      <option value="Pending" data-color="#d1ecf1" <%= item.status === 'pending' ? 'selected' : '' %>>Pending</option>
+      <option value="Packed" data-color="#fff3cd" <%= item.status === 'packed' ? 'selected' : '' %>>Packed</option>
+      <option value="Shipped" data-color="#cce5ff" <%= item.status === 'shipped' ? 'selected' : '' %>>Shipped</option>
+      <option value="Out for Delivery" data-color="#ffeeba" <%= item.status === 'out_for_delivery' ? 'selected' : '' %>>Out for Delivery</option>
+      <option value="Delivered" data-color="#d4edda" <%= item.status === 'delivered' ? 'selected' : '' %>>Delivered</option>
+    </select>
+
+    <div class="d-flex justify-content-center gap-1">
+      <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#returnModal-<%= item._id %>">Return</button>
+      <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#cancelModal-<%= item._id %>">Cancel</button>
+    </div>
+    
+    <button type="button" class="btn btn-primary btn-sm mt-2 update-itemStatus-btn"
+                    data-itemid="<%= item._id %>"
+                    data-orderid="<%= order._id %>">Update Status</button>
+  </form>
+</div>
+              </div>
+
+              <!-- Return Modal -->
+                <div class="modal fade" id="returnModal-<%= item._id %>" tabindex="-1">
+                  <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                      <form action="/admin/orders/<%= order._id %>/item/<%= item._id %>/return" method="POST">
+                        <div class="modal-header">
+                          <h5 class="modal-title">Return Requested - <%= item.name %></h5>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                          <label for="returnReason-<%= item._id %>" class="form-label">Reason for return</label>
+                          <textarea name="reason" id="returnReason-<%= item._id %>" class="form-control" rows="3" required></textarea>
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                          <button type="submit" name="action" value="approve" class="btn btn-secondary">Approve Return</button>
+                          <button type="submit" name="action" value="reject" class="btn btn-danger">Reject Return</button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Cancel Modal -->
+                <div class="modal fade" id="cancelModal-<%= item._id %>" tabindex="-1">
+                  <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                      <form action="/admin/orders/<%= order._id %>/item/<%= item._id %>/cancel" method="POST">
+                        <div class="modal-header">
+                          <h5 class="modal-title">Cancel Requested - <%= item.name %></h5>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                          <label for="cancelReason-<%= item._id %>" class="form-label">Reason for cancellation</label>
+                          <textarea name="reason" id="cancelReason-<%= item._id %>" class="form-control" rows="3" required></textarea>
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                          <button type="submit" name="action" value="approve" class="btn btn-danger">Approve Cancel</button>
+                          <button type="submit" name="action" value="reject" class="btn btn-secondary">Reject Cancel</button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+
+            <% }) %>
+          <% } else { %>
+            <p class="text-center text-muted py-4">No items in this order.</p>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- Order-Level Status Update -->
+      <div class="card mt-4 shadow-sm border-0 rounded-3">
+  <div class="card-header bg-light">
+    <h5 class="fw-semibold mb-0">Order-Level Status Update</h5>
+  </div>
+  <div class="card-body text-center order-status-form">
+    <form class="d-inline-block">
+      <select name="status" id="orderStatusSelect-<%= order._id %>" class="form-select form-select-sm mb-2 status-select"
+              onchange="this.style.backgroundColor=this.options[this.selectedIndex].dataset.color;" data-id="<%= order._id %>">
+        <option value="Pending" data-color="#d1ecf1" <%= order.status === 'Pending' ? 'selected' : '' %>>Pending</option>
+        <option value="Packed" data-color="#fff3cd" <%= order.status === 'Packed' ? 'selected' : '' %>>Packed</option>
+        <option value="Shipped" data-color="#cce5ff" <%= order.status === 'Shipped' ? 'selected' : '' %>>Shipped</option>
+        <option value="Out for Delivery" data-color="#ffeeba" <%= order.status === 'Out for Delivery' ? 'selected' : '' %>>Out for Delivery</option>
+        <option value="Delivered" data-color="#d4edda" <%= order.status === 'Delivered' ? 'selected' : '' %>>Delivered</option>
+      </select>
+
+      <div class="mt-3 d-flex justify-content-center gap-2">
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#orderReturnModal">Return</button>
+        <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#orderCancelModal">Cancel</button>
+      </div>
+
+      <button type="button" class="btn btn-primary btn-sm mt-2 update-status-btn" data-id="<%= order._id %>">Update Status</button>
+    </form>
+  </div>
+</div>
+    </div>
+
+    <!-- Order Return Modal -->
+<div class="modal fade" id="orderReturnModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form action="/admin/orders/<%= order._id %>/return" method="POST">
+        <div class="modal-header">
+          <h5 class="modal-title">Return Requested - Order <%= order.orderId %></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <label for="orderReturnReason" class="form-label">Reason for return</label>
+          <textarea name="reason" id="orderReturnReason" class="form-control" rows="3" required></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="submit" name="action" value="approve" class="btn btn-secondary">Approve Return</button>
+          <button type="submit" name="action" value="reject" class="btn btn-danger">Reject Return</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Order Cancel Modal -->
+<div class="modal fade" id="orderCancelModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form action="/admin/orders/<%= order._id %>/cancel" method="POST">
+        <div class="modal-header">
+          <h5 class="modal-title">Cancel Requested - Order <%= order.orderId %></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <label for="orderCancelReason" class="form-label">Reason for cancellation</label>
+          <textarea name="reason" id="orderCancelReason" class="form-control" rows="3" required></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="submit" name="action" value="approve" class="btn btn-danger">Approve Cancel</button>
+          <button type="submit" name="action" value="reject" class="btn btn-secondary">Reject Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="col-lg-4">
+      <div class="card shadow-sm border-0 rounded-3 mb-4">
+        <div class="card-header bg-light">
+          <h5 class="fw-semibold mb-0">Shipping Details</h5>
+        </div>
+        <div class="card-body">
+          <p class="fw-semibold mb-1"><%= order.shippingAddress.name %></p>
+          <p class="mb-1"><%= order.shippingAddress.streetAddress %></p>
+          <p class="mb-1"><%= order.shippingAddress.city %>, <%= order.shippingAddress.state %> - <%= order.shippingAddress.pinCode %></p>
+          <p class="small text-muted mb-0">📞 <%= order.shippingAddress.phone %></p>
+        </div>
+      </div>
+
+      <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-header bg-light">
+          <h5 class="fw-semibold mb-0">Price Details</h5>
+        </div>
+        <div class="card-body">
+          <div class="d-flex justify-content-between mb-2">
+            <span>Items Total (<%= order.orderedItems.length %> items) :</span>
+            <span>₹ <%= order.totalPrice %></span>
+          </div>
+          <div class="d-flex justify-content-between mb-2">
+            <span>Delivery Charges:</span>
+            <span class="text-success">₹ <%= order.shippingCharge %></span>
+          </div>
+          <div class="d-flex justify-content-between mb-2">
+            <span>Coupon Discount: </span>
+            <span>₹ <%= order.discount %></span>
+          </div>
+          <!-- <div class="d-flex justify-content-between mb-2">
+            <span>Delivery Tip</span>
+            <span>₹<%= order.deliveryTip %></span>
+          </div> -->
+          <hr>
+          <div class="d-flex justify-content-between fw-bold">
+            <span>Total</span>
+            <span>₹<%= order.finalAmount %></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../../views/partials/admin/footer') %>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  // Set initial color for each dropdown on page load
+  document.addEventListener('DOMContentLoaded', () => {
+    const select = document.getElementById('statusSelect-<%= order.orderedItems._id %>');
+    if(select) select.style.backgroundColor = select.options[select.selectedIndex].dataset.color;
+  });
+
+  // Set initial color for dropdown on page load
+  document.addEventListener('DOMContentLoaded', () => {
+    const orderSelect = document.getElementById('orderStatusSelect');
+    if(orderSelect) orderSelect.style.backgroundColor = orderSelect.options[orderSelect.selectedIndex].dataset.color;
+  });
+
+  //Swal messages with AJAX for Order Level
+document.addEventListener('DOMContentLoaded', () => {
+  const updateButtons = document.querySelectorAll('.update-status-btn');
+
+  updateButtons.forEach(button => {
+    button.addEventListener('click', async (e) => {
+      const orderId = e.target.dataset.id;
+      const statusSelect = document.querySelector(`.status-select[data-id="${orderId}"]`);
+      const newStatus = statusSelect.value;
+
+      const confirm = await Swal.fire({
+        title: 'Update Order Status ?',
+        text: `Are you sure you want to change the status to "${newStatus}"?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, update it!',
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: '#000',
+        cancelButtonColor: '#6c757d'
+      });
+
+      if (confirm.isConfirmed) {
+        try {
+          const response = await fetch(`/admin/userOrders/${orderId}/updateStatus`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: newStatus })
+          });
+
+          const result = await response.json();
+
+          if (result.success) {
+            Swal.fire({
+              icon: 'success',
+              title: 'Status Updated',
+              text: result.message,
+              timer: 1500,
+              showConfirmButton: false
+            });
+
+            // Optional: reload to reflect badge color change
+            setTimeout(() => window.location.reload(), 1600);
+          } else {
+            Swal.fire({
+              icon: 'error',
+              title: 'Update Failed',
+              text: result.message
+            });
+          }
+        } catch (error) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Server Error',
+            text: 'Something went wrong. Please try again later.'
+          });
+        }
+      }
+    });
+  });
+});
+
+//Swal messages with AJAX for ITEM LEVEL
+document.addEventListener('DOMContentLoaded', () => {
+  const updateButtons = document.querySelectorAll('.update-itemStatus-btn');
+
+  updateButtons.forEach(button => {
+    button.addEventListener('click', async (e) => {
+      const itemId = e.target.dataset.itemid;
+      const orderId = e.target.dataset.orderid;
+      const statusSelect = document.querySelector(`.itemStatus-select[data-itemid="${itemId}"]`);
+      const newStatus = statusSelect.value;
+
+      const confirm = await Swal.fire({
+        title: 'Update Order Status ?',
+        text: `Are you sure you want to change the status to "${newStatus}"?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, update it!',
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: '#000',
+        cancelButtonColor: '#6c757d'
+      });
+
+      if (confirm.isConfirmed) {
+        try {
+          const response = await fetch(`/admin/userOrders/${orderId}/item/${itemId}/status`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: newStatus })
+          });
+
+          const result = await response.json();
+
+          if (result.success) {
+          statusSelect.value = newStatus;
+          statusSelect.style.backgroundColor = statusSelect.options[statusSelect.selectedIndex].dataset.color;
+            Swal.fire({
+              icon: 'success',
+              title: 'Status Updated',
+              text: result.message,
+              timer: 1500,
+              showConfirmButton: false
+            });
+
+          } else {
+            Swal.fire({
+              icon: 'error',
+              title: 'Update Failed',
+              text: result.message
+            });
+          }
+        } catch (error) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Server Error',
+            text: 'Something went wrong. Please try again later.'
+          });
+        }
+      }
+    });
+  });
+});
+
+</script>

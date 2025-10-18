@@ -3,7 +3,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" />
 </head>
 
-<!-- Main Content Area for Add/Edit Product -->
+<!-- Main Content Area for Edit Product -->
 <div class="col-md-10">
     <!-- Page Header -->
     <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
@@ -59,14 +59,14 @@
                             <label for="publisher" class="form-label fw-semibold">Publisher *</label>
                             <input type="text" class="form-control form-control-lg" id="publisher" name="publisher" 
                                    placeholder="Book Publisher" 
-                                   value="<%= typeof product !== 'undefined' ? product.publisher : '' %>">
+                                   value="<%= typeof product !== 'undefined' ? product.publisher : '' %>" maxlength="50">
                         </div>
 
                         <!-- Book Description -->
                         <div class="mb-4">
                             <label for="bookDescription" class="form-label fw-semibold">Book Description *</label>
                             <textarea class="form-control" id="bookDescription" name="description" rows="4" 
-                                      placeholder="Write your description here..."><%= typeof product !== 'undefined' ? product.description : '' %></textarea>
+                                      placeholder="Write your description here..." maxlength="1000"><%= typeof product !== 'undefined' ? product.description : '' %></textarea>
                         </div>
 
                         <!-- Product Images -->
@@ -122,7 +122,7 @@
                                 name="pages" 
                                 placeholder="Total Pages"
                                 min="1"
-                                value="<%= typeof product !== 'undefined' ? product.pages : '' %>">
+                                value="<%= typeof product !== 'undefined' ? product.pages : '' %>" maxlength="4" pattern="[0-9]{4}">
                             </div>
                         </div>
 
@@ -204,17 +204,17 @@ function addCoverType(existing = null) {
             <div class="col-md-3">
                 <input type="number" class="form-control" name="variants[${index}][originalPrice]" 
                        placeholder="Original Price" min="0" step="0.01"
-                       value="${existing ? existing.originalPrice : ''}">
+                       value="${existing ? existing.originalPrice : ''}" maxlength="4" pattern="[0-9]{4}">
             </div>
             <div class="col-md-3">
                 <input type="number" class="form-control" name="variants[${index}][discountPrice]" 
                        placeholder="Discount Price" min="0" step="0.01"
-                       value="${existing ? existing.discountPrice : ''}">
+                       value="${existing ? existing.discountPrice : ''}" maxlength="4" pattern="[0-9]{4}>
             </div>
             <div class="col-md-2">
                 <input type="number" class="form-control" name="variants[${index}][stock]" 
                        placeholder="Stock" min="0" required
-                       value="${existing ? existing.stock : ''}">
+                       value="${existing ? existing.stock : ''}" maxlength="3" pattern="[0-9]{3}>
             </div>
         </div>
     `;

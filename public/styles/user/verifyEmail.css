@@ -18,3 +18,10 @@
   .min-vh-100 {
     min-height: 100vh;
   }
+  .login-link {
+      color: #f7931e;
+      text-decoration: none;
+  }
+  .login-link:hover {
+    text-decoration: underline;
+  }

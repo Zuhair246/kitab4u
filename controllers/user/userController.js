@@ -335,7 +335,7 @@ const login = async (req,res) => {
         const passwordMatch = await bcrypt.compare(password, findUser.password)
 
         if(!passwordMatch) {
-            return res.render("login", {message: "Incorrect Password"})
+            return res.render("login", {message: "Incorrect Email or Password"})
         }
 
         req.session.user = {
@@ -356,16 +356,8 @@ const login = async (req,res) => {
 
 const logout = async (req,res) => {
     try {
-        
-        req.session.destroy((err)=> {
-            if(err) {
-                console.log("Session destruction error", err.message);
-                return res.redirect('/pageNotFound')
-            } else {
-            return res.redirect('/login')
-            }
-        })
-
+        delete req.session.user
+        return res.redirect('/login')
     } catch (error) {
         console.log("Logout error", error);
         res.redirect('/pageNotFound')
@@ -388,8 +380,8 @@ const loadVerifyEmail = async (req,res) => {
 
 const verifyEmail = async (req,res) => {
     try {
-        const {email} = req.body;
-
+      const {email} = req.body;
+      const user = await User.findOne({email})
         if(!email){
             req.flash('error', "Enter the email")
           return  res.redirect('/verifyEmail')
@@ -399,10 +391,16 @@ const verifyEmail = async (req,res) => {
         req.flash("error", "Invalid Email");
         return res.redirect("/verifyEmail");
     }
+    if(user.googleId){
+      req.flash("error", "Google user can't reset password")
+       return res.redirect("/verifyEmail");
+    }else if(user.isBlocked){
+      req.flash('error', "Blocked user cannot reset password");
+      return res.redirect('/verifyEmail')
+    }
 
-        const emailExist = await User.findOne({email})
-        if(emailExist){
-            const otp = generateOtp()
+    if(user){
+        const otp = generateOtp()
         const emailSent = await sendVerificationEmail(email,otp);
         if(!emailSent) {
             req.flash('error', "OTP didn't send. Network issue..!")
@@ -412,7 +410,6 @@ const verifyEmail = async (req,res) => {
         req.session.otpExpiry = Date.now() + 2 * 60 * 1000;
         req.session.userData = {email};
         console.log(req.session.userData);
-        
         
         console.log("Forgot password OTP:", otp);
         req.flash('success', "OTP sent to your email!");
@@ -525,7 +522,7 @@ const newPassword = async (req,res) => {
 
 const loadShoppingPage = async (req, res) => {
   try {
-    const user = req.session.user;
+    const user = req.session.user || req.user;
     const userData = user ? await User.findById(user) : null;
 
     const categories = await Category.find({ isListed: true });

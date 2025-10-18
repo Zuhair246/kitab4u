@@ -6,7 +6,7 @@ const { default: mongoose } = require("mongoose");
 
 const loadCart = async (req, res) => {
   try {
-    const userId = req.session.user;
+    const userId = req.session.user || req.user;
     const user = await User.findById(userId);
 
     if (!user) {

@@ -40,9 +40,9 @@
 <% } %>
 
                 <form action="/signup" method="POST" onsubmit="disableButton()">
-                    <input type="text" class="form-control" name="name" value="<%= formData ? formData.name : '' %>" placeholder="Name" id="name">
+                    <input type="text" class="form-control" name="name" value="<%= formData ? formData.name : '' %>" placeholder="Name" id="name" maxlength="20">
                     <input type="text" class="form-control" name="email" value="<%= formData ? formData.email : '' %>" placeholder="Email Address" id="email">
-                    <input type="tel" class="form-control" name="phone" value="<%= formData ? formData.phone : '' %>" placeholder="Phone Number" id="phone">
+                    <input type="tel" class="form-control" name="phone" value="<%= formData ? formData.phone : '' %>" placeholder="Phone Number" id="phone" maxlength="10" pattern="[0-9]{10}">
                     <input type="password" class="form-control" name="password" value="<%= formData ? formData.password : '' %>" placeholder="Password" id="password">
                     <input type="password" class="form-control" name="confirmPassword" placeholder="Confirm Password" id="confirmPassword">
                     

@@ -44,7 +44,7 @@
   <!-- Right Panel -->
   <div class="col-12 col-lg-6 d-flex align-items-center justify-content-center p-4">
     <div class="w-100" style="max-width: 400px;">
-      <h2 class="form-title">ADMIN LOG IN TO KITAB4U</h2>
+      <h2 class="form-title fw-bold">ADMIN LOG IN <br> <i>KITAB4U</ii></h2>
       <br>
 
       <% if (locals.message && message.length>0) { %>
@@ -56,7 +56,7 @@
       <form action="/admin" method="POST"> 
         <input type="text" class="form-control mb-3" name="email" placeholder="Admin" id="email" value="admin@kitab4u.in">
         <input type="password" class="form-control mb-3" name="password" placeholder="Password" id="password" value="kitab@246">
-        <button type="submit" class="btn create-btn">Login</button>
+        <button type="submit" class="btn create-btn rounded-pill">Login</button>
       </form>
     </div>
   </div>

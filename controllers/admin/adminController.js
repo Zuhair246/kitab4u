@@ -51,14 +51,8 @@ const loadDashboard = async (req, res) => {
 
  const logout = async (req,res) => {
     try {
-        req.session.destroy((err)=>{
-            if(err){
-                console.log("Admin session destroying error:", err);
-                return res.redirect('/pageNotFound')
-            }else {
-                res.redirect('/admin')
-            }
-        })
+        req.session.admin = null;
+        return res.redirect('/admin');
     } catch (error) {
         console.log("Unexpexxted server error during admin logout:", error);
         res.redirect('/pageNotFound')

@@ -65,19 +65,20 @@ router.post('/cart/remove' , userStatus, checkProductAvailability, cartControlle
 router.post('/cart/update', userStatus, checkProductAvailability, cartController.updateQuantity);
 
 //Order Management
-router.get('/orders', orderController.loadOrderPage);
+router.get('/orders', userStatus,orderController.loadOrderPage);
 router.post('/orders', userStatus, orderController.checkout);
 router.get('/myOrders', userStatus, orderController.orderHistory);
 router.get('/myOrders/:id', userStatus, orderController.orderDetails);
 router.post('/myOrders/:id/cancel', userStatus, orderController.cancelOrder);
 router.post('/myOrders/:orderId/item/:itemId/cancel', userStatus, orderController.cancelSingleItem)
 router.post('/myOrders/:id/return', userStatus, orderController.returnOrder);
-router.get('/myOrders/:id/invoice', userStatus, orderController.downloadInvoice)
+router.get('/myOrders/:id/invoice', userStatus, orderController.downloadInvoice);
 
 
-router.get('/auth/google', passport.authenticate('google',{scope:['profile','email']}));
 
-router.get('/google/callback', passport.authenticate('google', {failureRedirect:'/login'}), (req,res)=>{
+router.get('/auth/google', passport.authenticate('google', {scope:['profile','email']}));
+
+router.get('/google/callback', passport.authenticate('google',{failureRedirect:'/login'}), userStatus,(req,res)=>{
     res.redirect('/')
 });
 

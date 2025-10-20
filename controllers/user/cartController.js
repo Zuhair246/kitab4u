@@ -79,7 +79,7 @@ const addTocart = async (req, res) => {
       !product.categoryId ||
       !product.categoryId.isListed
     ) {
-      console.log("if product blocked");
+      console.log("if product/category blocked");
       return res.redirect(
         "/cart?error=" + encodeURIComponent("This product is not available")
       );
@@ -141,18 +141,20 @@ console.log("cart items:", cartItem);
 
 const removeFromCart = async (req, res) => {
   try {
+    console.log("🛒 API reached! Product ID:", req.body.productId);
     const userId = req.session.user;
     const { productId, variantId } = req.body;
 
-  await Cart.findOneAndUpdate(
-      { userId },
-      { $pull: { items: { productId: productId, variantId: variantId } } },
-      { new: true }
+          await Cart.findOneAndUpdate(
+          { userId },
+          { $pull: { items: { productId: productId, variantId: variantId } } },
+          { new: true }
     );
     return res.json({ success: true });
+
   } catch (error) {
     console.log("cart item removig error:", error);
-    res.redirect("/pageNotFound");
+    return res.status(500).json({success: false, message: "Server error while removing item"})
   }
 };
 
@@ -173,6 +175,10 @@ const updateQuantity = async (req, res) => {
       return res.redirect(
         "/cart?error=" + encodeURIComponent("Item not in cart")
       );
+
+    if(cartItem.productId.isBlocked){
+      return res.redirect('/cart?error='+encodeURIComponent("Item is Unlisted \nRemove it from the cart"))
+    }
 
 const variant = cartItem.productId.variants.find(
   v => v._id.toString() === cartItem.variantId.toString()

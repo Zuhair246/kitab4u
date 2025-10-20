@@ -40,11 +40,8 @@
                         <h6 class="mb-1 fw-semibold"><%= item.productId.name %></h6>
                         <p class="mb-1 text-muted small"><%= item.productId.coverType %></p>
                         <p class="mb-1 text-muted small">by <%= item.productId.author %></p>
-                        <% if (item.productId.format) { %>
-                          <span class="badge bg-dark small"><%= item.productId.format %></span>
-                        <% } %>
-                        <% if (item.productId.inStock) { %>
-                          <span class="badge bg-success small ms-1">In Stock</span>
+                        <% if (item.productId.isBlocked) { %>
+                          <span class="badge bg-danger small">Unavailable</span>
                         <% } %>
                         <br>
                         <button class="btn btn-link text-muted p-0 mt-2 small text-decoration-none" 
@@ -130,11 +127,13 @@
 <script>
 
 document.addEventListener("DOMContentLoaded", function() {
-  <% if (error) { %>
+  const urlParams =new URLSearchParams(window.location.search);
+  const error = urlParams.get('error');
+   if (error) { 
     Swal.fire({
       icon: "error",
       title: "Oops...",
-      text: "<%= error %>",
+      text: decodeURIComponent(error),
       confirmButtonColor: "#3085d6"
     }).then(() => {
       // Remove ?error=... from URL without reload
@@ -142,7 +141,7 @@ document.addEventListener("DOMContentLoaded", function() {
       url.searchParams.delete("error");
       window.history.replaceState({}, document.title, url.pathname);
     });
-  <% } %>
+   } 
 });
 
 function updateQuantity(productId, variantId, change) {
@@ -168,6 +167,8 @@ let action = change === 1 ? "inc" : "dec";
 }
 
 function removeItem(productId, variantId) {
+  console.log(productId);
+  
   Swal.fire({
     title: "Are you sure?",
     text: "Do you want to remove this item from your cart?",
@@ -197,6 +198,13 @@ function removeItem(productId, variantId) {
           }).then(() => {
             window.location.reload();
           });
+        }else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: data.message || "Unable to remove the item!",
+            confirmButtonColor: "#3085d6"
+          })
         }
       })
       .catch(error => {
@@ -204,7 +212,7 @@ function removeItem(productId, variantId) {
         Swal.fire({
           icon: "error",
           title: "Oops...",
-          text: "Something went wrong while removing the item.",
+          text: error.message || "Something went wrong while removing the item.",
           confirmButtonColor: "#3085d6"
         });
       });

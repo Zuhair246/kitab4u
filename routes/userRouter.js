@@ -61,8 +61,8 @@ router.post('/profile/address/edit/:id', userStatus, profileController.editAddre
 //Cart Management
 router.get('/cart', cartController.loadCart);
 router.post('/cart', userStatus, checkProductAvailability, cartController.addTocart);
-router.post('/cart/remove' , userStatus, checkProductAvailability, cartController.removeFromCart)
-router.post('/cart/update', userStatus, checkProductAvailability, cartController.updateQuantity);
+router.post('/cart/remove' , userStatus, cartController.removeFromCart)
+router.post('/cart/update', userStatus, cartController.updateQuantity);
 
 //Order Management
 router.get('/orders', userStatus,orderController.loadOrderPage);

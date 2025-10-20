@@ -29,6 +29,9 @@ const profile = async (req,res) => {
 const editProfile = async (req,res) => {
   try {
     const userId = req.session.user || req.user;
+    if(!userId){
+      return res.redirect('/login')
+    }
     const userData = await User.findById(userId)
     res.render('editProfile', {
         user: userData,
@@ -47,7 +50,9 @@ const updateProfile = async (req,res) => {
   try {
     const userId = req.session.user || req.user;
     const {name, email, phone} = req.body;
-
+    if(!userId){
+      return res.redirect('/login')
+    }
     const user = await User.findById(userId)
 
     let updated = false;
@@ -116,6 +121,9 @@ const verifyOtp = async (req,res) => {
   try {
     const {otp} = req.body;
     const userId = req.session.user;
+    if(!userId){
+      return res.redirect('/login')
+    }
     const user = await User.findById(userId)
     if(otp === req.session.userOtp) {
       user.email = req.session.pendingEmail;
@@ -204,6 +212,9 @@ const resendOtp = async (req, res) => {
 const loadChangePassword = async (req,res) => {
   try {
     const userId = req.session.user;
+    if(!userId){
+      return res.redirect('/login')
+    }
     const user = await User.findById(userId)
     res.render('changePassword', {
       user,
@@ -221,6 +232,9 @@ const changePassword = async (req,res) => {
   try {
     const {oldPassword, newPassword, confirmPassword} = req.body;
     const userId = req.session.user;
+    if(!userId){
+      return res.redirect('/login')
+      }
     const user = await User.findById(userId)
     const passwordMatch = await bcrypt.compare(oldPassword, user.password)
 
@@ -275,6 +289,9 @@ const changePassword = async (req,res) => {
 const loadForgotOldPassword = async (req, res) => {
   try {
     const userId = req.session.user;
+     if(!userId){
+      return res.redirect('/login')
+    }
     const user = await User.findById(userId);
     res.render('forgotOldPassword', {
             user,
@@ -291,6 +308,9 @@ const loadForgotOldPassword = async (req, res) => {
 const forgotOldPassword = async (req,res) => {
   try {
     const userId = req.session.user;
+    if(!userId){
+      return res.redirect('/login')
+    }
     const user = await User.findById(userId);
     const email = user.email;
     const otp = generateOtp();
@@ -317,6 +337,9 @@ const forgotOldPassword = async (req,res) => {
 const setNewPassword = async (req, res) => {
   try {
     const userId = req.session.user;
+    if(!userId){
+      return res.redirect('/login')
+    }
     const user = await User.findById(userId);
 
     const {otp, newPassword, confirmPassword} = req.body;
@@ -363,6 +386,9 @@ const updateProfileImage = async (req, res) => {
     }
 
     const userId = req.session.user || req.user;
+    if(!userId){
+    return res.redirect('/login')
+    }
     const user = await User.findById(userId);
 
     const uploadDir = path.resolve(__dirname, "../../public/uploads/profile");
@@ -402,6 +428,9 @@ const updateProfileImage = async (req, res) => {
  const address = async (req, res) => {
   try {
     const userId = req.session.user || req.user;
+    if(!userId){
+    return res.redirect('/login')
+    }
     const user = await User.findById(userId);
 
     const page = parseInt(req.query.page) || 1;
@@ -436,6 +465,9 @@ const updateProfileImage = async (req, res) => {
  const loadAddAddress = async (req,res) => {
   try {
     const userId = req.session.user || req.user;
+    if(!userId){
+      return res.redirect('/login')
+    }
     const user = await User.findById(userId);
 
      res.render('addAddress', {
@@ -454,6 +486,9 @@ const updateProfileImage = async (req, res) => {
  const addAddress = async (req,res) => {
   try {
     const userId = req.session.user || req.user;
+    if(!userId){
+      return res.redirect('/login')
+    }
     const userData = await User.findById(userId);
     const {name, city, streetAddress, state, pinCode, phone, altPhone, addressType, isDefault} = req.body;
     
@@ -575,6 +610,9 @@ const editAddress = async (req, res) => {
   try {
     const id = req.params.id; 
     const userId = req.session.user || req.user;
+    if(!userId){
+        return res.redirect('/login')
+    }
     const { name, city, streetAddress, state, pinCode, phone, altPhone, addressType, isDefault } = req.body;
 
     const isAjax = req.headers['content-type']?.includes('application/json');

@@ -48,9 +48,14 @@ const loadOrderPage = async (req, res) => {
                 quantity: item.quantity,
                 price: price,
                 image: image,
-                totalPrice: item.quantity * price
+                totalPrice: item.quantity * price,
+                isBlocked: product.isBlocked
              }
         });
+
+        if(items.some(item => item.isBlocked)){
+            return res.redirect('/cart?error='+encodeURIComponent("Some of your products are unavailable \nPlease remove it and proceed"))
+        }
 
         const subtotal = items.reduce((sum, item) => sum + item.totalPrice, 0);
         let shippingCharge = 0;
@@ -110,9 +115,14 @@ const checkout = async (req,res) => {
                 quantity: item.quantity,
                 price: price,
                 totalPrice: item.quantity * price,
-                image: image
+                image: image,
+                isBlocked: product.isBlocked
              }
         });
+
+        if(items.some(item => item.isBlocked)){
+            return res.redirect('/cart?error='+encodeURIComponent("Some of your products are Un-available, Please remove it and proceed !"))
+        }
 
         const subtotal = items.reduce((sum, item) => sum + item.totalPrice, 0);
         let shippingCharge = 0;

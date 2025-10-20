@@ -1,4 +1,5 @@
 const Product = require("../models/productSchema");
+const Cart = require('../models/cartSchema');
 
 const checkProductAvailability = async (req, res, next) => {
   try {
@@ -15,7 +16,7 @@ const checkProductAvailability = async (req, res, next) => {
     }
 
     if (product.isBlocked) {
-      return res.redirect("/shop?error="+ encodeURIComponent("Product has been removed by the admin"));
+      return res.redirect("/shop?error="+ encodeURIComponent("Product has been Unlisted by the admin"));
     } 
 
     const hasStock = product.variants.some((variant) => variant.stock > 0);

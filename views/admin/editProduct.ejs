@@ -181,7 +181,7 @@ function removeExistingImage(index) {
 }
 
 
-// Add new cover type row dynamically
+// Edit / Add new cover type row dynamically
 function addCoverType(existing = null) {
     const container = document.getElementById("coverTypeContainer");
 
@@ -204,17 +204,17 @@ function addCoverType(existing = null) {
             <div class="col-md-3">
                 <input type="number" class="form-control" name="variants[${index}][originalPrice]" 
                        placeholder="Original Price" min="0" step="0.01"
-                       value="${existing ? existing.originalPrice : ''}" maxlength="4" pattern="[0-9]{4}">
+                       value="${existing ?.originalPrice ?? ''}" maxlength="4" pattern="[0-9]{4}">
             </div>
             <div class="col-md-3">
                 <input type="number" class="form-control" name="variants[${index}][discountPrice]" 
                        placeholder="Discount Price" min="0" step="0.01"
-                       value="${existing ? existing.discountPrice : ''}" maxlength="4" pattern="[0-9]{4}>
+                       value="${existing ?.discountPrice ?? ''}" maxlength="4" pattern="[0-9]{4}">
             </div>
             <div class="col-md-2">
                 <input type="number" class="form-control" name="variants[${index}][stock]" 
                        placeholder="Stock" min="0" required
-                       value="${existing ? existing.stock : ''}" maxlength="3" pattern="[0-9]{3}>
+                       value="${existing ?.stock ?? ''}" maxlength="3" pattern="[0-9]{3}">
             </div>
         </div>
     `;

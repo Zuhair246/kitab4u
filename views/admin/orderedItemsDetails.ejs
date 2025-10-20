@@ -40,25 +40,14 @@
                   <!-- Item-Level Status Update --> 
   <div class="col-md-3 text-center">  
   <form class="d-inline-block">
-    <select name="status" id="statusSelect-<%= item._id %>" class="form-select form-select-sm mb-2 itemStatus-select" 
-            data-itemid = "<%= item._id %>"
-            data-orderid = "<%= order._id %>"
-            onchange="this.style.backgroundColor=this.options[this.selectedIndex].dataset.color;">
-      <option value="Pending" data-color="#d1ecf1" <%= item.status === 'pending' ? 'selected' : '' %>>Pending</option>
-      <option value="Packed" data-color="#fff3cd" <%= item.status === 'packed' ? 'selected' : '' %>>Packed</option>
-      <option value="Shipped" data-color="#cce5ff" <%= item.status === 'shipped' ? 'selected' : '' %>>Shipped</option>
-      <option value="Out for Delivery" data-color="#ffeeba" <%= item.status === 'out_for_delivery' ? 'selected' : '' %>>Out for Delivery</option>
-      <option value="Delivered" data-color="#d4edda" <%= item.status === 'delivered' ? 'selected' : '' %>>Delivered</option>
-    </select>
+
+    <span class="badge bg-info mb-3 text-dark"><%= item.itemStatus %></span>
 
     <div class="d-flex justify-content-center gap-1">
       <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#returnModal-<%= item._id %>">Return</button>
       <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#cancelModal-<%= item._id %>">Cancel</button>
     </div>
     
-    <button type="button" class="btn btn-primary btn-sm mt-2 update-itemStatus-btn"
-                    data-itemid="<%= item._id %>"
-                    data-orderid="<%= order._id %>">Update Status</button>
   </form>
 </div>
               </div>

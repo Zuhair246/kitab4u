@@ -533,14 +533,13 @@ const loadShoppingPage = async (req, res) => {
     const skip = (page - 1) * limit;
 
     const searchQuery = req.query.q ? req.query.q.trim() : "";
-    const selectedCategory = req.query.category || null;
+    const selectedCategory = req.params.category || req.query.category || null;
     const selectedPriceRange = req.query.priceRange || null;
     const sortOption = req.query.sort || null;
 
     const match = {
       isBlocked: false,
       categoryId: { $in: categoryIds },
-      "variants.stock": { $gt: 0 },
     };
 
     if (searchQuery) {
@@ -551,7 +550,7 @@ const loadShoppingPage = async (req, res) => {
     }
 
     if (selectedCategory) {
-      const findCategory = await Category.findOne({ name: selectedCategory });
+      const findCategory = await Category.findOne({ name: {$regex: new RegExp(`^${selectedCategory}$`, 'i') } });
       if (findCategory) {
         match.categoryId = findCategory._id;
       }

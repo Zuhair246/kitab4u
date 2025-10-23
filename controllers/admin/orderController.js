@@ -28,14 +28,21 @@ const orderListing = async (req, res) => {
                     createdAt: { $gte: dateSearch, $lt: nextDay },
                 });
               }
+
+        const matchedUsers = await User.find(
+            { name: {$regex: search, $options: 'i'} },
+            { _id: 1}
+        );
+        const matchedUserIds =  matchedUsers.map(user => user._id);
+        if(matchedUserIds.length > 0) {
+            query.$or.push( { userId: {$in: matchedUserIds } } );
+        }
         }
 
         if (filter && filter.trim() !== '') {
                query.status = new RegExp(`^${filter}$`, 'i');
         }
 
-
-         
         let sortOption = { createdAt: -1 };
         switch(sortBy) {
             case 'date_asc': 

@@ -121,7 +121,7 @@
                 
                 <!-- Title -->
                 <h5 class="card-title mb-2">
-                  <a href="/products/<%= book._id %>" class="text-dark text-decoration-none"><%= book.name %></a>
+                  <p class="text-dark text-decoration-none"><%= book.name %></p>
                 </h5>
 
                 <!-- Price -->
@@ -149,21 +149,28 @@
                 </div>
 
                 <!-- Buttons -->
-                <div class="mt-auto d-flex gap-2">
-                  <form action="/cart" method="post">
-                    <input type="hidden" name="productId" value="<%= book._id %>">
-                    <button class="btn btn-sm btn-primary" type="submit" <%= book.variants[0].stock <= 0 ? 'disabled' : '' %>>
-                      <i class="bi bi-cart-plus"></i>
-                    </button>
-                  </form>
-                  <button class="btn btn-sm btn-outline-secondary" type="button" data-wishlist="<%= book._id %>">
-                    <i class="bi bi-heart"></i>
-                  </button>
-                </div>
+                 
+                  <div class="mt-auto d-flex justify-content-between align-items-center">
+                    <% if (book.variants[0].stock > 0) { %>
+                      <form action="/cart" method="post" class="d-inline-block">
+                        <input type="hidden" name="productId" value="<%= book._id %>">
+                        <button class="btn btn-sm btn-primary" type="submit">
+                          <i class="bi bi-cart-plus" style="font-size: 1rem; width: 1rem; height: 1rem; display: inline-flex; align-items: center; justify-content: center;"></i>
+                        </button>
+                      </form>
+                    <% } else { %>
+                      <!-- Invisible placeholder to keep cart button on the left -->
+                      <div class="badge bg-danger py-2 px-4">Out of stock</div>
+                    <% } %>
 
-                <% if (book.variants[0].stock <= 0) { %>
-                  <span class="badge text-bg-secondary mt-2">Out of stock</span>
-                <% } %>
+                    <form action="/wishlist" method="post" class="d-inline-block">
+                      <button class="btn" type="button" data-wishlist="<%= book._id %>">
+                        <i class="bi bi-heart fs-4 text-danger" style="font-size: 1rem; width: 1rem; height: 1rem; display: inline-flex; align-items: center; justify-content: center;"></i>
+                      </button>
+                    </form>
+                  </div>
+
+                
               </div>
             </div>
           </div>
@@ -172,7 +179,9 @@
     </main>
   </div>
 </div>
+<%- include('../../views/partials/user/footer') %>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <% if (error) { %>
   <script>
     document.addEventListener("DOMContentLoaded", function() {
@@ -185,4 +194,4 @@
     });
   </script>
 <% } %>
-<%- include('../../views/partials/user/footer') %>
+

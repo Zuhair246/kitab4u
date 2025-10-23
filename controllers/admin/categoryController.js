@@ -41,7 +41,7 @@ const categoryInfo = async (req,res) => {
 }
 
 const addCategory = async (req, res) => {
-    const { name, description, status } = req.body;  // Add status here
+    const { name, description, status } = req.body; 
     try {
         if (!name || !description) {
             return res.redirect("/admin/category?error=" + encodeURIComponent("Name and Description can't be empty"));
@@ -55,7 +55,7 @@ const addCategory = async (req, res) => {
         const newCategory = new Category({
             name,
             description,
-            isListed: status === "active"  // Use the status from form
+            isListed: status === "active"  
         });
         await newCategory.save();
 

@@ -33,8 +33,7 @@
             </div>
             <div class="col">
               <strong><%= item.name %></strong><br>
-              <span class="text-muted"><%= item.author %></span><br>
-              <span class="badge bg-dark mb-2"><%= item.coverType %></span>
+              <!-- <span class="badge bg-dark mb-2"><%= item.coverType %></span> -->
               <% if(order.items.length > 1) { %>
                 <p class="text-muted mt-1">+ <%= order.items.length -1 %> more item(s)</p>
               <% } %>   
@@ -92,5 +91,30 @@
       </div>
     </div>
   <% }) %>
+
+  <!-- Pagination -->
+        <% if (totalPages >= 1) { %>
+        <div class="d-flex justify-content-between align-items-center mt-4">
+            <div class="text-muted">
+                Showing <%= totalItems %> results
+            </div>
+            <nav aria-label="Product pagination">
+                
+                <ul class="pagination mb-0">
+                    <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
+                        <a class="page-link" href="?page=<%= currentPage - 1 %><%= search ? '&search=' + search : '' %>">Prev</a>
+                    </li>
+                    <% for (let i = 1; i <= totalPages; i++) { %>
+                        <li class="page-item <%= currentPage === i ? 'active' : '' %>">
+                            <a class="page-link" href="?page=<%= i %><%= search ? '&search=' + search : '' %>"><%= i %></a>
+                        </li>
+                    <% } %>
+                    <li class="page-item <%= currentPage === totalPages ? 'disabled' : '' %>">
+                        <a class="page-link" href="?page=<%= currentPage + 1 %><%= search ? '&search=' + search : '' %>">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+        <% } %>
 </div>
 <%- include('../../views/partials/user/footer') %>

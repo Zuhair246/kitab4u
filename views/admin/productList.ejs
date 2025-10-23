@@ -163,6 +163,7 @@
                 Showing <%= totalProducts %> results
             </div>
             <nav aria-label="Product pagination">
+                
                 <ul class="pagination mb-0">
                     <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
                         <a class="page-link" href="?page=<%= currentPage - 1 %><%= search ? '&search=' + search : '' %>">Prev</a>

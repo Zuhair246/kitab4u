@@ -145,7 +145,7 @@ const verifyOtp = async (req,res) => {
 }
   } catch (error) {
     console.error("Update email otp error:", error)
-    res.redirect('/profile/verifyOtp')
+    return res.redirect('/profile/verifyOtp')
   }
 }
 

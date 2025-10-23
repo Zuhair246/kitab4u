@@ -49,12 +49,15 @@ const loadOrderPage = async (req, res) => {
                 price: price,
                 image: image,
                 totalPrice: item.quantity * price,
-                isBlocked: product.isBlocked
+                isBlocked: product.isBlocked,
+                stock: variant.stock
              }
         });
 
         if(items.some(item => item.isBlocked)){
             return res.redirect('/cart?error='+encodeURIComponent("Some of your products are unavailable \nPlease remove it and proceed"))
+        }else if(items.some(item => item.stock <= 0)){
+            return res.redirect('/cart?error='+encodeURIComponent("Some of the products in cart are out of stock, Please remove it and proceed"))
         }
 
         const subtotal = items.reduce((sum, item) => sum + item.totalPrice, 0);
@@ -116,12 +119,15 @@ const checkout = async (req,res) => {
                 price: price,
                 totalPrice: item.quantity * price,
                 image: image,
-                isBlocked: product.isBlocked
+                isBlocked: product.isBlocked,
+                stock: variant.stock
              }
         });
 
         if(items.some(item => item.isBlocked)){
             return res.redirect('/cart?error='+encodeURIComponent("Some of your products are Un-available, Please remove it and proceed !"))
+        }else if(items.some(item => item.stock <= 0)){
+            return res.redirect('/cart?error='+encodeURIComponent("Some of your products in cart are out of stock, Please remove it and proceed...."))
         }
 
         const subtotal = items.reduce((sum, item) => sum + item.totalPrice, 0);
@@ -200,6 +206,10 @@ const orderHistory = async (req,res) => {
             return res.redirect('/login');
         }
 
+        const page = parseInt(req.query.page) || 1;
+        const limit = 5;
+        const skip = (page-1) * limit;
+
         const search = req.query.search ? req.query.search.trim() : null;
 
         let query = { userId };
@@ -217,8 +227,13 @@ const orderHistory = async (req,res) => {
 
         const orders = await Order.find( query )
                                 .sort({ createdAt: -1 })
+                                .skip(skip)
+                                .limit(limit)
                                 .lean();
         
+        const totalItems = await Order.countDocuments(query);
+        const totalPages = Math.ceil(totalItems / limit);
+
         const formattedOrders = orders.map(order => {
             const orderStatus = [ 'Pending', 'Packed', 'Shipped', 'Out for Delivery','Delivered', 'Cancel Requested', 'Cancelled', 'Return Requested', 'Returned' ];
             const statusIndex = orderStatus.indexOf(order.status);
@@ -240,7 +255,10 @@ const orderHistory = async (req,res) => {
         res.render('orderHistory', { 
             orders: formattedOrders,
             user,
-            search
+            search,
+            totalItems,
+            totalPages,
+            currentPage: page
         })
         
     } catch (error) {
@@ -300,7 +318,19 @@ const orderDetails = async (req, res) => {
 const cancelOrder = async (req, res) => {
     try {
         const userId = req.session.user || req.user;
+        if(!userId){
+            return res.redirect('/login')
+        }
         const orderId = req.params.id;
+        const { reason } = req.body;
+        console.log(reason)
+
+        if(!reason || !reason.trim()) {
+            return res.status(400).json({
+                success: false,
+                message: "Reason for cancellation required !"
+            })
+        }
 
         const order = await Order.findOne({ _id: orderId, userId });
         if(!order) {

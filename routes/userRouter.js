@@ -29,9 +29,9 @@ router.post('/resetPasswordOtp', userController.resetPasswordOtp)
 router.get('/newPassword', userController.loadNewPassword)
 router.post('/newPassword', userController.newPassword)
 
-
 //shopping page
 router.get('/shop', userStatus, userController.loadShoppingPage);
+router.get('/shop/:category', userController.loadShoppingPage)
 
 //Product Management
 router.get('/productDetails', checkProductAvailability, userStatus, productController.productDetails)

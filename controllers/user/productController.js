@@ -28,7 +28,6 @@ const productDetails = async (req, res) => {
       _id: { $ne: productId },
       categoryId: product.categoryId,
       isBlocked: false,
-      'variants.stock': { $gt: 0 }
     })
       .limit(4)
       .lean();
@@ -64,7 +63,6 @@ const loadSearchResults = async (req, res) => {
     const searchCondition = {
       isBlocked: false,
       categoryId: { $in: categoryIds },
-      'variants.stock': { $gt: 0 },
       $or: [
         { name: { $regex: query, $options: "i" } },
         { author: { $regex: query, $options: "i" } }

@@ -134,7 +134,7 @@
             document.querySelectorAll('.category-card').forEach(card => {
                 card.addEventListener('click', function() {
                     const category = this.querySelector('.category-title').textContent.toLowerCase();
-                    window.location.href = `/category/${category}`;
+                    window.location.href = `/shop/${encodeURIComponent(category)}`;
                 });
             });
 

@@ -323,7 +323,6 @@ const cancelOrder = async (req, res) => {
         }
         const orderId = req.params.id;
         const { reason } = req.body;
-        console.log(reason)
 
         if(!reason || !reason.trim()) {
             return res.status(400).json({
@@ -342,6 +341,8 @@ const cancelOrder = async (req, res) => {
         }
 
         order.status = "Cancel Requested";
+        order.returnReason = reason;
+
         order.orderedItems.forEach(item => {
             item.itemStatus = 'Cancel Requested';
         });
@@ -360,7 +361,6 @@ const cancelSingleItem = async (req, res) => {
     try {
         const userId = req.session.user || req.user;
         const { orderId, itemId } = req.params;
-console.log(`${orderId}, ${itemId}`);
 
         const order = await Order.findOne({ _id: orderId, userId });
         if(!order) {
@@ -397,7 +397,11 @@ const returnOrder = async (req, res) => {
     try {
         const userId = req.session.user || req.user;
         const orderId = req.params.id;
+        const { reason } = req.body;
 
+        if(!reason){
+            return res.status(400).json({success: false, message: "Return reason is needed"})
+        }
         const order = await Order.findOne({_id: orderId, userId});
         if(!order) {
             return res.status(404).json({ success: false, message: "Order not found" });
@@ -405,12 +409,12 @@ const returnOrder = async (req, res) => {
 
         const returnLimit = new Date(order.createdAt.getTime() + 14 * 24 * 60 * 60 * 1000);
 
-        if(!order.status !== "Delivered") {
-            return res.status(400).json({success: false, message: "Cannot return the order now"})
+        if(order.status !== "Delivered") {
+            return res.status(400).json({success: false, message: "Cannot return the order before delivering"})
         }
 
-        if(Date.now > returnLimit) {
-            return res.status(400).json({success: false, message: "Return date over"})
+        if(Date.now() > returnLimit) {
+            return res.status(400).json({success: false, message: "Return period over"})
         }
 
         order.status = "Return Requested";
@@ -420,11 +424,61 @@ const returnOrder = async (req, res) => {
 
         await order.save();
 
-        return res.status(200).json({ message: "Return requested successfully"});
+        return res.status(200).json({ success: true, message: "Return requested successfully"});
         
     } catch (error) {
         console.log("Order returning error:" ,error);
         return res.redirect("/pageNotFound")
+    }
+}
+
+const returnSingleItem = async (req, res) => {
+    try {
+        const userId = req.session.user || req.user;
+        if(!userId){
+            return res.redirect('/login');
+        }
+        const { orderId, itemId } = req.params;
+        
+        const { reason } = req.body;
+        if(!reason){
+            return res.status(400).json({success: false, message: "Return reason is necessary!"})
+        }
+        
+        const order = await Order.findOne({_id: orderId, userId});
+        if(!order){
+            return res.status(404).json({success: false, message: "Order not found !"})
+        }
+
+        const item = order.orderedItems.id(itemId);
+        if(!item) {
+            return res.status(404).json({success: false, message: "Item not found"})
+        }
+
+        if(item.itemStatus !== "Delivered"){
+            return res.status(400).json({ success: false, message: "Cannot return item before delivering !"});
+        }
+        
+        const returnLimit = new Date(order.createdAt.getTime() + 14 * 24 * 60 * 60 * 1000);
+        if(Date.now () > returnLimit ){
+            return res.status(400).json({success: false, message: "Return period finished"})
+        }
+
+        item.itemStatus = 'Return Requested';
+        item.returnReason = reason;
+
+        const allReturned = order.orderedItems.every(item => item.itemStatus === 'Return Requested');
+        if(allReturned){
+            order.status = 'Return Requested'
+        }
+
+        await order.save();
+        
+        return res.status(200).json({ success: true, message: `Return requested for ${item.name}`});
+
+    } catch (error) {
+        console.log('Single item return error:',error);
+        return res.status(500).json({ success: false, message: "Sever error while returning single item"})
     }
 }
 
@@ -594,6 +648,7 @@ module.exports = {
     cancelOrder,
     cancelSingleItem,
     returnOrder,
+    returnSingleItem,
     downloadInvoice
 
 }

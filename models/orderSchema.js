@@ -161,6 +161,9 @@ const orderSchema = new mongoose.Schema({
     ],
     default: 'Pending'
   },
+  returnReason: {
+    type: String
+  },
   createdAt: {
     type: Date,
     default: Date.now,

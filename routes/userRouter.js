@@ -72,6 +72,7 @@ router.get('/myOrders/:id', userStatus, orderController.orderDetails);
 router.post('/myOrders/:id/cancel', userStatus, orderController.cancelOrder);
 router.post('/myOrders/:orderId/item/:itemId/cancel', userStatus, orderController.cancelSingleItem)
 router.post('/myOrders/:id/return', userStatus, orderController.returnOrder);
+router.post('/myOrders/:orderId/item/:itemId/return', userStatus,orderController.returnSingleItem)
 router.get('/myOrders/:id/invoice', userStatus, orderController.downloadInvoice);
 
 

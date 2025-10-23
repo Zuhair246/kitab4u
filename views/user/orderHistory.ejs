@@ -53,11 +53,14 @@
      <div class="text-center my-4">
     <h5 class="text-danger fw-bold">Order requested for Cancelling</h5>
   </div>
+    <% } else if (order.status === 'Return Requested') { %>
+     <div class="text-center my-4">
+    <h5 class="text-danger fw-bold">Order requested for Returning</h5>
+  </div>
 <% } else { %>
   <% 
-    // Include 'Returned' if the order is returned
     let stages = ['Order Placed','Packed','Shipped','Out for Delivery','Delivered'];
-    if (['Return Requested', 'Returned'].includes(order.status)) {
+    if (['Returned'].includes(order.status)) {
       stages.push('Returned');
     }
   %>

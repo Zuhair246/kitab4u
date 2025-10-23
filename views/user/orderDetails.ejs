@@ -26,16 +26,15 @@
   <div class="text-center my-4">
     <h5 class="text-danger fw-bold">Order Cancelled</h5>
   </div>
+    <% }else if (order.status === 'Return Requested') { %>
+  <div class="text-center my-4">
+    <h5 class="text-danger fw-bold">Order requested for Returning</h5>
+  </div>
 <% } else { %>
-  <% 
-    // Include 'Returned' if the order is returned
+  <%
     let stages = ['Order Placed','Packed','Shipped','Out for Delivery','Delivered'];
-    if (['Return Requested', 'Returned'].includes(order.status)) {
-      if(order.status==='Return Requested') {
-        stages.push('Return Requested');
-      }else{
+    if (['Returned'].includes(order.status)) {
         stages.push('Returned');
-      }
     }
   %>
 
@@ -81,13 +80,37 @@
         <% } else if (item.itemStatus==='Cancelled') {%>
            <div class="badge text-danger">Item Cancelled</div>
           <% } else if (item.itemStatus==='Delivered') { %>
-            <button class="btn btn-sm btn-outline-dark return-item-btn mt-2 fw-bold" data-order-id="<%= order._id %>" data-item-id="<%= item._id %>">
+            <button class="btn btn-sm btn-outline-dark return-item-btn mt-2 fw-bold" data-bs-toggle="modal" data-bs-target="#returnModal-<%= item._id %>">
           Return Item
         </button>
             <% } %>
           </div>
         </div>
+
+        <!-- Return Item Modal -->
+<div class="modal fade" id="returnModal-<%= item._id %>" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form id="returnForm-<%= item._id %>" action="/myOrders/<%= order._id %>/item/<%= item._id %>/return" method="POST" onsubmit="return confirmItemReturn(event, '<%= item._id %>')">
+        <div class="modal-header">
+          <h5 class="modal-title">Return Item - <%= item.name %></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <label for="returnReason-<%= item._id %>" class="form-label">Reason for return</label>
+          <textarea name="reason" id="returnReason-<%= item._id %>" class="form-control" rows="3" placeholder="May we know the reason......?"></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-dark">Confirm Return</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
       <% }) %>
+
       <hr>
       <h5>Delivery Address</h5>
       <div class="border rounded p-3 mb-4">
@@ -161,7 +184,7 @@
         </div>
         <div class="modal-body">
           <label for="returnReason-<%= order._id %>" class="form-label">Reason for return</label>
-          <textarea name="reason" id="returnReason-<%= order._id %>" class="form-control" rows="3" required></textarea>
+          <textarea name="reason" id="returnReason-<%= order._id %>" class="form-control" rows="3" placeholder="May we know the reason......?"></textarea>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
@@ -171,17 +194,16 @@
     </div>
   </div>
 </div>
+
   </div>
 </div>
-
-<!-- Return Modal -->
-
 
 <%- include('../../views/partials/user/footer') %>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-        
+
+    //Handle Cancel
       async function confirmCancel(event, orderId) {
       event.preventDefault();
       const form = document.getElementById(`cancelForm-${orderId}`);
@@ -208,7 +230,7 @@
               return;
             }     
 
-            const data = await res.json();
+          const data = await res.json();
             
             if(!data.success) {
                 Swal.fire({
@@ -221,7 +243,7 @@
 
             Swal.fire({
               icon: 'success',
-              title: 'Cancelled!',
+              title: 'Cancel',
               text: data.message || "Order Cancel Requested Successfully !",
               timer: 2000,
               showConfirmButton: false
@@ -238,38 +260,59 @@
       }
 
     // Handle Return
-    if (returnBtn) {
-      returnBtn.addEventListener('click', async (e) => {
-        e.preventDefault();
+      async function confirmReturn(event, orderId) {
+          event.preventDefault();
+          const form = document.getElementById(`returnForm-${orderId}`);
+          const formData = new URLSearchParams (new FormData(form));
 
         const confirm = await Swal.fire({
           title: 'Return this order?',
           text: 'You can only return within 14 days of delivery.',
           icon: 'question',
           showCancelButton: true,
-          confirmButtonText: 'Yes, return it!',
+          confirmButtonText: 'Yes, Return it!',
           cancelButtonText: 'No, keep it',
         });
 
         if (confirm.isConfirmed) {
           Swal.showLoading();
           try {
-            const res = await fetch(`/myOrders/<%= order._id %>/return`, { method: 'POST' });
+            const res = await fetch(form.action, { 
+                                                    method: 'POST',
+                                                    body: formData
+                                                  });
+          if(res.headers.get('content-type')?.includes('text/html')){
+            window.location.reload();
+            return;
+          }
             const data = await res.json();
+            
+            if(!data.success){
+              Swal.fire({
+                icon: 'error',
+                title: 'Oops....',
+                text: data.message || 'Something went wrong'
+              });
+              return;
+            }
+
             Swal.fire({
-              icon: data.success ? 'success' : 'error',
-              title: data.success ? 'Return Requested!' : 'Oops...',
-              text: data.message,
+              icon: 'success',
+              title: 'Return',
+              text: data.message || "Order Return Requested",
               timer: 2000,
               showConfirmButton: false
             });
-            if (data.success) setTimeout(() => location.reload(), 2000);
+          setTimeout(() => location.reload(), 2000);
           } catch (err) {
-            Swal.fire('Error', 'Something went wrong while returning!', 'error');
+            Swal.fire({
+              icon: 'error',
+              title: "Error",
+              text: err.message || 'Unexpected server error !'
+            });
           }
         }
-      });
-    }
+      }
 
 
   document.querySelectorAll('.cancel-item-btn').forEach(btn => {
@@ -305,15 +348,62 @@
   });
 });
 
-const returnModal = document.getElementById('returnModal');
-  returnModal.addEventListener('show.bs.modal', event => {
-    const button = event.relatedTarget; 
-    const orderId = button.getAttribute('data-order-id');
+  async function confirmItemReturn(event, itemId) {
+    event.preventDefault();
+    const form = document.getElementById(`returnForm-${itemId}`);
+    const formData = new URLSearchParams(new FormData(form));
 
-    document.getElementById('orderIdInput').value = orderId;
+    const confirm = await Swal.fire({
+      title: 'Return this item?',
+      text: 'You can only return within 14 days of delivery.',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, Return it!',
+      cancelButtonText: 'No, keep it',
+    });
 
-    // Update form action dynamically
-    const form = document.getElementById('returnForm');
-    form.action = `/myOrders/${orderId}/return`;
-  });
+    if (confirm.isConfirmed) {
+      Swal.showLoading();
+      try {
+        const res = await fetch(form.action, {
+          method: 'POST',
+          body: formData
+        });
+
+        if (res.headers.get('content-type')?.includes('text/html')) {
+          window.location.reload();
+          return;
+        }
+
+        const data = await res.json();
+
+        if (!data.success) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Oops...',
+            text: data.message || 'Something went wrong!'
+          });
+          return;
+        }
+
+        Swal.fire({
+          icon: 'success',
+          title: 'Return Requested',
+          text: data.message || 'Item return request submitted',
+          timer: 2000,
+          showConfirmButton: false
+        });
+
+        setTimeout(() => location.reload(), 2000);
+
+      } catch (err) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: err.message || 'Unexpected server error!'
+        });
+      }
+    }
+  }
+
 </script>

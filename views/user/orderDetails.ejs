@@ -72,18 +72,20 @@
             ₹ <%= item.totalPrice %>/-
             <br>
              <% if(['Pending','Packed'].includes(item.itemStatus)) { %>
-        <button class="btn btn-sm btn-outline-danger cancel-item-btn mt-2 fw-bold" data-order-id="<%= order._id %>" data-item-id="<%= item._id %>">
+        <button class="btn btn-sm btn-outline-danger cancel-item-btn mt-2 fw-bold" data-bs-toggle="modal" data-bs-target="#cancelModal-<%= item._id %>">
           Cancel Item
         </button>
       <% } else if (item.itemStatus==='Cancel Requested'){ %>
-          <span class="badge text-warning">Item Cancellation Requested</span>
+          <span class="badge text-info">Item Cancellation Requested</span>
         <% } else if (item.itemStatus==='Cancelled') {%>
            <div class="badge text-danger">Item Cancelled</div>
           <% } else if (item.itemStatus==='Delivered') { %>
             <button class="btn btn-sm btn-outline-dark return-item-btn mt-2 fw-bold" data-bs-toggle="modal" data-bs-target="#returnModal-<%= item._id %>">
           Return Item
         </button>
-            <% } %>
+            <% } else if (item.itemStatus === 'Return Requested') { %>
+              <span class="badge text-info">Item Return Requested</span>
+              <% } %>
           </div>
         </div>
 
@@ -103,6 +105,28 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
           <button type="submit" class="btn btn-dark">Confirm Return</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!--Cancel Item Modal-->
+<div class="modal fade" id="cancelModal-<%= item._id %>" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form id="cancelForm-<%= item._id %>" action="/myOrders/<%= order._id %>/item/<%= item._id %>/cancel" method="POST" onsubmit="return confirmItemCancel(event, '<%= item._id %>')">
+        <div class="modal-header">
+          <h5 class="modal-title">Cancel Item - <%= item.name %></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <label for="cancelReason-<%= item._id %>" class="form-label">Reason for cancel:</label>
+          <textarea name="reason" id="cancelReason-<%= item._id %>" class="form-control" rows="3" placeholder="May we know the reason......?"></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-dark">Confirm Cancel</button>
         </div>
       </form>
     </div>
@@ -314,40 +338,7 @@
         }
       }
 
-
-  document.querySelectorAll('.cancel-item-btn').forEach(btn => {
-  btn.addEventListener('click', async (e) => {
-    e.preventDefault();
-    const itemId = btn.dataset.itemId;
-    const orderId = btn.dataset.orderId;
-
-    const confirm = await Swal.fire({
-      title: 'Cancel this item?',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Yes, cancel it!',
-      cancelButtonText: 'No',
-    });
-
-    if (confirm.isConfirmed) {
-      try {
-        const res = await fetch(`/myOrders/${orderId}/item/${itemId}/cancel`, { method: 'POST' });
-        const data = await res.json();
-        Swal.fire({
-          icon: data.success ? 'success' : 'error',
-          title: data.success ? 'Cancelled!' : 'Oops...',
-          text: data.message,
-          timer: 2000,
-          showConfirmButton: false
-        });
-        if (data.success) setTimeout(() => location.reload(), 2000);
-      } catch (err) {
-        Swal.fire('Error', 'Something went wrong while cancelling!', 'error');
-      }
-    }
-  });
-});
-
+    // Handle Item Retrun
   async function confirmItemReturn(event, itemId) {
     event.preventDefault();
     const form = document.getElementById(`returnForm-${itemId}`);
@@ -390,6 +381,65 @@
           icon: 'success',
           title: 'Return Requested',
           text: data.message || 'Item return request submitted',
+          timer: 2000,
+          showConfirmButton: false
+        });
+
+        setTimeout(() => location.reload(), 2000);
+
+      } catch (err) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: err.message || 'Unexpected server error!'
+        });
+      }
+    }
+  }
+
+   //Handle Item Cancel
+  async function confirmItemCancel(event, itemId) {
+    event.preventDefault();
+    const form = document.getElementById(`cancelForm-${itemId}`);
+    const formData = new URLSearchParams(new FormData(form));
+
+    const confirm = await Swal.fire({
+      title: 'Cancel this item ?',
+      text: 'This item will be removed from your order !',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, Cancel it!',
+      cancelButtonText: 'No, keep it',
+    });
+
+    if (confirm.isConfirmed) {
+      Swal.showLoading();
+      try {
+        const res = await fetch(form.action, {
+          method: 'POST',
+          body: formData
+        });
+
+        if (res.headers.get('content-type')?.includes('text/html')) {
+          window.location.reload();
+          return;
+        }
+
+        const data = await res.json();
+
+        if (!data.success) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Oops...',
+            text: data.message || 'Something went wrong!'
+          });
+          return;
+        }
+
+        Swal.fire({
+          icon: 'success',
+          title: 'Cancel Requested',
+          text: data.message || 'Item cancel request submitted',
           timer: 2000,
           showConfirmButton: false
         });

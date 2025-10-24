@@ -124,6 +124,7 @@ const getProductList = async (req, res) => {
             products: productData,
             currentPage: page,
             totalPages,
+            limit,
             search: req.query.search || "",
             totalProducts,
             error: req.query.error || null,
@@ -147,7 +148,7 @@ const getEditProduct = async (req, res) => {
 
         res.render("editProduct", {
             product,
-            cat
+            cat,
         });
     } catch (error) {
         console.error("Error loading edit product page:", error);

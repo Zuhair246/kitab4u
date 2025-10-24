@@ -341,7 +341,7 @@ const cancelOrder = async (req, res) => {
         }
 
         order.status = "Cancel Requested";
-        order.returnReason = reason;
+        order.cancelReason = reason;
 
         order.orderedItems.forEach(item => {
             item.itemStatus = 'Cancel Requested';
@@ -361,6 +361,7 @@ const cancelSingleItem = async (req, res) => {
     try {
         const userId = req.session.user || req.user;
         const { orderId, itemId } = req.params;
+        const { reason } = req.body;
 
         const order = await Order.findOne({ _id: orderId, userId });
         if(!order) {
@@ -376,11 +377,17 @@ const cancelSingleItem = async (req, res) => {
       return res.status(400).json({ success: false, message: "This item cannot be cancelled after shipping" });
     }
 
+    if(!reason) {
+        return res.status(400).json({ success: false, message: "Reason for item cancellation is neceesary"})
+    }
+
     item.itemStatus = 'Cancel Requested';
+    item.cancelReason = reason;
 
     const allCancelled = order.orderedItems.every(it => it.itemStatus === 'Cancel Requested');
     if (allCancelled) {
       order.status = 'Cancel Requested';
+      order.cancelReason = reason;
     }
 
     await order.save();
@@ -421,6 +428,7 @@ const returnOrder = async (req, res) => {
         order.orderedItems.forEach(item => {
             item.itemStatus = "Return Requested";
         })
+        order.returnReason = reason;
 
         await order.save();
 
@@ -439,7 +447,7 @@ const returnSingleItem = async (req, res) => {
             return res.redirect('/login');
         }
         const { orderId, itemId } = req.params;
-        
+
         const { reason } = req.body;
         if(!reason){
             return res.status(400).json({success: false, message: "Return reason is necessary!"})
@@ -469,7 +477,8 @@ const returnSingleItem = async (req, res) => {
 
         const allReturned = order.orderedItems.every(item => item.itemStatus === 'Return Requested');
         if(allReturned){
-            order.status = 'Return Requested'
+            order.status = 'Return Requested';
+            order.returnReason = reason;
         }
 
         await order.save();
@@ -526,14 +535,14 @@ const downloadInvoice = async (req, res) => {
             .fontSize(14)
             .fillColor('#34495e')
             .font('Times-Bold')
-            .text('Customer Information:', { underline: true })
+            .text('Shipping Address:', { underline: true })
             .moveDown(0.5);
 
         doc
             .fontSize(12)
             .fillColor('#091fe3')
             .font('Times-Italic')
-            .text(`Customer Name: ${order.shippingAddress.name}`)
+            .text(`Name: ${order.shippingAddress.name}`)
             .text(`Phone: ${order.shippingAddress.phone}, ${order.shippingAddress.altPhone}`)
             .text(`Address: ${order.shippingAddress.streetAddress}, ${order.shippingAddress.city} 
                 ${order.shippingAddress.state}, ${order.shippingAddress.pinCode}`)

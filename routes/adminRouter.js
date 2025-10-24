@@ -40,6 +40,11 @@ router.post('/deleteProduct', adminAuth, productController.deleteProduct)
 router.get('/userOrders', adminAuth, orderController.orderListing)
 router.get('/userOrders/:id', adminAuth,orderController.viewOrderDetails);
 router.post('/userOrders/:orderId/updateStatus', orderController.updateOrderStatus);
-router.post('/userOrders/:orderId/item/:itemId/status', orderController.updateItemStatus);
+router.post('/userOrders/:orderId/cancel', orderController.orderCancelRequest);
+router.post('/userOrders/:orderId/item/:itemId/cancel', orderController.itemCancelRequest);
+router.post('/userOrders/:orderId/return', orderController.orderReturnRequest);
+router.post('/userOrders/:orderId/item/:itemId/return', orderController.itemReturnRequest);
 
-module.exports = router
+// router.post('/userOrders/:orderId/item/:itemId/status', orderController.updateItemStatus);
+
+module.exports = router;

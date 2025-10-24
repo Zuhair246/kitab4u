@@ -51,17 +51,23 @@ const orderSchema = new mongoose.Schema({
           "Pending",
           "Packed",
           "Shipped",
+          "Out for Delivery",
           "Delivered",
           'Cancel Requested',
           "Cancelled",
+          "Cancel Rejected",
           "Return Requested",
           "Returned",
+          "Return Rejected"
         ],
         default: 'Pending'
       },
       returnReason: {
         type: String
-      }
+      },
+      cancelReason: {
+      type: String
+    }
     },
   ],
   totalPrice: {
@@ -156,12 +162,17 @@ const orderSchema = new mongoose.Schema({
       "Delivered",
       'Cancel Requested',
       "Cancelled",
+      "Cancel Rejected",
       "Return Requested",
       "Returned",
+      "Return Rejected"
     ],
     default: 'Pending'
   },
   returnReason: {
+    type: String
+  },
+  cancelReason: {
     type: String
   },
   createdAt: {

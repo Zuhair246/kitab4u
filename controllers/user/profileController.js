@@ -462,26 +462,26 @@ const updateProfileImage = async (req, res) => {
   }
 };
 
- const loadAddAddress = async (req,res) => {
-  try {
-    const userId = req.session.user || req.user;
-    if(!userId){
-      return res.redirect('/login')
-    }
-    const user = await User.findById(userId);
+//  const loadAddAddress = async (req,res) => {
+//   try {
+//     const userId = req.session.user || req.user;
+//     if(!userId){
+//       return res.redirect('/login')
+//     }
+//     const user = await User.findById(userId);
 
-     res.render('addAddress', {
-      user,
-      formData: req.flash("formData")[0] || {},
-      error: req.flash("error"),
-      success: req.flash("success"),
-    })
-  } catch (error) {
-    console.log("Add address page load error:", error);
-    return res.redirect('/pageNotFound')
+//      res.render('addAddress', {
+//       user,
+//       formData: req.flash("formData")[0] || {},
+//       error: req.flash("error"),
+//       success: req.flash("success"),
+//     })
+//   } catch (error) {
+//     console.log("Add address page load error:", error);
+//     return res.redirect('/pageNotFound')
     
-  }
- }
+//   }
+//  }
 
  const addAddress = async (req,res) => {
   try {
@@ -548,6 +548,30 @@ if (!stateRegex.test(city) || city.replace(/\s/g, '').length < 3) {
   req.flash("formData", { name, city, streetAddress, state, pinCode, phone, altPhone, addressType });
   const msg = 'City name should be at least 5 letters and contain only alphabets with spaces only between words.'
   if(isAjax) return res.json({success: false, message: msg})
+}
+
+//Real Pincode validation with API
+
+const pinCodeRegex = /^[1-9][0-9]{5}$/;
+  if(!pinCodeRegex.test(pinCode)) {
+      req.flash("formData", { name, city, streetAddress, state, pinCode, phone, altPhone, addressType });
+      const msg = 'Invalid Pincode format (must be 6 digits and not start with 0).';
+      if(isAjax) return res.json({success: false, message: msg});
+  }
+
+try {
+  const response = await fetch(`https://api.postalpincode.in/pincode/${pinCode}`);
+  const data = await response.json();
+  const result = data[0];
+
+  if (result.Status === 'Error' || !result.PostOffice || result.PostOffice.length === 0) {
+    const msg = 'Pincode not found in India Post records.';
+    if (isAjax) return res.json({ success: false, message: msg });
+  }
+} catch (err) {
+  console.error('Error verifying pincode:', err);
+  const msg = 'Unable to verify pincode at the moment.';
+  if (isAjax) return res.json({ success: false, message: msg });
 }
 
 const defaultFlag = isDefault === 'on';
@@ -668,6 +692,30 @@ const editAddress = async (req, res) => {
       return isAjax ? res.json({ success: false, message: msg }) : res.redirect('/profile/address?error=' + encodeURIComponent(msg));
     }
 
+    //Real Pincode validation with API
+
+const pinCodeRegex = /^[1-9][0-9]{5}$/;
+  if(!pinCodeRegex.test(pinCode)) {
+      req.flash("formData", { name, city, streetAddress, state, pinCode, phone, altPhone, addressType });
+      const msg = 'Invalid Pincode format (must be 6 digits and not start with 0).';
+      if(isAjax) return res.json({success: false, message: msg});
+  }
+
+try {
+  const response = await fetch(`https://api.postalpincode.in/pincode/${pinCode}`);
+  const data = await response.json();
+  const result = data[0];
+
+  if (result.Status === 'Error' || !result.PostOffice || result.PostOffice.length === 0) {
+    const msg = 'Pincode not found in India Post records.';
+    if (isAjax) return res.json({ success: false, message: msg });
+  }
+} catch (err) {
+  console.error('Error verifying pincode:', err);
+  const msg = 'Unable to verify pincode at the moment.';
+  if (isAjax) return res.json({ success: false, message: msg });
+}
+
     if (isDefault === "on") {
       await Address.updateOne(
         { "address.isDefault": true, userId },
@@ -718,8 +766,9 @@ module.exports = {
     forgotOldPassword,
     setNewPassword,
     address,
-    loadAddAddress,
     addAddress,
     deleteAddress,
-    editAddress
+    editAddress,
+    // loadAddAddress,
+
 }

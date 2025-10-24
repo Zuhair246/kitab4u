@@ -40,8 +40,11 @@
                         <h6 class="mb-1 fw-semibold"><%= item.productId.name %></h6>
                         <p class="mb-1 text-muted small"><%= item.productId.coverType %></p>
                         <p class="mb-1 text-muted small">by <%= item.productId.author %></p>
+                        <% const variant = item.productId.variants.find(v => v._id.toString() === item.variantId.toString()) %>
                         <% if (item.productId.isBlocked) { %>
                           <span class="badge bg-danger small">Unavailable</span>
+                        <% } else if (variant && variant.stock <= 0 ) { %>
+                          <span class="badge bg-danger small">Out of stock</span>
                         <% } %>
                         <br>
                         <button class="btn btn-link text-muted p-0 mt-2 small text-decoration-none" 

@@ -44,26 +44,29 @@
     <span class="badge bg-info mb-3 text-dark"><%= item.itemStatus %></span>
 
     <div class="d-flex justify-content-center gap-1">
+      <% if(item.itemStatus === 'Return Requested') { %>
       <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#returnModal-<%= item._id %>">Return</button>
+      <% } else if(item.itemStatus === 'Cancel Requested') { %>
       <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#cancelModal-<%= item._id %>">Cancel</button>
+      <%}%>
     </div>
     
   </form>
 </div>
               </div>
 
-              <!-- Return Modal -->
+              <!-- Return Item Modal -->
                 <div class="modal fade" id="returnModal-<%= item._id %>" tabindex="-1">
                   <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content">
-                      <form action="/admin/orders/<%= order._id %>/item/<%= item._id %>/return" method="POST">
+                      <form action="/admin/userOrders/<%= order._id %>/item/<%= item._id %>/return" method="POST">
                         <div class="modal-header">
                           <h5 class="modal-title">Return Requested - <%= item.name %></h5>
                           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
                           <label for="returnReason-<%= item._id %>" class="form-label">Reason for return</label>
-                          <textarea name="reason" id="returnReason-<%= item._id %>" class="form-control" rows="3" required></textarea>
+                          <textarea name="reason" id="returnReason-<%= item._id %>" class="form-control" rows="3" readonly><%= item.returnReason %></textarea>
                         </div>
                         <div class="modal-footer">
                           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
@@ -75,18 +78,18 @@
                   </div>
                 </div>
 
-                <!-- Cancel Modal -->
+                <!-- Cancel Item Modal -->
                 <div class="modal fade" id="cancelModal-<%= item._id %>" tabindex="-1">
                   <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content">
-                      <form action="/admin/orders/<%= order._id %>/item/<%= item._id %>/cancel" method="POST">
+                      <form action="/admin/userOrders/<%= order._id %>/item/<%= item._id %>/cancel" method="POST">
                         <div class="modal-header">
                           <h5 class="modal-title">Cancel Requested - <%= item.name %></h5>
                           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
                           <label for="cancelReason-<%= item._id %>" class="form-label">Reason for cancellation</label>
-                          <textarea name="reason" id="cancelReason-<%= item._id %>" class="form-control" rows="3" required></textarea>
+                          <textarea name="reason" id="cancelReason-<%= item._id %>" class="form-control" rows="3" readonly><%= item.cancelReason %></textarea>
                         </div>
                         <div class="modal-footer">
                           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
@@ -122,8 +125,11 @@
       </select>
 
       <div class="mt-3 d-flex justify-content-center gap-2">
+        <% if(order.status === 'Return Requested') { %>
         <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#orderReturnModal">Return</button>
+        <%} else if(order.status === 'Cancel Requested') { %>
         <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#orderCancelModal">Cancel</button>
+        <%}%>
       </div>
 
       <button type="button" class="btn btn-primary btn-sm mt-2 update-status-btn" data-id="<%= order._id %>">Update Status</button>
@@ -136,14 +142,14 @@
 <div class="modal fade" id="orderReturnModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <form action="/admin/orders/<%= order._id %>/return" method="POST">
+      <form action="/admin/userOrders/<%= order._id %>/return" method="POST">
         <div class="modal-header">
           <h5 class="modal-title">Return Requested - Order <%= order.orderId %></h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
           <label for="orderReturnReason" class="form-label">Reason for return</label>
-          <textarea name="reason" id="orderReturnReason" class="form-control" rows="3" required></textarea>
+          <textarea name="reason" id="orderReturnReason" class="form-control" rows="3" readonly><%= order.returnReason %></textarea>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
@@ -159,14 +165,14 @@
 <div class="modal fade" id="orderCancelModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <form action="/admin/orders/<%= order._id %>/cancel" method="POST">
+      <form action="/admin/userOrders/<%= order._id %>/cancel" method="POST">
         <div class="modal-header">
           <h5 class="modal-title">Cancel Requested - Order <%= order.orderId %></h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
           <label for="orderCancelReason" class="form-label">Reason for cancellation</label>
-          <textarea name="reason" id="orderCancelReason" class="form-control" rows="3" required></textarea>
+          <textarea name="reason" id="orderCancelReason" class="form-control" rows="3" readonly><%= order.cancelReason %></textarea>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>

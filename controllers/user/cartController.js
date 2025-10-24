@@ -141,7 +141,6 @@ console.log("cart items:", cartItem);
 
 const removeFromCart = async (req, res) => {
   try {
-    console.log("🛒 API reached! Product ID:", req.body.productId);
     const userId = req.session.user;
     const { productId, variantId } = req.body;
 

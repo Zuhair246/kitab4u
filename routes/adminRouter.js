@@ -39,11 +39,11 @@ router.post('/deleteProduct', adminAuth, productController.deleteProduct)
 //Order Management
 router.get('/userOrders', adminAuth, orderController.orderListing)
 router.get('/userOrders/:id', adminAuth,orderController.viewOrderDetails);
-router.post('/userOrders/:orderId/updateStatus', orderController.updateOrderStatus);
-router.post('/userOrders/:orderId/cancel', orderController.orderCancelRequest);
-router.post('/userOrders/:orderId/item/:itemId/cancel', orderController.itemCancelRequest);
-router.post('/userOrders/:orderId/return', orderController.orderReturnRequest);
-router.post('/userOrders/:orderId/item/:itemId/return', orderController.itemReturnRequest);
+router.post('/userOrders/:orderId/updateStatus', adminAuth, orderController.updateOrderStatus);
+router.post('/userOrders/:orderId/cancel', adminAuth, orderController.orderCancelRequest);
+router.post('/userOrders/:orderId/item/:itemId/cancel', adminAuth, orderController.itemCancelRequest);
+router.post('/userOrders/:orderId/return', adminAuth, orderController.orderReturnRequest);
+router.post('/userOrders/:orderId/item/:itemId/return', adminAuth, orderController.itemReturnRequest);
 
 // router.post('/userOrders/:orderId/item/:itemId/status', orderController.updateItemStatus);
 

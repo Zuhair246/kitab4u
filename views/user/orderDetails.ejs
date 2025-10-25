@@ -71,6 +71,11 @@
           <div class="col-auto text-end fs-5 fw-bold">
             ₹ <%= item.totalPrice %>/-
             <br>
+            <% if(item.itemStatus === 'Cancel Rejected') { %>
+                <span class="badge text-danger">Cancel Rejected</span>
+              <%}else if(item.itemStatus === 'Return Rejected'){ %>
+                <span class="badge text-danger">Return Rejected</span>
+                <%}%>
              <% if(['Pending','Packed'].includes(item.itemStatus)) { %>
         <button class="btn btn-sm btn-outline-danger cancel-item-btn mt-2 fw-bold" data-bs-toggle="modal" data-bs-target="#cancelModal-<%= item._id %>">
           Cancel Item
@@ -165,14 +170,17 @@
     <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#cancelModal-<%= order._id %>">
       Cancel Order
     </button>
-  <% } %>
-
+  <% }else if(order.status==='Cancel Rejected'){ %>
+    <span class="badge text-danger fs-4">Cancel Rejected</span>
+    <%}%>
   <% if(order.canReturn) { %>
     <!-- Return Button Trigger -->
     <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#returnModal-<%= order._id %>">
       Return
     </button>
-  <% } %>
+  <% } else if(order.status==='Return Rejected'){ %>
+       <span class="badge text-danger">Return Rejected</span>
+    <%}%>
 </div>
 
 <!-- Cancel Modal -->
@@ -338,7 +346,7 @@
         }
       }
 
-    // Handle Item Retrun
+    // Handle Item Return
   async function confirmItemReturn(event, itemId) {
     event.preventDefault();
     const form = document.getElementById(`returnForm-${itemId}`);

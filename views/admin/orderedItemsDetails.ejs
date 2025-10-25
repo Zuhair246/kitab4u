@@ -55,51 +55,68 @@
 </div>
               </div>
 
-              <!-- Return Item Modal -->
-                <div class="modal fade" id="returnModal-<%= item._id %>" tabindex="-1">
-                  <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content">
-                      <form action="/admin/userOrders/<%= order._id %>/item/<%= item._id %>/return" method="POST">
-                        <div class="modal-header">
-                          <h5 class="modal-title">Return Requested - <%= item.name %></h5>
-                          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body">
-                          <label for="returnReason-<%= item._id %>" class="form-label">Reason for return</label>
-                          <textarea name="reason" id="returnReason-<%= item._id %>" class="form-control" rows="3" readonly><%= item.returnReason %></textarea>
-                        </div>
-                        <div class="modal-footer">
-                          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
-                          <button type="submit" name="action" value="approve" class="btn btn-secondary">Approve Return</button>
-                          <button type="submit" name="action" value="reject" class="btn btn-danger">Reject Return</button>
-                        </div>
-                      </form>
-                    </div>
-                  </div>
-                </div>
+             <!-- Cancel Item Modal -->
+<div class="modal fade" id="cancelModal-<%= item._id %>" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Cancel Requested - <%= item.name %></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <label for="cancelReason-<%= item._id %>" class="form-label">Reason for cancellation</label>
+        <textarea name="reason" id="cancelReason-<%= item._id %>" class="form-control" rows="3" readonly><%= item.cancelReason %></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-danger item-action-btn" 
+                data-order-id="<%= order._id %>" 
+                data-item-id="<%= item._id %>" 
+                data-action="approve" 
+                data-type="cancel"
+                data-bs-dismiss="modal">Approve Cancel</button>
+        <button type="button" class="btn btn-secondary item-action-btn" 
+                data-order-id="<%= order._id %>" 
+                data-item-id="<%= item._id %>" 
+                data-action="reject" 
+                data-type="cancel"
+                data-bs-dismiss="modal">Reject Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
 
-                <!-- Cancel Item Modal -->
-                <div class="modal fade" id="cancelModal-<%= item._id %>" tabindex="-1">
-                  <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content">
-                      <form action="/admin/userOrders/<%= order._id %>/item/<%= item._id %>/cancel" method="POST">
-                        <div class="modal-header">
-                          <h5 class="modal-title">Cancel Requested - <%= item.name %></h5>
-                          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body">
-                          <label for="cancelReason-<%= item._id %>" class="form-label">Reason for cancellation</label>
-                          <textarea name="reason" id="cancelReason-<%= item._id %>" class="form-control" rows="3" readonly><%= item.cancelReason %></textarea>
-                        </div>
-                        <div class="modal-footer">
-                          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
-                          <button type="submit" name="action" value="approve" class="btn btn-danger">Approve Cancel</button>
-                          <button type="submit" name="action" value="reject" class="btn btn-secondary">Reject Cancel</button>
-                        </div>
-                      </form>
-                    </div>
-                  </div>
-                </div>
+<!-- Return Item Modal -->
+<div class="modal fade" id="returnModal-<%= item._id %>" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Return Requested - <%= item.name %></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <label for="returnReason-<%= item._id %>" class="form-label">Reason for return</label>
+        <textarea name="reason" id="returnReason-<%= item._id %>" class="form-control" rows="3" readonly><%= item.returnReason %></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-secondary item-action-btn" 
+                data-order-id="<%= order._id %>" 
+                data-item-id="<%= item._id %>" 
+                data-action="approve" 
+                data-type="return"
+                data-bs-dismiss="modal">Approve Return</button>
+        <button type="button" class="btn btn-danger item-action-btn" 
+                data-order-id="<%= order._id %>" 
+                data-item-id="<%= item._id %>" 
+                data-action="reject" 
+                data-type="return"
+                data-bs-dismiss="modal">Reject Return</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 
             <% }) %>
           <% } else { %>
@@ -113,6 +130,9 @@
   <div class="card-header bg-light">
     <h5 class="fw-semibold mb-0">Order-Level Status Update</h5>
   </div>
+  <% if(['Cancelled','Returned'].includes(order.status)) { %>
+    <span class="badge bg-info mb-3 text-dark"><%= order.status %></span>
+    <%}else { %>
   <div class="card-body text-center order-status-form">
     <form class="d-inline-block">
       <select name="status" id="orderStatusSelect-<%= order._id %>" class="form-select form-select-sm mb-2 status-select"
@@ -135,54 +155,68 @@
       <button type="button" class="btn btn-primary btn-sm mt-2 update-status-btn" data-id="<%= order._id %>">Update Status</button>
     </form>
   </div>
+  <%}%>
 </div>
     </div>
 
-    <!-- Order Return Modal -->
-<div class="modal fade" id="orderReturnModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <form action="/admin/userOrders/<%= order._id %>/return" method="POST">
-        <div class="modal-header">
-          <h5 class="modal-title">Return Requested - Order <%= order.orderId %></h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <label for="orderReturnReason" class="form-label">Reason for return</label>
-          <textarea name="reason" id="orderReturnReason" class="form-control" rows="3" readonly><%= order.returnReason %></textarea>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
-          <button type="submit" name="action" value="approve" class="btn btn-secondary">Approve Return</button>
-          <button type="submit" name="action" value="reject" class="btn btn-danger">Reject Return</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
-<!-- Order Cancel Modal -->
+    <!-- Order Cancel Modal -->
 <div class="modal fade" id="orderCancelModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <form action="/admin/userOrders/<%= order._id %>/cancel" method="POST">
-        <div class="modal-header">
-          <h5 class="modal-title">Cancel Requested - Order <%= order.orderId %></h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <label for="orderCancelReason" class="form-label">Reason for cancellation</label>
-          <textarea name="reason" id="orderCancelReason" class="form-control" rows="3" readonly><%= order.cancelReason %></textarea>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
-          <button type="submit" name="action" value="approve" class="btn btn-danger">Approve Cancel</button>
-          <button type="submit" name="action" value="reject" class="btn btn-secondary">Reject Cancel</button>
-        </div>
-      </form>
+      <div class="modal-header">
+        <h5 class="modal-title">Cancel Requested - Order <%= order.orderId %></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <label for="orderCancelReason" class="form-label">Reason for cancellation</label>
+        <textarea name="reason" id="orderCancelReason" class="form-control" rows="3" readonly><%= order.cancelReason %></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-danger order-action-btn" 
+                data-order-id="<%= order._id %>" 
+                data-action="approve" 
+                data-type="cancel"
+                data-bs-dismiss="modal">Approve Cancel</button>
+        <button type="button" class="btn btn-secondary order-action-btn" 
+                data-order-id="<%= order._id %>" 
+                data-action="reject" 
+                data-type="cancel"
+                data-bs-dismiss="modal">Reject Cancel</button>
+      </div>
     </div>
   </div>
 </div>
+
+<!-- Order Return Modal -->
+<div class="modal fade" id="orderReturnModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Return Requested - Order <%= order.orderId %></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <label for="orderReturnReason" class="form-label">Reason for return</label>
+        <textarea name="reason" id="orderReturnReason" class="form-control" rows="3" readonly><%= order.returnReason %></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-secondary order-action-btn" 
+                data-order-id="<%= order._id %>" 
+                data-action="approve" 
+                data-type="return"
+                data-bs-dismiss="modal">Approve Return</button>
+        <button type="button" class="btn btn-danger order-action-btn" 
+                data-order-id="<%= order._id %>" 
+                data-action="reject" 
+                data-type="return"
+                data-bs-dismiss="modal">Reject Return</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 
     <!-- RIGHT COLUMN -->
     <div class="col-lg-4">
@@ -246,7 +280,7 @@
     if(orderSelect) orderSelect.style.backgroundColor = orderSelect.options[orderSelect.selectedIndex].dataset.color;
   });
 
-  //Swal messages with AJAX for Order Level
+  //Swal messages with AJAX for Order Level Update
 document.addEventListener('DOMContentLoaded', () => {
   const updateButtons = document.querySelectorAll('.update-status-btn');
 
@@ -307,57 +341,125 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-//Swal messages with AJAX for ITEM LEVEL
-document.addEventListener('DOMContentLoaded', () => {
-  const updateButtons = document.querySelectorAll('.update-itemStatus-btn');
 
-  updateButtons.forEach(button => {
+// Swal messages with AJAX for ITEM LEVEL
+document.addEventListener('DOMContentLoaded', () => {
+  const itemActionButtons = document.querySelectorAll('.item-action-btn');
+
+  itemActionButtons.forEach(button => {
     button.addEventListener('click', async (e) => {
-      const itemId = e.target.dataset.itemid;
-      const orderId = e.target.dataset.orderid;
-      const statusSelect = document.querySelector(`.itemStatus-select[data-itemid="${itemId}"]`);
-      const newStatus = statusSelect.value;
+      const orderId = e.target.dataset.orderId;
+      const itemId = e.target.dataset.itemId;
+      const action = e.target.dataset.action;
+      const type = e.target.dataset.type; // 'cancel' or 'return'
+
+      const actionText = action === 'approve' ? 'approve' : 'reject';
+      const typeText = type === 'cancel' ? 'cancellation' : 'return';
 
       const confirm = await Swal.fire({
-        title: 'Update Order Status ?',
-        text: `Are you sure you want to change the status to "${newStatus}"?`,
-        icon: 'question',
+        title: `${action === 'approve' ? 'Approve' : 'Reject'} ${typeText}?`,
+        text: `Are you sure you want to ${actionText} this ${typeText} request?`,
+        icon: 'warning',
         showCancelButton: true,
-        confirmButtonText: 'Yes, update it!',
+        confirmButtonText: `Yes, ${actionText} it!`,
         cancelButtonText: 'Cancel',
-        confirmButtonColor: '#000',
+        confirmButtonColor: action === 'approve' ? '#000' : '#dc3545',
         cancelButtonColor: '#6c757d'
       });
 
       if (confirm.isConfirmed) {
         try {
-          const response = await fetch(`/admin/userOrders/${orderId}/item/${itemId}/status`, {
+          const url = `/admin/userOrders/${orderId}/item/${itemId}/${type}`;
+          const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: newStatus })
+            body: JSON.stringify({ action: action })
           });
 
           const result = await response.json();
 
           if (result.success) {
-          statusSelect.value = newStatus;
-          statusSelect.style.backgroundColor = statusSelect.options[statusSelect.selectedIndex].dataset.color;
-            Swal.fire({
+            await Swal.fire({
               icon: 'success',
-              title: 'Status Updated',
+              title: 'Success!',
               text: result.message,
               timer: 1500,
               showConfirmButton: false
             });
-
+            window.location.reload();
           } else {
             Swal.fire({
               icon: 'error',
-              title: 'Update Failed',
+              title: 'Failed',
               text: result.message
             });
           }
         } catch (error) {
+          console.error('Item action error:', error);
+          Swal.fire({
+            icon: 'error',
+            title: 'Server Error',
+            text: 'Something went wrong. Please try again later.'
+          });
+        }
+      }
+    });
+  });
+});
+
+// Swal messages with AJAX for ORDER LEVEL Cancel/Return
+document.addEventListener('DOMContentLoaded', () => {
+  const orderActionButtons = document.querySelectorAll('.order-action-btn');
+
+  orderActionButtons.forEach(button => {
+    button.addEventListener('click', async (e) => {
+      const orderId = e.target.dataset.orderId;
+      const action = e.target.dataset.action;
+      const type = e.target.dataset.type; // 'cancel' or 'return'
+
+      const actionText = action === 'approve' ? 'approve' : 'reject';
+      const typeText = type === 'cancel' ? 'cancellation' : 'return';
+
+      const confirm = await Swal.fire({
+        title: `${action === 'approve' ? 'Approve' : 'Reject'} order ${typeText}?`,
+        text: `Are you sure you want to ${actionText} this order ${typeText} request?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: `Yes, ${actionText} it!`,
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: action === 'approve' ? '#000' : '#dc3545',
+        cancelButtonColor: '#6c757d'
+      });
+
+      if (confirm.isConfirmed) {
+        try {
+          const url = `/admin/userOrders/${orderId}/${type}`;
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: action })
+          });
+
+          const result = await response.json();
+
+          if (result.success) {
+            await Swal.fire({
+              icon: 'success',
+              title: 'Success!',
+              text: result.message,
+              timer: 1500,
+              showConfirmButton: false
+            });
+            window.location.reload();
+          } else {
+            Swal.fire({
+              icon: 'error',
+              title: 'Failed',
+              text: result.message
+            });
+          }
+        } catch (error) {
+          console.error('Order action error:', error);
           Swal.fire({
             icon: 'error',
             title: 'Server Error',

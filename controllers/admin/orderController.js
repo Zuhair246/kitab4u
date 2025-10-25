@@ -208,6 +208,9 @@ const orderCancelRequest = async (req, res) => {
         }
         }
         await order.save();
+        if(action !== 'approve'){
+            return res.status(400).json( { success: false, message: "Cancel Rejected"})
+        }
         return res.status(200).json( { success: true, message: "Order cancel approved" } );
     } catch (error) {
         console.log('Admin order cancel approval error:',error);
@@ -232,6 +235,11 @@ const itemCancelRequest = async (req, res) => {
 
         item.itemStatus = action === 'approve' ? "Cancelled" : "Cancel Rejected";
 
+        const allCancelled = order.orderedItems.every(item => item.itemStatus === 'Cancelled');
+        if(allCancelled){
+            order.status = 'Cancelled';
+        }
+
         if(action === 'approve') {
             const product = await Product.findById(item.product);
             const variant = product?.variants.id(item.variantId);
@@ -241,6 +249,9 @@ const itemCancelRequest = async (req, res) => {
             }
         }
         await order.save();
+        if(action !== 'approve'){
+            return res.status(400).json({success: false, message: "Item cancel Rejected"})
+        }
         return res.status(200).json( { success: true, message: "Item cancel approved" } );
     } catch (error) {
         console.log('Admin Item cancel approval error:', error);
@@ -249,7 +260,7 @@ const itemCancelRequest = async (req, res) => {
     }
 }
 
-const orderReturnRequest = async (erq, res) => {
+const orderReturnRequest = async (req, res) => {
     try {
         const { orderId } = req.params;
         const { action } = req.body;
@@ -274,6 +285,9 @@ const orderReturnRequest = async (erq, res) => {
             }
         }
         await order.save();
+        if(action !== 'approve'){
+            return res.status(400).josn( { success: false, message: "Return not Rejected"})
+        }
         return res.status(200).json( { success: true, message: "Order Return Approved!"})
     } catch (error) {
         console.log('Admin Order Return Approval Error:', error);
@@ -298,6 +312,11 @@ const itemReturnRequest = async (req, res) => {
 
         item.itemStatus = action === 'approve' ? "Returned" : "Return Rejected";
 
+        const allReturned = order.orderedItems.every(item => item.itemStatus === 'Returned');
+        if(allReturned) {
+            order.status = 'Returned';
+        }
+
         if(action === 'approve') {
             const product = await Product.findById(item.product);
             const variant = product?.variants.id(item.variantId);
@@ -307,6 +326,9 @@ const itemReturnRequest = async (req, res) => {
             }
         }
         await order.save()
+        if(action !== 'approve'){
+            return res.status(400).json({success: false, message: "Item return Rejected"})
+        }
         return res.status(200).json( { success: true, message: "Item return approved" } );
 
     } catch (error) {

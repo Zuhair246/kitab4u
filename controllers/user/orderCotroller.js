@@ -6,6 +6,7 @@ const Order = require('../../models/orderSchema');
 const path = require('path')
 const PDFDocument = require('pdfkit');
 const { model } = require('mongoose');
+const { match } = require('assert');
 
 const loadOrderPage = async (req, res) => {
     try {
@@ -27,14 +28,26 @@ const loadOrderPage = async (req, res) => {
         const recentAddresses = sortedAddresses.slice(0,1);
         
         const cart = await Cart.findOne({userId}).populate({
-            path: 'items.productId'
+            path: 'items.productId',
+            populate:{
+                path:'categoryId',
+                model:'Category',
+                match: {isListed: true}
+            }
         });
-
-        if(!cart || cart.items.length === 0) {
+   
+        let cartItems = [];
+        if(cart && cart.items.length >0){
+            cartItems = cart.items.filter(
+                item => item.productId && item.productId.categoryId
+            )
+        }
+        
+        if(!cartItems || cartItems.length === 0) {
             return res.redirect ('/cart?error='+encodeURIComponent('Cart is empty'));
         }
 
-        let items = cart.items.map(item => {
+        let items = cartItems.map(item => {
             const product = item.productId;
             const variant = product.variants.id(item.variantId);
             const price = variant.discountPrice || variant.originalPrice;
@@ -98,13 +111,25 @@ const checkout = async (req,res) => {
         
         const cart = await Cart.findOne({userId}).populate({
             path: 'items.productId',
+            populate:{
+                path:'categoryId',
+                model:'Category',
+                match: {isListed: true}
+            }
         })
         
-         if(!cart || cart.items.length === 0) {
+        let cartItems = [];
+        if(cart && cart.items.length >0){
+            cartItems = cart.items.filter(
+                item => item.productId && item.productId.categoryId
+            )
+        }
+
+         if(!cartItems || cartItems.length === 0) {
             return res.redirect ('/cart?error='+encodeURIComponent('Cart is empty'));
         }
 
-        let items = cart.items.map(item => {
+        let items = cartItems.map(item => {
             const product = item.productId;
             const variant = product.variants.id(item.variantId);
             const price = variant.discountPrice || variant.originalPrice;

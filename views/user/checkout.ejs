@@ -3,146 +3,134 @@
 <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
 
 <div class="container py-5">
- <form id="checkoutForm" action="/orders" method="post">
-  <div class="row justify-content-center">
-    
-    <!-- Address Selection (Right) -->
-    <div class="col-lg-7 mb-4 order-lg-1">
-      <div class="bg-white p-4 rounded shadow-sm">
-        <h4 class="mb-4"> Select Delivery Address:</h4>
-        
-        <div class="mb-3">
-          <% if(addresses && addresses.length > 0) { %>
-            <% addresses.forEach((address, index) => { %>
-              <div class="border rounded p-3 mb-3 position-relative" 
-                   style="border-width:2px; border-color:#edc2ba; border-style:solid;">
-                <div>
-                  <input type="radio" name="selectedAddressId" 
-                         value="<%= address._id %>" 
-                         <%= index === 0 ? "checked" : "" %>
-                         onchange="updateSelectedAddress('<%= address._id %>')" />
-                  <strong><%= address.name %></strong><br>
-                  <%= address.phone %><br>
-                  <%= address.streetAddress %><br>
-                  <%= address.city %>, <%= address.state %> - <%= address.pinCode %>
+  <form id="checkoutForm" action="/orders" method="post" novalidate>
+    <div class="row justify-content-center">
+      <!-- Address Selection (Right) -->
+      <div class="col-lg-7 mb-4 order-lg-1">
+        <div class="bg-white p-4 rounded shadow-sm">
+          <h4 class="mb-4"> Select Delivery Address:</h4>
+
+          <div id="addressList" class="mb-3">
+            <% if(addresses && addresses.length > 0) { %>
+              <% addresses.forEach((address, index) => { %>
+                <div class="address-card border rounded p-3 mb-3 position-relative" style="border-width:2px; border-color:#edc2ba; border-style:solid;" data-address-id="<%= address._id %>">
+                  <div>
+                    <input type="radio" name="selectedAddressId" 
+                           value="<%= address._id %>" 
+                           <%= index === 0 ? "checked" : "" %>
+                           onchange="updateSelectedAddress('<%= address._id %>')" />
+                    <strong><%= address.name %></strong><br>
+                    <%= address.phone %><br>
+                    <%= address.streetAddress %><br>
+                    <%= address.city %>, <%= address.state %> - <%= address.pinCode %>
+                  </div>
+                  <span class="badge bg-secondary position-absolute top-0 end-0 mt-2 me-2">
+                    <%= address.addressType %>
+                  </span>
+                  <button type="button" 
+                          class="btn btn-sm btn-dark position-absolute top-0 end-0 mt-2 me-2 edit-btn" 
+                          style="transform:translateY(1.8rem);" 
+                          data-bs-toggle="modal"
+                          data-bs-target="#editAddressModal-<%=address._id %>">Edit</button>
                 </div>
-                <span class="badge bg-secondary position-absolute top-0 end-0 mt-2 me-2">
-                  <%= address.addressType %>
-                </span>
-                <button type="button" 
-                        class="btn btn-sm btn-dark position-absolute top-0 end-0 mt-2 me-2" 
-                        style="transform:translateY(1.8rem);" 
-                        data-bs-toggle="modal"
-                        data-bs-target="#editAddressModal-<%=address._id %>">Edit</button>
+              <% }); %>
+            <% } else { %>
+              <p>No saved addresses. Please add one.</p>
+            <% } %>
+          </div>
+
+          <!-- View More + Add New -->
+          <div class="d-flex justify-content-between mt-3">
+            <button type="button" class="btn btn-outline-primary w-40" data-bs-toggle="modal" data-bs-target="#viewMoreAddressesModal">
+              View more Addresses
+            </button>
+            <button type="button" class="btn btn-outline-primary w-40 me-1" data-bs-toggle="modal" data-bs-target="#addAddressModal">
+              + Add New Address
+            </button>
+          </div>
+
+          <!-- Payment Method Selection -->
+          <h5 class="mt-4 mb-3">Select Payment Method:</h5>
+          <div class="mb-3">
+            <div class="border rounded p-3 mb-2 payment-option" data-target="cod">
+              <div class="form-check w-100">
+                <input class="form-check-input" type="radio" name="paymentMethod" id="cod" value="COD">
+                <label class="form-check-label fw-semibold w-100 p-0" for="cod">
+                  <i class="bi bi-cash-coin me-2 fs-3 text-primary"></i>Cash on Delivery
+                </label>
               </div>
-            <% }); %>
-          <% } else { %>
-            <p>No saved addresses. Please add one.</p>
-          <% } %>
+            </div>
+            <div class="border rounded p-3 payment-option" data-target="online">
+              <div class="form-check w-100">
+                <input class="form-check-input" type="radio" name="paymentMethod" id="online" value="Online">
+                <label class="form-check-label fw-semibold w-100 p-0" for="online">
+                  <i class="bi bi-credit-card-fill me-2 fs-3 text-primary"></i>Online Payment
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hidden field -->
+          <input type="hidden" name="selectedAddressIdHidden" id="selectedAddressIdHidden" value="<%= addresses && addresses.length > 0 ? addresses[0]._id : '' %>">
         </div>
-
-        <!-- View More + Add New -->
-        <div class="d-flex justify-content-between mt-3">
-          <button type="button" class="btn btn-outline-primary w-40" 
-                  data-bs-toggle="modal" data-bs-target="#viewMoreAddressesModal">
-            View more Addresses
-          </button>
-          <button type="button" class="btn btn-outline-primary w-40 me-1" data-bs-toggle="modal" data-bs-target="#addAddressModal">
-            + Add New Address
-          </button>
-        </div>
-
-        <!-- Payment Method Selection -->
-<h5 class="mt-4 mb-3">Select Payment Method:</h5>
-<div class="mb-3">
-  <div class="border rounded p-3 mb-2 payment-option" data-target="cod">
-    <div class="form-check w-100">
-      <input class="form-check-input" type="radio" name="paymentMethod" id="cod" value="COD">
-      <label class="form-check-label fw-semibold w-100 p-0" for="cod">
-        <i class="bi bi-cash-coin me-2 fs-3 text-primary"></i>Cash on Delivery
-      </label>
-    </div>
-  </div>
-  <div class="border rounded p-3 payment-option" data-target="online">
-    <div class="form-check w-100">
-      <input class="form-check-input" type="radio" name="paymentMethod" id="online" value="Online">
-      <label class="form-check-label fw-semibold w-100 p-0" for="online">
-        <i class="bi bi-credit-card-fill me-2 fs-3 text-primary"></i>Online Payment
-      </label>
-    </div>
-  </div>
-</div>
-
-
-        <!-- Hidden field -->
-        <input type="hidden" name="selectedAddressIdHidden" id="selectedAddressIdHidden" 
-               value="<%= addresses.length > 0 ? addresses[0]._id : "" %>">
-
       </div>
-    </div>
 
-    <!-- Order Summary (Left column, exact left to address selection) -->
-    <div class="col-lg-5 order-lg-2">
-      <div class="bg-white p-4 rounded shadow-sm">
-        <h4 class="mb-4">Order Summary</h4>
-        <ul class="list-group mb-3">
-          <% for (let i = 0; i < items.length; i++) { %>
-            <li class="list-group-item d-flex justify-content-between align-items-center border-0 px-0 pb-0">
-              <div class="d-flex align-items-center">
-                <img
-                  src="<%= items[i].image ? items[i].image : '/placeholder.svg?height=80&width=60' %>"
-                  alt="<%= items[i].name %>"
-                  class="rounded me-2"
-                  style="width: 60px; height: 80px; object-fit: cover;"
-                >
-                <div>
-                  <strong><%= items[i].name %></strong>
-                  <div class="text-muted small">Qty: <%=items[i].quantity%></div>
+      <!-- Order Summary (Left column) -->
+      <div class="col-lg-5 order-lg-2">
+        <div class="bg-white p-4 rounded shadow-sm">
+          <h4 class="mb-4">Order Summary</h4>
+          <ul class="list-group mb-3">
+            <% for (let i = 0; i < items.length; i++) { %>
+              <li class="list-group-item d-flex justify-content-between align-items-center border-0 px-0 pb-0">
+                <div class="d-flex align-items-center">
+                  <img src="<%= items[i].image ? items[i].image : '/placeholder.svg?height=80&width=60' %>" alt="<%= items[i].name %>" class="rounded me-2" style="width:60px;height:80px;object-fit:cover">
+                  <div>
+                    <strong><%= items[i].name %></strong>
+                    <div class="text-muted small">Qty: <%= items[i].quantity %></div>
+                  </div>
                 </div>
-              </div>
-              <span>₹ <%= items[i].totalPrice %></span>
+                <span>₹ <%= items[i].totalPrice %></span>
+              </li>
+            <% } %>
+            <li class="list-group-item d-flex justify-content-between border-0 px-0">
+              <span>Delivery Charge:</span>
+              <span class="text-success fw-bold">₹ <%= shippingCharge %></span>
             </li>
-          <% } %>
-          <li class="list-group-item d-flex justify-content-between border-0 px-0">
-            <span>Delivery Charge:</span>
-            <span class="text-success fw-bold">₹ <%=shippingCharge%></span>
-          </li>
-          <li class="list-group-item d-flex justify-content-between border-0 px-0">
-            <span>Coupon Discount:</span>
-            <span class="text-success fw-bold">-₹ 0</span>
-          </li>
-        </ul>
-        <div class="mb-3">
-          <div class="input-group">
-            <input type="text" class="form-control" placeholder="Enter Coupon Code" aria-label="Enter Coupon Code">
-            <button class="btn btn-danger" type="button">Apply</button>
-          </div>
-        </div>
-        <div class="d-flex justify-content-between mb-3 px-1">
-          <div>
-            <span class="fw-bold">Total</span><br>
-            <small class="text-muted">In Rupees</small>
-          </div>
-          <span class="h5 fw-bold">₹ <%=finalAmount %></span>
-        </div>
+            <li class="list-group-item d-flex justify-content-between border-0 px-0">
+              <span>Coupon Discount:</span>
+              <span class="text-success fw-bold">-₹ 0</span>
+            </li>
+          </ul>
 
-        <!-- Submit button -->
-        <button class="btn btn-danger w-100 fw-bold" type="submit">
-          Continue
-        </button>
+          <div class="mb-3">
+            <div class="input-group">
+              <input type="text" class="form-control" placeholder="Enter Coupon Code" aria-label="Enter Coupon Code">
+              <button class="btn btn-danger" type="button">Apply</button>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between mb-3 px-1">
+            <div>
+              <span class="fw-bold">Total</span><br>
+              <small class="text-muted">In Rupees</small>
+            </div>
+            <span class="h5 fw-bold">₹ <%= finalAmount %></span>
+          </div>
+
+          <!-- Submit button -->
+          <button class="btn btn-danger w-100 fw-bold" type="submit">Continue</button>
+        </div>
       </div>
     </div>
-  </div>
-</form>
+  </form>
 
   <!-- View More Addresses Modal -->
-  <div class="modal fade" id="viewMoreAddressesModal" tabindex="-1" 
-       aria-labelledby="viewMoreAddressesLabel" aria-hidden="true">
+  <div class="modal fade" id="viewMoreAddressesModal" tabindex="-1" aria-labelledby="viewMoreAddressesLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="viewMoreAddressesLabel">All Addresses</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
           <% if(allAddresses && allAddresses.length > 0) { %>
@@ -153,9 +141,8 @@
                 <%= address.streetAddress %><br>
                 <%= address.city %>, <%= address.state %> - <%= address.pinCode %><br>
                 <span class="badge bg-secondary"><%= address.addressType %></span>
-                <button type="button" 
-                        class="btn btn-primary btn-sm float-end ms-2"
-                        onclick="selectAddressFromModal('<%= address._id %>', '<%= address.name %>', '<%= address.phone %>', '<%= address.streetAddress %>', '<%= address.city %>', '<%= address.state %>', '<%= address.pinCode %>', '<%= address.addressType %>')">
+                <button type="button" class="btn btn-primary btn-sm float-end ms-2"
+                        onclick="selectAddressFromModal('<%= address._id %>', '<%= escape(address.name) %>', '<%= address.phone %>', '<%= escape(address.streetAddress) %>', '<%= escape(address.city) %>', '<%= escape(address.state) %>', '<%= address.pinCode %>', '<%= address.addressType %>')">
                   Select this address
                 </button>
               </div>
@@ -168,483 +155,293 @@
     </div>
   </div>
 
-  <!-- Edit Address Modals -->
-  <% if(addresses && addresses.length > 0) { %>
-    <% addresses.forEach(address => { %>
-      <!-- Edit Address Modal -->
-      <div class="modal fade" id="editAddressModal-<%= address._id %>" tabindex="-1" aria-labelledby="editAddressLabel-<%= address._id %>" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-          <div class="modal-content">
-            <form id="editAddressForm-<%= address._id %>" class="row g-3">
-              <div class="modal-header">
-                <h5 class="modal-title fw-bold" id="editAddressLabel-<%= address._id %>">Edit Address</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-              </div>
-
-              <div class="modal-body">
-                <!-- Name -->
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold">Name:</label>
-                  <input type="text" name="name" class="form-control" value="<%= address.name %>" maxlength="15">
-                </div>
-
-                <!-- City -->
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold">City:</label>
-                  <input type="text" name="city" class="form-control" value="<%= address.city %>" maxlength="15">
-                </div>
-
-                <!-- Street Address -->
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold">Street address:</label>
-                  <input type="text" name="streetAddress" class="form-control" value="<%= address.streetAddress %>" maxlength="25">
-                </div>
-
-                <!-- State -->
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold">State:</label>
-            <select name="state" id="stateSelect" class="form-select">
-                <option value="<%= address.state %>"><%= address.state %></option>
-                <option value="Andhra Pradesh">Andhra Pradesh</option>
-                <option value="Arunachal Pradesh">Arunachal Pradesh</option>
-                <option value="Assam">Assam</option>
-                <option value="Bihar">Bihar</option>
-                <option value="Chathisgarh">Chathisgarh</option>
-                <option value="Goa">Goa</option>
-                <option value="Gujarat">Gujarat</option>
-                <option value="Haryana">Haryana</option>
-                <option value="Himachal Pradesh">Himachal Pradesh</option>
-                <option value="Jharkhand">Jharkhand</option>
-                <option value="Karnataka">Karnataka</option>
-                <option value="Kerala">Kerala</option>
-                <option value="Maharashtra">Maharashtra</option>
-                <option value="Manipur">Manipur</option>
-                <option value="Meghalaya">Meghalaya</option>
-                <option value="Mizoram">Mizoram</option>
-                <option value="Nagaland">Nagaland</option>
-                <option value="Odisha">Odisha</option>
-                <option value="Punjab">Punjab</option>
-                <option value="Rajasthan">Rajasthan</option>
-                <option value="Sikkim">Sikkim</option>
-                <option value="Tamil Nadu">Tamil Nadu</option>
-                <option value="Telangana">Telangana</option>
-                <option value="Tripura">Tripura</option>
-                <option value="Uttar Pradesh">Uttar Pradesh</option>
-                <option value="Uttatakand">Uttatakand</option>
-                <option value="West Bengal">West Bengal</option>
-          </select>
-                </div>
-
-                <!-- Pin Code -->
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold">Pin Code:</label>
-                  <input type="text" name="pinCode" class="form-control" value="<%= address.pinCode %>" maxlength="6" pattern="[0-9]{6}" >
-                </div>
-
-                <!-- Phone -->
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold">Phone:</label>
-                  <input type="text" name="phone" class="form-control" value="<%= address.phone %>" maxlength="10" pattern="[0-9]{10}" >
-                </div>
-
-                <!-- Alternative Phone -->
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold">Alternative Phone:</label>
-                  <input type="text" name="altPhone" class="form-control" value="<%= address.altPhone %>" maxlength="10" pattern="[0-9]{10}">
-                </div>
-
-                <!-- Address Type -->
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold">Address Type:</label>
-                  <select name="addressType" class="form-select">
-                    <option value="Home" <%= address.addressType === 'Home' ? 'selected' : '' %>>Home</option>
-                    <option value="Work" <%= address.addressType === 'Work' ? 'selected' : '' %>>Work</option>
-                    <option value="Other" <%= address.addressType === 'Other' ? 'selected' : '' %>>Other</option>
-                  </select>
-                </div>
-
-                <!-- Default Address -->
-                <div class="col-md-12">
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" name="isDefault" <%= address.isDefault ? 'checked' : '' %>>
-                    <label class="form-check-label">Set as default address</label>
-                  </div>
-                </div>
-              </div>
-
-              <div class="modal-footer">
-                <button type="submit" class="btn btn-primary">Save Changes</button>
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-    <% }); %>
-  <% } %>
+  <!-- Edit Address Modals (one per address) -->
+  <%-include("../../views/partials/user/editAddressModal") %>
 
   <!-- Add Address Modal -->
-  <div class="modal fade" id="addAddressModal" tabindex="-1" aria-labelledby="addAddressLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <form id="addAddressForm" action="/profile/address/add" class="row g-3">
-          <div class="modal-header">
-            <h5 class="modal-title fw-bold" id="addAddressLabel">Add New Address</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <!-- Name -->
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">Name:</label>
-              <input type="text" name="name" class="form-control" maxlength="15">
-            </div>
-
-            <!-- City -->
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">City:</label>
-              <input type="text" name="city" class="form-control" maxlength="15">
-            </div>
-
-            <!-- Street Address -->
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">Street address:</label>
-              <select name="state" id="stateSelect" class="form-select">
-                <option value="Andhra Pradesh">Andhra Pradesh</option>
-                <option value="Arunachal Pradesh">Arunachal Pradesh</option>
-                <option value="Assam">Assam</option>
-                <option value="Bihar">Bihar</option>
-                <option value="Chathisgarh">Chathisgarh</option>
-                <option value="Goa">Goa</option>
-                <option value="Gujarat">Gujarat</option>
-                <option value="Haryana">Haryana</option>
-                <option value="Himachal Pradesh">Himachal Pradesh</option>
-                <option value="Jharkhand">Jharkhand</option>
-                <option value="Karnataka">Karnataka</option>
-                <option value="Kerala">Kerala</option>
-                <option value="Maharashtra">Maharashtra</option>
-                <option value="Manipur">Manipur</option>
-                <option value="Meghalaya">Meghalaya</option>
-                <option value="Mizoram">Mizoram</option>
-                <option value="Nagaland">Nagaland</option>
-                <option value="Odisha">Odisha</option>
-                <option value="Punjab">Punjab</option>
-                <option value="Rajasthan">Rajasthan</option>
-                <option value="Sikkim">Sikkim</option>
-                <option value="Tamil Nadu">Tamil Nadu</option>
-                <option value="Telangana">Telangana</option>
-                <option value="Tripura">Tripura</option>
-                <option value="Uttar Pradesh">Uttar Pradesh</option>
-                <option value="Uttatakand">Uttatakand</option>
-                <option value="West Bengal">West Bengal</option>
-              </select>
-            </div>
-
-            <!-- State -->
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">State:</label>
-              <input type="text" name="state" class="form-control">
-            </div>
-
-            <!-- Pin Code -->
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">Pin Code</label>
-              <input type="text" 
-                            name="pinCode" 
-                            class="form-control"  
-                            maxlength="6" 
-                            pattern="[0-9]{6}"
-                            placeholder="6-digit PIN"
-                            title="Pin code must be 6 digits"
-                            oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,6)">
-            </div>
-
-            <!-- Phone -->
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">Phone</label>
-              <input type="text" name="phone" class="form-control" maxlength="10" pattern="[0-9]{10}" placeholder="Mobile Number"
-                                                      title="Phone number must be 10 digits"
-                                                      oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,10)" 
-                                                      >
-            </div>
-
-            <!-- Alternative Phone -->
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">Alternative Phone</label>
-              <input type="text" name="altPhone" class="form-control"  maxlength="10" 
-                          placeholder="Alt. Phone"
-                          pattern="[0-9]{10}"
-                          title="Alternative phone must be 10 digits"
-                          oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,10)">
-            </div>
-
-            <!-- Address Type -->
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">Address Type</label>
-              <select name="addressType" class="form-select">
-                <option value="Home">Home</option>
-                <option value="Work">Work</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-
-            <!-- Default Address -->
-            <div class="col-md-12 mt-3">
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="isDefault">
-                <label class="form-check-label">Set as default address</label>
-              </div>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="submit" class="btn btn-primary">Add Address</button>
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
+  <%-include("../../views/partials/user/addAddressModal") %>
 </div>
 
 <%- include("../../views/partials/user/footer") %>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
- const urlParams = new URLSearchParams(window.location.search);
-  const error = urlParams.get('error');
-  const success = urlParams.get('success');
+/* -------------------------
+  Utilities & PIN validation
+----------------------------*/
+async function fetchPincodeInfo(pin) {
+  // returns null on failure, or the first PostOffice object on success
+  try {
+    const resp = await fetch(`https://api.postalpincode.in/pincode/${pin}`);
+    const arr = await resp.json();
+    const root = arr && arr[0];
+    if (!root || root.Status !== 'Success' || !root.PostOffice || root.PostOffice.length === 0) return null;
+    return root.PostOffice[0];
+  } catch (err) {
+    console.error('postal API error', err);
+    return null;
+  }
+}
 
-  if (error) {
-    Swal.fire({
-      icon: 'error',
-      title: 'Oops...',
-      text: decodeURIComponent(error),
-      confirmButtonColor: '#d33'
-    });
+// validate and autofill for a specific form (scoped)
+async function validateAndAutofill(pinInput) {
+  const pin = String(pinInput.value || '').trim();
+  if (!/^[1-9][0-9]{5}$/.test(pin)) {
+    pinInput.classList.remove('is-valid');
+    pinInput.classList.add('is-invalid');
+    return false;
+  }
+  pinInput.classList.remove('is-invalid');
+  pinInput.classList.add('is-valid');
+  pinInput.style.cursor = 'wait';
+  const postOffice = await fetchPincodeInfo(pin);
+  pinInput.style.cursor = 'default';
+  const form = pinInput.closest('form');
+  const cityInput = form?.querySelector('input[name="city"]');
+  const stateInput = form?.querySelector('input[name="state"]');
+
+  if (!postOffice) {
+    // clear or keep? we clear to avoid wrong values
+    if (cityInput) cityInput.value = '';
+    if (stateInput) stateInput.value = '';
+    Swal.fire({ icon: 'error', title: 'Invalid Pincode', text: 'Pincode not found in India Post records.' });
+    pinInput.classList.remove('is-valid');
+    pinInput.classList.add('is-invalid');
+    return false;
   }
 
-  if (success) {
-    Swal.fire({
-      icon: 'success',
-      title: 'Success!',
-      text: decodeURIComponent(success),
-      confirmButtonColor: '#3085d6'
-    });
-  }
+  if (cityInput) cityInput.value = (postOffice.District || '').trim();
+  if (stateInput) stateInput.value = (postOffice.State || '').trim();
+  pinInput.classList.remove('is-invalid');
+  pinInput.classList.add('is-valid');
+  return true;
+}
 
-  function updateSelectedAddress(addressId) {
-    document.getElementById("selectedAddressIdHidden").value = addressId;
-  }
+/* -------------------------
+  Delegated event listeners
+----------------------------*/
 
-  function selectAddressFromModal(id, name, phone, street, city, state, pin, type) {
-    document.getElementById("selectedAddressIdHidden").value = id;
-    
-    // Find the currently selected address div in the main section
-    const currentRadio = document.querySelector('input[name="selectedAddressId"]:checked');
-    if (currentRadio) {
-      const currentDiv = currentRadio.closest('.position-relative');
-      if (currentDiv) {
-        // Update the content of the current selected address div
-        currentDiv.innerHTML = `
-          <div>
-            <input type="radio" name="selectedAddressId" value="${id}" checked onchange="updateSelectedAddress('${id}')" />
-            <strong>${name}</strong><br>
-            ${phone}<br>
-            ${street}<br>
-            ${city}, ${state} - ${pin}
-          </div>
-          <span class="badge bg-secondary position-absolute top-0 end-0 mt-2 me-2">
-            ${type}
-          </span>
-          <button type="button" 
-                  class="btn btn-sm btn-dark position-absolute top-0 end-0 mt-2 me-2" 
-                  style="transform:translateY(1.8rem);">Edit</button>
-        `;
-      }
+// live pincode validation: works for add & edit forms (delegated)
+document.addEventListener('input', function(e) {
+  const el = e.target;
+  if (!el) return;
+  // keep digits only
+  if (el.name === 'pinCode') {
+    el.value = el.value.replace(/[^0-9]/g, '').slice(0, 6);
+    if (el.value.length === 6) {
+      // call but don't block typing (fire + forget)
+      validateAndAutofill(el);
     }
-    
-    // Close the modal
-    const modalElement = document.getElementById('viewMoreAddressesModal');
-    const modal = bootstrap.Modal.getInstance(modalElement);
-    if (modal) {
-      modal.hide();
-    }
   }
+});
 
-  document.getElementById("addAddressForm").addEventListener("submit", async function(e) {
+// Add Address (delegated submit)
+document.addEventListener('submit', async function(e) {
+  const form = e.target;
+  // Add address
+  if (form && form.id === 'addAddressForm') {
     e.preventDefault();
+    const pinInput = form.querySelector('input[name="pinCode"]');
+    const isPinValid = await validateAndAutofill(pinInput);
+    if (!isPinValid) return;
 
-    const form = e.target;
+    // gather data
     const formData = new FormData(form);
     const data = Object.fromEntries(formData.entries());
 
     try {
-      const res = await fetch(form.action, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch(form.action || '/profile/address/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       });
       const result = await res.json();
 
-      if (result.success) {
-        // ✅ Close modal
-        const modal = bootstrap.Modal.getInstance(document.getElementById("addAddressModal"));
-        modal.hide();
-
-        // ✅ Add new address to checkout list dynamically
-        const addressList = document.querySelector(".mb-3"); // container for addresses
-        const newDiv = document.createElement("div");
-        newDiv.className = "border rounded p-3 mb-3 position-relative";
-        newDiv.style.border = "2px solid #edc2ba";
-        newDiv.innerHTML = `
-          <div>
-            <input type="radio" name="selectedAddressId" 
-                   value="${result.addressId}" 
-                   checked 
-                   onchange="updateSelectedAddress('${result.addressId}')"/>
-            <strong>${data.name}</strong><br>
-            ${data.phone}<br>
-            ${data.streetAddress}<br>
-            ${data.city}, ${data.state} - ${data.pinCode}
-          </div>
-          <span class="badge bg-secondary position-absolute top-0 end-0 mt-2 me-2">
-            ${data.addressType}
-          </span>
-          <button type="button" 
-                  class="btn btn-sm btn-dark position-absolute top-0 end-0 mt-2 me-2" 
-                  style="transform:translateY(1.8rem);" 
-                  data-bs-toggle="modal"
-                  data-bs-target="#editAddressModal-${result.addressId}">Edit</button>
-        `;
-        addressList.prepend(newDiv);
-
-        // ✅ Update hidden field
-        document.getElementById("selectedAddressIdHidden").value = result.addressId;
-
-        Swal.fire({
-          icon: 'success',
-          title: 'Success!',
-          text: 'Address added successfully!',
-        });
-      } else {
-        Swal.fire({
-          icon: 'error',
-          title: 'Error!',
-          text: result.message || 'Failed to add address',
-        });
+      if (!result || !result.success) {
+        Swal.fire({ icon: 'error', title: 'Failed', text: (result && result.message) || 'Could not add address' });
+        return;
       }
+
+      // Build new address card HTML and insert
+      const newCard = document.createElement('div');
+      newCard.className = 'address-card border rounded p-3 mb-3 position-relative';
+      newCard.style.borderWidth = '2px'; newCard.style.borderColor = '#edc2ba'; newCard.style.borderStyle = 'solid';
+      newCard.setAttribute('data-address-id', result.addressId);
+      newCard.innerHTML = `
+        <div>
+          <input type="radio" name="selectedAddressId" value="${result.addressId}" checked onchange="updateSelectedAddress('${result.addressId}')"/>
+          <strong>${escapeHtml(data.name)}</strong><br>
+          ${escapeHtml(data.phone)}<br>
+          ${escapeHtml(data.streetAddress)}<br>
+          ${escapeHtml(data.city)}, ${escapeHtml(data.state)} - ${escapeHtml(data.pinCode)}
+        </div>
+        <span class="badge bg-secondary position-absolute top-0 end-0 mt-2 me-2">${escapeHtml(data.addressType)}</span>
+        <button type="button" class="btn btn-sm btn-dark position-absolute top-0 end-0 mt-2 me-2 edit-btn" style="transform:translateY(1.8rem);" data-bs-toggle="modal" data-bs-target="#editAddressModal-${result.addressId}">Edit</button>
+      `;
+
+      // Prepend
+      const addressList = document.getElementById('addressList');
+      if (addressList) addressList.prepend(newCard);
+
+      // update hidden selection
+      document.getElementById('selectedAddressIdHidden').value = result.addressId;
+
+      // close modal
+      const modalEl = document.getElementById('addAddressModal');
+      const modal = bootstrap.Modal.getInstance(modalEl);
+      if (modal) modal.hide();
+
+      Swal.fire({ icon: 'success', title: 'Address added', timer: 1500, showConfirmButton: false });
+
+      form.reset();
+      form.querySelectorAll('.is-valid').forEach(i => i.classList.remove('is-valid'));
+
     } catch (err) {
-      console.error("Error:", err);
-      Swal.fire({
-        icon: 'error',
-        title: 'Error!',
-        text: 'Something went wrong',
-      });
+      console.error('Add address error', err);
+      Swal.fire({ icon: 'error', title: 'Error', text: 'Server error' });
     }
-  });
+  }
 
-  <% if(addresses && addresses.length > 0) { %>
-    <% addresses.forEach(address => { %>
-      document.getElementById("editAddressForm-<%= address._id %>").addEventListener("submit", async function(e) {
-        e.preventDefault();
-        await saveEditedAddress(e, "<%= address._id %>");
+  // Edit address forms: id format editAddressForm-<id>
+  if (form && form.id && form.id.startsWith('editAddressForm-')) {
+    e.preventDefault();
+    const addressId = form.getAttribute('data-address-id') || form.id.replace('editAddressForm-', '');
+    const pinInput = form.querySelector('input[name="pinCode"]');
+    const isPinValid = await validateAndAutofill(pinInput);
+    if (!isPinValid) return;
+
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+
+    try {
+      const res = await fetch(`/profile/address/edit/${addressId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
       });
-    <% }); %>
-  <% } %>
+      const result = await res.json();
+      if (!result || !result.success) {
+        Swal.fire({ icon: 'error', title: 'Failed', text: (result && result.message) || 'Could not update address' });
+        return;
+      }
 
- async function saveEditedAddress(e, addressId) {
-  const form = document.getElementById(`editAddressForm-${addressId}`);
-  const formData = new FormData(form);
-  const data = Object.fromEntries(formData.entries());
-
-  const radio = document.querySelector(`input[value="${addressId}"]`);
-  const wasChecked = radio ? radio.checked : false;
-  const checkedAttr = wasChecked ? 'checked' : '';
-
-  try {
-    const res = await fetch(`/profile/address/edit/${addressId}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data)
-    });
-
-    // Always parse the JSON!
-    const result = await res.json();
-
-    if (result.success) {
-      // Only on success: update address card and hide modal
-      const card = document.querySelector(`input[value="${addressId}"]`)?.closest(".position-relative");
+      // Update existing card DOM if present
+      const card = document.querySelector(`.address-card[data-address-id="${addressId}"]`);
       if (card) {
+        // preserve checked state
+        const wasChecked = card.querySelector('input[name="selectedAddressId"]')?.checked;
         card.innerHTML = `
           <div>
-            <input type="radio" name="selectedAddressId" value="${addressId}" ${checkedAttr} onchange="updateSelectedAddress('${addressId}')" />
-            <strong>${data.name}</strong><br>
-            ${data.phone}<br>
-            ${data.streetAddress}<br>
-            ${data.city}, ${data.state} - ${data.pinCode}
+            <input type="radio" name="selectedAddressId" value="${addressId}" ${wasChecked ? 'checked' : ''} onchange="updateSelectedAddress('${addressId}')"/>
+            <strong>${escapeHtml(data.name)}</strong><br>
+            ${escapeHtml(data.phone)}<br>
+            ${escapeHtml(data.streetAddress)}<br>
+            ${escapeHtml(data.city)}, ${escapeHtml(data.state)} - ${escapeHtml(data.pinCode)}
           </div>
-          <span class="badge bg-secondary position-absolute top-0 end-0 mt-2 me-2">
-            ${data.addressType}
-          </span>
-          <button type="button" 
-                  class="btn btn-sm btn-dark position-absolute top-0 end-0 mt-2 me-2" 
-                  style="transform:translateY(1.8rem);" 
-                  data-bs-toggle="modal"
-                  data-bs-target="#editAddressModal-${addressId}">Edit</button>
+          <span class="badge bg-secondary position-absolute top-0 end-0 mt-2 me-2">${escapeHtml(data.addressType)}</span>
+          <button type="button" class="btn btn-sm btn-dark position-absolute top-0 end-0 mt-2 me-2 edit-btn" style="transform:translateY(1.8rem);" data-bs-toggle="modal" data-bs-target="#editAddressModal-${addressId}">Edit</button>
         `;
-        if (wasChecked) {
-          updateSelectedAddress(addressId);
-        }
+        if (wasChecked) updateSelectedAddress(addressId);
       }
 
-      // Only close the modal here!
+      // close modal
       const modalEl = document.getElementById(`editAddressModal-${addressId}`);
       const modal = bootstrap.Modal.getInstance(modalEl);
-      modal.hide();
+      if (modal) modal.hide();
 
-      Swal.fire({
-        icon: 'success',
-        title: 'Success!',
-        text: 'Address updated successfully!',
-      });
-    } else {
-      // Show Swal for errors and do NOT close the modal!
-      Swal.fire({
-        icon: 'error',
-        title: 'Error!',
-        text: result.message || 'Failed to update address',
-      });
+      Swal.fire({ icon: 'success', title: 'Address updated', timer: 1400, showConfirmButton: false });
+
+    } catch (err) {
+      console.error('Edit address error', err);
+      Swal.fire({ icon: 'error', title: 'Error', text: 'Server error' });
     }
-  } catch (err) {
-    console.error(err);
-    Swal.fire({
-      icon: 'error',
-      title: 'Error!',
-      text: 'Something went wrong',
-    });
   }
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-  const paymentOptions = document.querySelectorAll('.payment-option');
-  paymentOptions.forEach(option => {
-    option.addEventListener('click', function() {
-      const targetId = this.dataset.target;
-      document.getElementById(targetId).checked = true;
-      // Trigger change event if needed
-      document.getElementById(targetId).dispatchEvent(new Event('change'));
-    });
-  });
-
-  // Update visual state on radio change
-  document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
-    radio.addEventListener('change', function() {
-      paymentOptions.forEach(opt => opt.classList.remove('selected'));
-      const selectedOption = document.querySelector(`[data-target="${this.value}"]`);
-      if (selectedOption) {
-        selectedOption.classList.add('selected');
-      }
-    });
-  });
 });
 
+/* selection helpers */
+function updateSelectedAddress(addressId) {
+  const hidden = document.getElementById('selectedAddressIdHidden');
+  if (hidden) hidden.value = addressId;
+}
+
+/* Select from view more modal */
+function selectAddressFromModal(id, name, phone, street, city, state, pin, type) {
+  // set hidden id
+  document.getElementById('selectedAddressIdHidden').value = id;
+
+  // find previously selected card's radio and update it
+  const previousCheckedRadio = document.querySelector('input[name="selectedAddressId"]:checked');
+  if (previousCheckedRadio) previousCheckedRadio.checked = false;
+
+  // If card exists in main list, we select it; else prepend a new card
+  let card = document.querySelector(`.address-card[data-address-id="${id}"]`);
+  if (!card) {
+    const addressList = document.getElementById('addressList');
+    const newCard = document.createElement('div');
+    newCard.className = 'address-card border rounded p-3 mb-3 position-relative';
+    newCard.style.borderWidth = '2px'; newCard.style.borderColor = '#edc2ba'; newCard.style.borderStyle = 'solid';
+    newCard.setAttribute('data-address-id', id);
+    newCard.innerHTML = `
+      <div>
+        <input type="radio" name="selectedAddressId" value="${id}" checked onchange="updateSelectedAddress('${id}')"/>
+        <strong>${escapeHtml(name)}</strong><br>
+        ${escapeHtml(phone)}<br>
+        ${escapeHtml(street)}<br>
+        ${escapeHtml(city)}, ${escapeHtml(state)} - ${escapeHtml(pin)}
+      </div>
+      <span class="badge bg-secondary position-absolute top-0 end-0 mt-2 me-2">${escapeHtml(type)}</span>
+      <button type="button" class="btn btn-sm btn-dark position-absolute top-0 end-0 mt-2 me-2 edit-btn" style="transform:translateY(1.8rem);">Edit</button>
+    `;
+    if (addressList) addressList.prepend(newCard);
+  } else {
+    // mark radio checked
+    const radio = card.querySelector('input[name="selectedAddressId"]');
+    if (radio) radio.checked = true;
+  }
+
+  // close modal
+  const modalElement = document.getElementById('viewMoreAddressesModal');
+  const modal = bootstrap.Modal.getInstance(modalElement);
+  if (modal) modal.hide();
+}
+
+/* small helper to escape HTML when injecting user content */
+function escapeHtml(unsafe) {
+  if (unsafe === undefined || unsafe === null) return '';
+  return String(unsafe)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
+/* payment option UI (unchanged behavior) */
+document.addEventListener('click', function(e) {
+  const opt = e.target.closest('.payment-option');
+  if (!opt) return;
+  const target = opt.dataset.target;
+  const input = document.getElementById(target);
+  if (input) {
+    input.checked = true;
+    input.dispatchEvent(new Event('change'));
+  }
+});
+
+document.addEventListener('change', function(e) {
+  if (e.target && e.target.name === 'paymentMethod') {
+    document.querySelectorAll('.payment-option').forEach(el => el.classList.remove('selected'));
+    const sel = document.querySelector(`[data-target="${e.target.value}"]`);
+    if (sel) sel.classList.add('selected');
+  }
+});
+
+/* Notify query params */
+(function showQueryMessages() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const err = urlParams.get('error');
+  const suc = urlParams.get('success');
+  if (err) Swal.fire({ icon: 'error', title: 'Oops...', text: decodeURIComponent(err), confirmButtonColor: '#d33' });
+  if (suc) Swal.fire({ icon: 'success', title: 'Success!', text: decodeURIComponent(suc), confirmButtonColor: '#3085d6' });
+})();
 </script>

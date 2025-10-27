@@ -11,3 +11,8 @@
   border-color: #dc3545;
   box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
 }
+input.is-valid { border-color: #28a745 !important; box-shadow: none !important; }
+input.is-invalid { border-color: #dc3545 !important; box-shadow: none !important; }
+textarea.is-valid { border-color: #28a745 !important; }
+textarea.is-invalid { border-color: #dc3545 !important; }
+.payment-option.selected { box-shadow: 0 0 0 3px rgba(13,110,253,.08); }

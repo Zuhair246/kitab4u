@@ -1,0 +1,74 @@
+<% if (addresses && addresses.length > 0) { %>
+  <% addresses.forEach(address => { %>
+    <div class="modal fade" id="editAddressModal-<%= address._id %>" tabindex="-1" aria-labelledby="editAddressLabel-<%= address._id %>" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content rounded-3 shadow-sm">
+          <form id="editAddressForm-<%= address._id %>" method="POST" class="row g-3 edit-address-form" data-address-id="<%= address._id %>">
+            <div class="modal-header border-0">
+              <h5 class="modal-title fw-bold" id="editAddressLabel-<%= address._id %>">Edit Address</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Full Name</label>
+                <input type="text" name="name" class="form-control" value="<%= address.name %>" maxlength="50" required>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Phone</label>
+                <input type="text" name="phone" class="form-control" value="<%= address.phone %>" maxlength="10" required>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Pincode</label>
+                <input type="text" name="pinCode" class="form-control" value="<%= address.pinCode %>" maxlength="6" required>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">City</label>
+                <input type="text" name="city" class="form-control" value="<%= address.city %>" maxlength="30" required>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">State</label>
+                <input type="text" name="state" class="form-control" value="<%= address.state %>" maxlength="30" required>
+              </div>
+
+              <div class="col-md-12">
+                <label class="form-label fw-semibold">Street Address</label>
+                <textarea name="streetAddress" class="form-control" rows="2" maxlength="150" required><%= address.streetAddress %></textarea>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Alternative Phone</label>
+                <input type="text" name="altPhone" class="form-control" value="<%= address.altPhone %>" maxlength="10">
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Address Type</label>
+                <select name="addressType" class="form-select">
+                  <option value="Home" <%= address.addressType === 'Home' ? 'selected' : '' %>>Home</option>
+                  <option value="Work" <%= address.addressType === 'Work' ? 'selected' : '' %>>Work</option>
+                  <option value="Other" <%= address.addressType === 'Other' ? 'selected' : '' %>>Other</option>
+                </select>
+              </div>
+
+              <div class="col-md-12 mt-2">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" name="isDefault" id="isDefaultEdit-<%= address._id %>" <%= address.isDefault ? 'checked' : '' %>>
+                  <label class="form-check-label" for="isDefaultEdit-<%= address._id %>">Set as default address</label>
+                </div>
+              </div>
+            </div>
+
+            <div class="modal-footer border-0">
+              <button type="submit" class="btn btn-primary">Save Changes</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  <% }); %>
+<% } %>

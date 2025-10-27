@@ -354,16 +354,18 @@ const login = async (req,res) => {
     }
 }
 
-const logout = async (req,res) => {
-    try {
-        delete req.session.user
-        return res.redirect('/login')
-    } catch (error) {
-        console.log("Logout error", error);
-        res.redirect('/pageNotFound')
-        
-    }
-}
+const logout = async (req, res) => {
+  try {
+    req.session.destroy((err) => {
+      if (err) return res.redirect("/pageNotFound");
+      res.clearCookie("user.sid");
+      return res.redirect("/login");
+    });
+  } catch (error) {
+    return res.redirect("/pageNotFound");
+  }
+};
+
 
 const loadVerifyEmail = async (req,res) => {
     try {

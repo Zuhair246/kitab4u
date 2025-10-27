@@ -449,7 +449,7 @@ const updateProfileImage = async (req, res) => {
 
     res.render('address', {
       user,
-      userAddress: paginatedAddress,
+      addresses: paginatedAddress,
       currentPage: page,
       totalPages,
       error: req.flash("error"),
@@ -582,8 +582,8 @@ const defaultFlag = isDefault === 'on';
         userId: userData._id,
         address: [{addressType, name, city, streetAddress, state, pinCode, phone, isDeleted:false, isDefault:true}]
       })
-     const result = await newAddress.save()
-     console.log("first:",result);
+ await newAddress.save()
+
     }else {
 
        if (defaultFlag) {
@@ -594,15 +594,14 @@ const defaultFlag = isDefault === 'on';
       }
 
       userAddress.address.push({addressType, name, city, streetAddress, state, pinCode, phone, altPhone, isDeleted: false, isDefault: defaultFlag});
-    const result2 =  await userAddress.save();
-    console.log("Second:",result2);
+        await userAddress.save();
     
     }
 
     if(isAjax) {
       const newAddress = userAddress
             ? userAddress.address[userAddress.address.length - 1] 
-            : result.address[0];
+            : newAddress.address[0]
       return res.json({success: true, message: 'Address added successfully !', addressId: newAddress._id})
     }
     res.redirect('/profile/address?success=Address added successfully')

@@ -1,0 +1,65 @@
+<div class="modal fade" id="addAddressModal" tabindex="-1" aria-labelledby="addAddressModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content p-3 rounded-3 shadow">
+      <div class="modal-header border-0">
+        <h5 class="modal-title fw-bold" id="addAddressModalLabel">Add New Address</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <form id="addAddressForm" action="/profile/address/add" method="POST" class="row g-3 needs-validation" novalidate>
+        <div class="modal-body">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Full Name</label>
+            <input type="text" name="name" class="form-control" maxlength="50" required>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Phone Number</label>
+            <input type="tel" name="phone" class="form-control" pattern="\d{10}" maxlength="10" required>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Pincode</label>
+            <input type="text" name="pinCode" class="form-control" maxlength="6" required>
+          </div>
+
+          <div class="col-md-12">
+            <label class="form-label fw-semibold">Street Address</label>
+            <textarea name="streetAddress" class="form-control" rows="2" maxlength="150" required></textarea>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">City</label>
+            <input type="text" name="city" class="form-control" maxlength="30" required>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">State</label>
+            <input type="text" name="state" class="form-control" maxlength="30" required>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Address Type</label>
+            <select name="addressType" class="form-select" required>
+              <option value="">Select Type</option>
+              <option value="Home">Home</option>
+              <option value="Work">Work</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div class="col-md-12 mt-2">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="isDefault" id="isDefaultAdd">
+              <label class="form-check-label" for="isDefaultAdd">Set as default address</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer border-0">
+          <button type="submit" class="btn btn-primary w-100 fw-semibold">Add Address</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

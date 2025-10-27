@@ -2,7 +2,8 @@ const User = require("../../models/userSchema");
 const Product = require("../../models/productSchema");
 const Cart = require("../../models/cartSchema");
 const Wishlist = require("../../models/wishlistSchema");
-const { default: mongoose } = require("mongoose");
+const { default: mongoose, model } = require("mongoose");
+const { path } = require("pdfkit");
 
 const loadCart = async (req, res) => {
   try {
@@ -16,17 +17,28 @@ const loadCart = async (req, res) => {
     const productId = req.query.id;
     const product = productId ? await Product.findById(productId) : null;
 
-    const cart = await Cart.findOne({ userId }).populate("items.productId");
+    const cart = await Cart.findOne({ userId }).populate({
+      path:'items.productId',
+      populate:{
+        path:'categoryId',
+        model:'Category',
+        match: {isListed: true}
+      }
+    });
 
+    let cartItems =[];
     let subtotal = 0;
     if (cart && cart.items.length > 0) {
-      subtotal = cart.items.reduce((acc, item) => acc + item.totalPrice, 0);
+      cartItems = cart.items.filter(
+        item => item.productId && item.productId.categoryId
+      );
+      subtotal = cartItems.reduce((total, item) => total + item.totalPrice , 0);
     }
 
     res.render("cart", {
       user,
       product,
-      cartItems: cart ? cart.items : [],
+      cartItems,
       subtotal,
       error: req.query.error || null,
     });
@@ -87,8 +99,6 @@ const addTocart = async (req, res) => {
 
     const variantPrice = variant.discountPrice || variant.originalPrice;
 
-    console.log("VariantId price:", variantPrice);
-
     let cart = await Cart.findOne({ userId });
     if (!cart) {
       cart = new Cart({ userId, items: [] });
@@ -98,7 +108,6 @@ const addTocart = async (req, res) => {
   item.productId?.toString() === productId.toString() &&
   item.variantId?.toString() === variantId.toString()
 );
-console.log("cart items:", cartItem);
 
     if (cartItem) {
       if (cartItem.quantity < variant.stock && cartItem.quantity < 5) {

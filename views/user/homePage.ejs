@@ -86,7 +86,14 @@
                                 </div>
                                 <div class="mt-auto d-flex justify-content-between align-items-center">
                                 <span class="price fw-bold">₹<%= book.defaultPrice %></span>
-                                <button class="btn btn-primary btn-sm">Add to Cart</button>
+                                <form action="/cart" method="post">
+                                <input type="hidden" name="productId" value="<%= book._id %>">
+                                <input type="hidden" name="variantId" value="<%= book.variants[0]._id %>">
+                                <button class="btn btn-primary px-4" type="submit">
+                                <i class="bi bi-cart-plus me-2"></i>Add to Cart
+                                </button>
+                                </form>
+                                <!-- <button class="btn btn-primary btn-sm">Add to Cart</button> -->
                                 </div>
                             </div>
                             </div>

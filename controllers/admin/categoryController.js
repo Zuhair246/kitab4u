@@ -9,7 +9,6 @@ const categoryInfo = async (req,res) => {
 
        let filter = {$or:[{isListed:true},{isListed:false}] };
 
-
         if(req.query.search) {
             filter.name = {$regex: req.query.search, $options:"i"};
         }

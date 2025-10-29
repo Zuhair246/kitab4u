@@ -1,13 +1,29 @@
 <%-include("../../views/partials/user/header") %>
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
 
 <!-- Main Body for Wishlist Page -->
 <main class="container my-4">
   <!-- Page Heading -->
-  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-    <h1 class="h2 mb-0 fw-bold">My Wishlist</h1>
-    <p class="text-muted mb-0"><% if (wishlistItems && wishlistItems.length > 0) { %> <%= wishlistItems.length %> Items <% } else { %> 0 Items <% } %></p>
-  </div>
+<div class="text-center mb-4">
+  <h1 class="display-6 fw-bold">My Wishlist</h1>
 
+  <p class="text-muted">
+    <% if (wishlistItems && wishlistItems.length > 0) { %>
+      <%= wishlistItems.length %> Items
+    <% } else { %>
+      0 Items
+    <% } %>
+  </p>
+
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb justify-content-center">
+      <li class="breadcrumb-item">
+        <a href="/" class="text-decoration-none">Home</a>
+      </li>
+      <li class="breadcrumb-item active" aria-current="page">Your Wishlist</li>
+    </ol>
+  </nav>
+</div>
   <% if (wishlistItems && wishlistItems.length > 0) { %>
     <!-- Toolbar: Search, Filter, Sort -->
     <div class="card mb-4 shadow-sm border-0">
@@ -15,77 +31,113 @@
         <div class="row align-items-center g-3">
           <!-- Search -->
           <div class="col-md-6">
-            <div class="input-group">
-              <span class="input-group-text bg-white border-end-0">
-                <i class="bi bi-search"></i>
-              </span>
-              <input type="text" class="form-control border-start-0" placeholder="Search in wishlist..." id="wishlistSearch">
-            </div>
+
+              <form action="/wishlist" method="get" class="d-flex justify-content-center mb-0">
+                <input 
+                            type="text" 
+                            name="search"
+                            class="form-control w-50 me-2" 
+                            placeholder="Search Book Name...." 
+                            id="wishlistSearch"
+                            value="<%= typeof search !== 'undefined' ? search : '' %>">
+                            <button class="btn btn-primary me-2" id="searchBtn">
+                              <i class="bi bi-search"></i> Search
+                            </button>
+                            <% if(search && search.trim().length > 0){ %>
+                            <a href="/wishlist" class="btn btn-secondary">
+                              <i class="bi bi-x-circle"></i> Clear
+                            </a>
+                            <%}%>                      
+              </form>
+
           </div>
           <!-- Filter and Sort Buttons -->
           <div class="col-md-6 text-md-end">
             <div class="btn-group" role="group">
-              <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+              <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
                 <i class="bi bi-funnel me-1"></i> Filter
               </button>
               <ul class="dropdown-menu dropdown-menu-end">
-                <li><a class="dropdown-item" href="#">In Stock</a></li>
-                <li><a class="dropdown-item" href="#">Price Low to High</a></li>
-                <li><a class="dropdown-item" href="#">Price High to Low</a></li>
+                <li><a class="dropdown-item filter-option" href="#" data-filter="inStock">In Stock</a></li>
+                <li><a class="dropdown-item filter-option" href="#" data-filter="priceLow">Price Low to High</a></li>
+                <li><a class="dropdown-item filter-option" href="#" data-filter="priceHigh">Price High to Low</a></li>
+                <li><a class="dropdown-item filter-option" href="#" data-filter="nameAZ">Name: A - Z</a></li>
+                <li><a class="dropdown-item filter-option" href="#" data-filter="nameZA">Name: Z - A</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="#"  onclick="clearFilters()"><i class="bi bi-x-circle-fill"></i> Clear Filters</a></li>
               </ul>
             </div>
-            <button type="button" class="btn btn-outline-secondary ms-2">
-              <i class="bi bi-arrow-down-up me-1"></i> Sort by Price
-            </button>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Product Grid -->
-    <div class="row g-4">
-      <% wishlistItems.forEach(item => { %>
-        <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 col-12">
-          <div class="card h-100 shadow-sm border-0 overflow-hidden">
-            <!-- Image with Remove Button -->
-            <div class="position-relative">
-              <img src="<%= item.image || '/images/placeholder-book.jpg' %>" class="card-img-top" alt="<%= item.name %>" style="height: 250px; object-fit: cover;">
-              <button type="button" class="position-absolute top-10 end-10 btn btn-danger btn-sm rounded-circle p-0" style="width: 32px; height: 32px;" onclick="removeFromWishlist('<%= item._id %>')">
-                <i class="bi bi-x-lg"></i>
-              </button>
-            </div>
-            <!-- Card Body -->
-            <div class="card-body d-flex flex-column">
-              <!-- Title and Author -->
-              <h6 class="card-subtitle text-muted mb-1"><%= item.author %></h6>
-              <h5 class="card-title mb-2">
-                <a href="/productDetails?id=<%= item._id %>" class="text-decoration-none text-dark"><%= item.name %></a>
-              </h5>
-              <!-- Price -->
-              <div class="mb-2">
-                <% if (item.originalPrice > item.discountPrice) { %>
-                  <span class="text-danger fw-bold me-2">₹<%= item.discountPrice %></span>
-                  <span class="text-muted text-decoration-line-through">₹<%= item.originalPrice %></span>
-                <% } else { %>
-                  <span class="fw-bold">₹<%= item.originalPrice %></span>
-                <% } %>
-              </div>
-              <!-- Stock Status -->
-              <p class="mb-2 text-sm <%= item.stock > 0 ? 'text-success' : 'text-danger' %>">
-                <%= item.stock > 0 ? 'In Stock' : 'Out of Stock' %>
-              </p>
-              <!-- Add to Cart Button -->
-              <form action="/cart" method="post" class="mt-auto">
-                <input type="hidden" name="productId" value="<%= item._id %>">
-                <button type="submit" class="btn btn-primary w-100 <%= item.stock <= 0 ? 'disabled opacity-50' : '' %>">
-                  <i class="bi bi-cart-plus me-1"></i> Add to Cart
-                </button>
-              </form>
-            </div>
-          </div>
+<div class="row g-4">
+  <% wishlistItems.forEach(item => { %>
+    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 col-12">
+      <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
+        
+        <!-- Image with Remove Button -->
+        <div class="position-relative bg-light d-flex align-items-center justify-content-center" style="height: 280px;">
+
+          <img src="<%= item.image || '/images/placeholder-book.jpg' %>" 
+               alt="<%= item.name %>" 
+               class="img-fluid rounded-3" 
+              onclick="window.location.href='/productDetails?id=<%= item._id %>'"
+               style="max-height: 100%; width: auto; object-fit: contain; cursor: pointer;">
+          <button type="button" 
+                  class="position-absolute top-0 end-0 m-2 btn btn-danger btn-sm rounded-circle d-flex align-items-center justify-content-center" 
+                  style="width: 32px; height: 32px;" 
+                  onclick="removeFromWishlist('<%= item._id %>', '<%= item.variantId %>')">
+            <i class="bi bi-trash-fill"></i>
+          </button>
         </div>
-      <% }) %>
+
+        <!-- Card Body -->
+        <div class="card-body d-flex flex-column px-3 pt-3 pb-2">
+          
+          <!-- Title and Author -->
+          <h6 class="card-subtitle text-muted small mb-1"><%= item.author %></h6>
+          <h5 class="card-title fs-6 fw-semibold text-truncate mb-2">
+            <a href="/productDetails?id=<%= item._id %>" 
+               class="text-decoration-none text-dark">
+               <%= item.name %>
+            </a>
+          </h5>
+
+          <!-- Price Section -->
+          <div class="mb-2">
+            <% if (item.originalPrice > item.discountPrice) { %>
+              <span class="text-danger fw-bold me-2">₹<%= item.discountPrice %></span>
+              <span class="text-muted text-decoration-line-through small">₹<%= item.originalPrice %></span>
+            <% } else { %>
+              <span class="fw-bold">₹<%= item.originalPrice %></span>
+            <% } %>
+          </div>
+
+          <!-- Stock Status -->
+          <p class="mb-3 small <%= item.stock > 0 ? 'text-success' : 'text-danger' %>">
+            <%= item.stock > 0 ? 'In Stock' : 'Out of Stock' %>
+          </p>
+
+          <!-- Add to Cart Button -->
+          <form action="/cart" method="post" class="mt-auto">
+            <input type="hidden" name="productId" value="<%= item._id %>">
+            <input type="hidden" name="variantId" value="<%= item.variantId %>">
+            <button type="submit" 
+                    class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2 
+                           <%= item.stock <= 0 ? 'disabled opacity-50' : '' %>">
+              <i class="bi bi-cart-plus"></i> Add to Cart
+            </button>
+          </form>
+
+        </div>
+      </div>
     </div>
+  <% }) %>
+</div>
+
 
     <!-- Pagination -->
     <nav aria-label="Wishlist Pagination" class="mt-5">
@@ -107,25 +159,87 @@
     <!-- Empty State -->
     <div class="text-center py-5">
       <i class="bi bi-heart text-muted" style="font-size: 4rem;"></i>
-      <h4 class="mt-3 text-muted">Your Wishlist is Empty</h4>
-      <p class="text-muted">Start adding items to your wishlist to save them for later.</p>
+      <h4 class="mt-3 text-muted">No Wishlist Items Found!</h4>
+<% if(search){ %>
+      <a href="/wishlist" class="btn btn-primary">Back to wishlist</a>
+  <%}else{%>
       <a href="/shop" class="btn btn-primary">Browse Products</a>
+  <%}%>
     </div>
   <% } %>
 </main>
 <%-include("../../views/partials/user/footer") %>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
 <script>
-  function removeFromWishlist(itemId) {
-    if (confirm('Remove from wishlist?')) {
-      fetch(`/wishlist/remove/${itemId}`, { method: 'POST' })
+
+  function removeFromWishlist(productId, variantId) {
+      fetch(`/wishlist/removeItem`, { 
+            method: 'POST',
+            headers: { 'content-Type' : 'application/json' },
+            body: JSON.stringify({ productId, variantId })
+            })
         .then(response => response.json())
         .then(data => {
           if (data.success) {
-            location.reload();
+            Toastify({
+          text: "✅ Removed from wishlist",
+          duration: 2000,
+          gravity: "top",
+          position: "right",
+          backgroundColor: "#28a745",
+          stopOnFocus: true
+            }).showToast();
+        // small delay before reload for smooth UX
+            setTimeout(() => location.reload(), 1000);
           } else {
-            alert('Error removing item');
+                    Toastify({
+          text: "❌ Error removing item",
+          duration: 2000,
+          gravity: "top",
+          position: "right",
+          backgroundColor: "#dc3545",
+          stopOnFocus: true
+              }).showToast();
           }
+        })
+        .catch(() => {
+      Toastify({
+        text: "⚠️ Something went wrong",
+        duration: 2000,
+        gravity: "top",
+        position: "right",
+        backgroundColor: "#ffc107",
+        stopOnFocus: true
+        }).showToast();
         });
-    }
   }
+
+document.querySelectorAll('.filter-option').forEach(item => {
+  item.addEventListener('click', (e) => {
+    e.preventDefault();
+    const filter = e.target.dataset.filter;
+    const url = new URL(window.location.href);
+    url.searchParams.set('filter', filter);
+    url.searchParams.set('page', 1);
+    window.location.href = url.toString();
+  });
+});
+
+  function clearFilters() {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('filter');
+    window.location.href = url.toString();
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const form = document.querySelector('form[action="/wishlist"]');
+    const searchInput = document.getElementById('wishlistSearch');
+
+    searchInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault(); 
+        form.submit(); 
+      }
+    });
+  });
 </script>

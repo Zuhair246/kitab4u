@@ -205,13 +205,15 @@
                     <% } %>
 
                     <form action="/wishlist" method="post" class="d-inline-block">
-                      <button class="btn" type="button" data-wishlist="<%= book._id %>">
-                        <i class="bi bi-heart fs-4 text-danger" style="font-size: 1rem; width: 1rem; height: 1rem; display: inline-flex; align-items: center; justify-content: center;"></i>
-                      </button>
+                        <input type="hidden" name="productId" value="<%= book._id %>">
+                        <input type="hidden" name="variantId" value="<%= book.variants[0]._id %>">                      
+                        <button class="btn" type="submit"
+                                title="<%= wishlistItems.includes(book._id.toString()) ? 'Remove from Wishlist' : 'Add to Wishlist' %>">
+                          <i class="bi <%= wishlistItems.includes(book._id.toString()) ? 'bi-heart-fill' : 'bi-heart' %> fs-4 text-danger"
+                            style="font-size: 1rem; width: 1rem; height: 1rem; display: inline-flex; align-items: center; justify-content: center;"></i>
+                        </button>
                     </form>
                   </div>
-
-                
               </div>
             </div>
           </div>

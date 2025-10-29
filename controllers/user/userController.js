@@ -1,6 +1,7 @@
 const User = require("../../models/userSchema")
 const Category = require('../../models/categorySchema')
 const Product = require('../../models/productSchema')
+const Wishlist = require('../../models/wishlistSchema')
 const mongoose = require('mongoose')
 const flash = require("connect-flash")
 const bcrypt = require("bcrypt")
@@ -524,8 +525,8 @@ const newPassword = async (req,res) => {
 
 const loadShoppingPage = async (req, res) => {
   try {
-    const user = req.session.user || req.user;
-    const userData = user ? await User.findById(user) : null;
+    const userId = req.session.user || req.user;
+    const userData = userId ? await User.findById(userId) : null;
 
     const categories = await Category.find({ isListed: true });
     const categoryIds = categories.map((c) => c._id);
@@ -629,6 +630,9 @@ const loadShoppingPage = async (req, res) => {
 
     const products = await Product.aggregate(pipeline);
 
+    const wishlist = await Wishlist.findOne({ userId });
+    const wishlistItems = wishlist ? wishlist.products.map(p => p.productId.toString()) : [];
+
     res.render("shop", {
       user: userData,
       books: products,
@@ -640,6 +644,7 @@ const loadShoppingPage = async (req, res) => {
       selectedCategory,
       selectedPriceRange,
       sortOption,
+      wishlistItems,
       error: req.query.error || null
     });
   } catch (error) {

@@ -78,7 +78,8 @@ router.get('/myOrders/:id/invoice', userStatus, orderController.downloadInvoice)
 
 //Wishlist Management
 router.get('/wishlist', wishlistController.loadWishlist);
-
+router.post('/wishlist', wishlistController.addToWishlist);
+router.post('/wishlist/removeItem', wishlistController.removeFromWishlist);
 
 
 router.get('/auth/google', passport.authenticate('google', {scope:['profile','email']}));

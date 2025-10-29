@@ -50,7 +50,7 @@ const loadCart = async (req, res) => {
 
 const addTocart = async (req, res) => {
   try {
-    const userId = req.session.user;
+    const userId = req.session.user || req.user;
     if (!userId) {
       return res.redirect(
         "/login?error=" +
@@ -130,10 +130,10 @@ const addTocart = async (req, res) => {
 
     let wishlist = await Wishlist.findOne({ userId });
     if (wishlist) {
-      wishlist.items = wishlist.items.filter(
+      wishlist.products = wishlist.products.filter(
         (item) =>
-          item.productId.toString() == productId.toString() &&
-          item.variantId?.toString() === variantId.toString()
+          item.productId.toString() !== productId.toString() ||
+          item.variantId?.toString() !== variantId.toString()
       );
       await wishlist.save();
     }
@@ -150,7 +150,7 @@ const addTocart = async (req, res) => {
 
 const removeFromCart = async (req, res) => {
   try {
-    const userId = req.session.user;
+    const userId = req.session.user || req.user;
     const { productId, variantId } = req.body;
 
           await Cart.findOneAndUpdate(
@@ -168,7 +168,7 @@ const removeFromCart = async (req, res) => {
 
 const updateQuantity = async (req, res) => {
   try {
-    const userId = req.session.user;
+    const userId = req.session.user || req.user;
     const { productId, action, variantId } = req.body;
 
     const cart = await Cart.findOne({ userId }).populate("items.productId");

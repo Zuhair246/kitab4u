@@ -1,5 +1,5 @@
 <link rel="stylesheet" href="../../styles/user/productDetails.css">
-
+<!-- <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css"> -->
 <%- include("../../views/partials/user/header") %>
 
 <div class="container my-5">
@@ -114,9 +114,11 @@
       </form>
       <form action="/wishlist" method="post" id="cartForm">
         <input type="hidden" name="productId" value="<%= product._id %>">
-        <input type="hidden" name="variantId" id="variantId" >
-        <button class="btn btn-outline-secondary" type="submit" data-wishlist="<%= product._id %>">
-          <i class="bi bi-heart"></i>
+        <input type="hidden" name="variantId" id="variantId" value="<%= variant._id %>">
+        <button class="btn" type="submit"
+                title="<%= wishlistItems.includes(product._id.toString()) ? 'Remove from Wishlist' : 'Add to Wishlist' %>">
+          <i class="bi <%= wishlistItems.includes(product._id.toString()) ? 'bi-heart-fill' : 'bi-heart' %> fs-4 text-danger"
+            style="font-size: 1rem; width: 1rem; height: 1rem; display: inline-flex; align-items: center; justify-content: center;"></i>
         </button>
       </form>
       </div>
@@ -172,7 +174,7 @@
 
 <%- include("../../views/partials/user/footer") %>
 
-
+<!-- <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script> -->
 <script>
  // 🔍 Image Zoom Script
   const mainImage = document.getElementById('mainImage');
@@ -235,4 +237,17 @@
   if (firstVariant) {
     updateVariant(firstVariant);
   }
+
+//    fetch('/wishlist', {
+//   method: 'POST',
+//   headers: { 'Content-Type': 'application/json' },
+//   body: JSON.stringify({ username: 'test' })
+// })
+// .then(res => res.json())
+// .then(data => {
+//   Toastify({
+//     text: data.message,
+//     style: { background: data.type === 'success' ? 'green' : 'red' }
+//   }).showToast();
+// });
 </script>

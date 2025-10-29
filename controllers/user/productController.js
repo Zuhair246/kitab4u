@@ -1,6 +1,7 @@
 const Product = require('../../models/productSchema');
 const Category = require('../../models/categorySchema');
 const User = require('../../models/userSchema');
+const Wishlist = require ('../../models/wishlistSchema')
 
 const productDetails = async (req, res) => {
   try {
@@ -32,13 +33,17 @@ const productDetails = async (req, res) => {
       .limit(4)
       .lean();
 
+    const wishlist = await Wishlist.findOne({ userId });
+    const wishlistItems = wishlist ? wishlist.products.map(p => p.productId.toString()) : [];
+
     res.render('productDetails', {
       user: userData,
       product,
       quantity,
       totalOffer,
       category: findCategory,
-      similarProducts
+      similarProducts,
+      wishlistItems
     });
   } catch (error) {
     console.log("Product Detail Error:", error);

@@ -20,7 +20,6 @@ const loadWishlist = async (req,res)=>{
 
         const search = req.query.search ? req.query.search.trim() : null;
         const filter = req.query.filter || null;
-        console.log(search);
         
         const wishlist = await Wishlist.findOne({userId}).populate({
             path: 'products.productId',

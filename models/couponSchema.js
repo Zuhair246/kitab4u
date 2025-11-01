@@ -1,36 +1,51 @@
-const mongoose = require("mongoose")
+const mongoose = require('mongoose');
+const { ref } = require('pdfkit');
 
 const couponSchema = new mongoose.Schema({
     name: {
         type: String,
         required: true,
-        unique: true
+        trim: true
     },
-    createdOn: {
-        type: Date,
-        default: Date.now,
+    code: {
+        type: String,
+        required: true,
+        unique: true,
+        uppercase: true
+    },
+    discountType: {
+        type: String,
+        enum: ["percentage","flat"],
         required: true
     },
-expireOn: {
-    type: Date,
-    required: true
+    discountValue: {
+        type: Number,
+        required: true
+    },
+    minPrice: {
+        type: Number,
+        default: 0
+    },
+    maxDiscAmount: {
+        type: Number,
+        default: 0
+    },
+    expiryDate: {
+        type: Date,
+        required: true
+    },
+    usedUsers: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User"
+        }
+    ],
+    isActive: {
+        type: Boolean,
+        default: true
+    }
 },
-offerPrice: {
-    type: Number,
-    required: true    
-},
-minimumPrice: {
-    type: Number,
-    required: true,
-},
-isList: {
-    type: Boolean,
-    default: true
-},
-userId: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User"
-}]
-})
+{timestamps: true}
+);
 
-module.exports = mongoose.model("Coupon", couponSchema)
+module.exports = mongoose.model("Coupon", couponSchema);

@@ -1,12 +1,14 @@
 const express = require('express')
 const router = express.Router()
-const adminController = require('../controllers/admin/adminController')
-const customerController = require('../controllers/admin/customerController')
-const categoryController = require('../controllers/admin/categoryController')
-const productController = require('../controllers/admin/productController')
-const orderController = require('../controllers/admin/orderController')
+const adminController = require('../controllers/admin/adminController');
+const customerController = require('../controllers/admin/customerController');
+const categoryController = require('../controllers/admin/categoryController');
+const productController = require('../controllers/admin/productController');
+const orderController = require('../controllers/admin/orderController');
+const couponController = require('../controllers/admin/couponController');
 const {userAuth, adminAuth} = require('../middlewares/auth');
-const uploadImages = require('../middlewares/imgValid')
+const uploadImages = require('../middlewares/imgValid');
+const couponValidator = require('../middlewares/couponValidator')
 // const upload = require('../middlewares/upload')
 
 //admin authentication
@@ -46,5 +48,12 @@ router.post('/userOrders/:orderId/return', adminAuth, orderController.orderRetur
 router.post('/userOrders/:orderId/item/:itemId/return', adminAuth, orderController.itemReturnRequest);
 
 // router.post('/userOrders/:orderId/item/:itemId/status', orderController.updateItemStatus);
+
+//Coupon Management
+router.get('/coupons', couponController.loadCoupons);
+router.post('/coupons/add', couponValidator, couponController.addCoupon);
+router.post('/coupons/edit/:id', couponValidator, couponController.editCoupon);
+router.post('/coupons/delete/:id', couponController.deleteCoupon);
+router.post('/coupons/activate/:id', couponController.activateCoupon);
 
 module.exports = router;

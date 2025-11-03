@@ -3,10 +3,10 @@ const Product = require('../../models/productSchema');
 const Cart = require('../../models/cartSchema');
 const Address = require('../../models/addressSchema');
 const Order = require('../../models/orderSchema');
+const Coupon = require('../../models/couponSchema')
 const path = require('path')
 const PDFDocument = require('pdfkit');
-const { model } = require('mongoose');
-const { match } = require('assert');
+
 
 const loadOrderPage = async (req, res) => {
     try {
@@ -75,22 +75,26 @@ const loadOrderPage = async (req, res) => {
 
         const subtotal = items.reduce((sum, item) => sum + item.totalPrice, 0);
         let shippingCharge = 0;
-        let discount = 0;
-        if((subtotal - discount)<1000){
+        if((subtotal)<1000){
             shippingCharge = 50;
         }
-        const finalAmount = subtotal - discount + shippingCharge;
-
+        const finalAmount = subtotal + shippingCharge;
+        let discountFinalAmount = 0;
+        let discount = 0;
+        let coupons = await Coupon.find({isActive: true, usedUsers: {$ne:userId}})
+        let session = req.session
         res.render('checkout', {
             user,
             items,
             subtotal,
-            discount,
             shippingCharge,
             finalAmount,
+            discountFinalAmount,
+            discount,
+            coupons,
+            session,
             addresses: recentAddresses,
             allAddresses,
-
         })
         
     } catch (error) {
@@ -107,7 +111,7 @@ const checkout = async (req,res) => {
             return res.redirect('/login')
         }
 
-        const { selectedAddressId, paymentMethod } = req.body;
+        const { selectedAddressId, paymentMethod, totalAmount } = req.body;
         
         const cart = await Cart.findOne({userId}).populate({
             path: 'items.productId',
@@ -157,12 +161,11 @@ const checkout = async (req,res) => {
 
         const subtotal = items.reduce((sum, item) => sum + item.totalPrice, 0);
         let shippingCharge = 0;
-        let discount = 0;
-        if((subtotal - discount)<1000){
+        if((subtotal)<1000){
             shippingCharge = 50;
         }
-        const finalAmount = subtotal - discount + shippingCharge;
-
+        const finalAmount = subtotal + shippingCharge;
+        let discount = 0;
         const addressDoc = await Address.findOne(
             { userId, 'address._id' : selectedAddressId } ,
             { 'address.$': 1 }
@@ -178,6 +181,19 @@ const checkout = async (req,res) => {
                                 .sort({ createdAt: -1 })
                                 .lean();
 
+
+        let appliedCoupon = req.session.appliedCoupon;
+        let discountFinalAmount = 0;
+        if(!appliedCoupon) {
+            delete req.session.appliedCoupon;
+            appliedCoupon = null;
+        }else{
+            discountFinalAmount = appliedCoupon ? appliedCoupon.discountFinalAmount : 0 ;
+            discount = Math.round(appliedCoupon.discountAmount);
+        }
+
+        const finalPayableAmount = discountFinalAmount > 0 ? discountFinalAmount : finalAmount;
+
         if(!paymentMethod) {
             return res.redirect('/orders?error=' + encodeURIComponent("Please Select a Payment Method"));
         }
@@ -187,10 +203,12 @@ const checkout = async (req,res) => {
             userId,
             orderedItems: items,
             totalPrice: subtotal,
-            discount,
             shippingCharge,
             finalAmount,
+            finalPayableAmount,
+            discount,
             shippingAddress: selectedAddress,
+            couponApplied: appliedCoupon? true : false,
             paymentMethod: "COD",
             paymentStatus: 'Pending',
             status: 'Pending',
@@ -207,6 +225,16 @@ const checkout = async (req,res) => {
 
         await Cart.updateOne({userId} , { $set: {items: [] } });
 
+        if(req.session.appliedCoupon?.couponCode) {
+            await Coupon.updateOne(
+                { code: req.session.appliedCoupon.couponCode },
+                { $addToSet: {usedUsers : userId } }
+            );
+            delete req.session.appliedCoupon;
+        }else{
+            delete req.session.appliedCoupon;
+        }
+        
         return res.render('orderSuccess', {
             orderId: newOrder.orderId,
             user,

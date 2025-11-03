@@ -148,21 +148,52 @@
         <%= order.address.streetAddress %>, <%= order.address.city %>, <%= order.address.state %> - <%= order.address.pinCode %>
       </div>
       <div class="row mb-2">
-        <div class="col">Subtotal:</div>
-        <div class="col text-end">₹ <%= order.subtotal %>/-</div>
+        <div class="col fw-semibold">Subtotal:</div>
+        <div class="col text-end fw-semibold">₹ <%= order.subtotal %>/-</div>
       </div>
       <div class="row mb-2">
         <div class="col">Delivery Charge:</div>
-        <div class="col text-end">₹ <%= order.shippingCharge %>/-</div>
+        <div class="col text-end text-primary">₹ <%= order.shippingCharge %>/-</div>
       </div>
-      <div class="row mb-2">
-        <div class="col">Discount:</div>
-        <div class="col text-end text-success">-₹ <%= order.discount %>/-</div>
-      </div>
-      <div class="row border-top pt-2">
-        <div class="col fw-bold">Total:</div>
-        <div class="col text-end fw-bold">₹ <%= order.finalAmount %>/-</div>
-      </div>
+<div class="row border-top pt-2">
+
+  <% if(order.finalPayableAmount && order.finalPayableAmount < order.finalAmount) { %>
+
+    <!-- Original Total -->
+    <div class="col-6 fw-semibold">Total:</div>
+    <div class="col-6 text-end fw-bold">
+      ₹ <%= order.finalAmount %>/-
+    </div>
+
+    <!-- Discount -->
+    <div class="col-6">Discount:</div>
+    <div class="col-6 text-end text-danger">
+      - ₹ <%= order.discount %>/-
+    </div>
+
+    <!-- Separator Line -->
+    <div class="col-12">
+      <hr class="my-1">
+    </div>
+
+    <!-- Final Total -->
+    <div class="col-6 fw-bold">Final Total:</div>
+    <div class="col-6 text-end fw-bold">
+      ₹ <%= order.finalPayableAmount %>/-
+    </div>
+
+  <% } else { %>
+
+    <!-- Normal Total (No Coupon) -->
+    <div class="col-6 fw-bold">Total:</div>
+    <div class="col-6 text-end fw-bold">
+      ₹ <%= order.finalPayableAmount %>/-
+    </div>
+
+  <% } %>
+
+</div>
+
     </div>
 <div class="mt-3 text-center">
   <% if(order.canCancel) { %>

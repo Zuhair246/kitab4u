@@ -5,6 +5,7 @@ const productController = require('../controllers/user/productController');
 const profileController = require('../controllers/user/profileController');
 const cartController = require('../controllers/user/cartController');
 const orderController = require('../controllers/user/orderCotroller');
+const couponController = require('../controllers/admin/couponController')
 const wishlistController = require('../controllers/user/wishlistController')
 const {userAuth }= require('../middlewares/auth');
 const checkProductAvailability = require('../middlewares/productAuth');
@@ -75,6 +76,10 @@ router.post('/myOrders/:orderId/item/:itemId/cancel', userStatus, orderControlle
 router.post('/myOrders/:id/return', userStatus, orderController.returnOrder);
 router.post('/myOrders/:orderId/item/:itemId/return', userStatus,orderController.returnSingleItem)
 router.get('/myOrders/:id/invoice', userStatus, orderController.downloadInvoice);
+
+//Order Coupon Management
+router.post('/applyCoupon', couponController.applyCoupon);
+router.post('/removeCoupon', couponController.removeCoupon)
 
 //Wishlist Management
 router.get('/wishlist', wishlistController.loadWishlist);

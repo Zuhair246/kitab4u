@@ -1,10 +1,11 @@
 const Coupon = require('../../models/couponSchema');
 const User = require('../../models/userSchema');
-const { search } = require('../../routes/adminRouter');
+const Order = require('../../models/orderSchema')
 
 const loadCoupons = async (req, res) => {
     try {
         const coupons = await Coupon.find().sort({ createdAt: -1 });
+        let search;
         res.render('couponList', {
             coupons,
             search,
@@ -86,10 +87,76 @@ const activateCoupon = async (req, res) => {
     }
 }
 
+const applyCoupon = async (req, res) => {
+    try {
+        const { code, finalAmount } = req.body;
+        const userId = req.session.user || req.user;
+        
+        const coupon = await Coupon.findOne({ code: code.toUpperCase(), isActive: true});
+        const currentDate = new Date();
+
+        if(!coupon || currentDate> coupon.expiryDate){
+            return res.status(400).json({ success: false, message: "Invalid or expired coupon!"});
+        }
+
+        if(coupon.usedUsers.includes(userId)) {
+            return res.status(400).json({ success: false, message: "You already used this coupon!"})
+        }
+        
+        if(finalAmount < coupon.minPrice){
+            return res.status(400).json({ success: false, message: `Minimum order of ₹${coupon.minPrice} is required to apply this coupon`})
+        }
+
+        let discountAmount = 0;
+
+        if(coupon.discountType === 'percentage') {
+            discountAmount = (finalAmount * coupon.discountValue) / 100 ;
+
+            if(coupon.maxDiscAmount > 0) {
+                discountAmount = Math.min(discountAmount, coupon.maxDiscAmount);
+            }
+        } //add else condition as flat disc. amount here.
+
+            
+        let discountedPrice = Math.round( finalAmount - discountAmount ) ;
+        discountedPrice = Math.max(discountedPrice, 0); //for avoiding hacker manipulation in price.
+        
+        req.session.appliedCoupon = {
+            couponCode: code,
+            discountAmount,
+            discountFinalAmount: discountedPrice,
+            userId
+        };
+
+        res.status(200).json({ success: true, discountFinalAmount: discountedPrice, discount: discountAmount, couponCode: code, message: "Coupon applied"});
+    } catch (error) {
+        console.log("Error coupon apply: ", error);
+        res.status(500).json({ success: false, message: "Server error occured while applying coupon!"})
+        
+    }
+}
+
+const removeCoupon = async (req, res) => {
+    try {
+        delete req.session.appliedCoupon;
+        
+        return res.status(200).json({
+            success: true,
+            message: "Coupon removed!"
+        })
+        
+    } catch (error) {
+        console.log('Remove coupon error:', error);
+        return res.status(500).json({ success: false, message: "Remove coupon server error!"})
+    }
+}
+
 module.exports = {
     loadCoupons,
     addCoupon,
     editCoupon,
     deleteCoupon,
-    activateCoupon
+    activateCoupon,
+    applyCoupon,
+    removeCoupon
 }

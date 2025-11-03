@@ -72,7 +72,7 @@ const orderListing = async (req, res) => {
             _id: order._id,
             orderId: order.orderId,
             createdAt: order.createdAt,
-            totalAmount: order.finalAmount,
+            totalAmount: order.finalPayableAmount,
             status: order.status.toLocaleLowerCase().replace(/\s/g, '_'),
             user: {
                 name: order.userId?.name || 'Unknown',

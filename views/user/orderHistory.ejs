@@ -38,9 +38,11 @@
                 <p class="text-muted mt-1">+ <%= order.items.length -1 %> more item(s)</p>
               <% } %>   
             </div>
+
             <div class="col-auto text-end fs-5 fw-semibold">
-              ₹ <%= order.finalAmount %>/-
+              ₹ <%= order.finalPayableAmount %>/-
             </div>
+
           </div>
         <!-- Progress bar (order status) -->
 <hr>

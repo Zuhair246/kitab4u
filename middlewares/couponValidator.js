@@ -35,7 +35,7 @@
             return res.status(400).json({ success: false, message: "Expiry date cannot be past!"})
         }
 
-        expiryDate = new Date(expiryDate);
+        expiryDate = expDate;
 
         req.couponData = { name, code, discountType, discountValue, minPrice, maxDiscAmount, expiryDate };
         next();

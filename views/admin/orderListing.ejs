@@ -106,9 +106,9 @@
                     <%= statusMap[order.status]?.text || order.status %>
                   </span>
                 </td>
-                <td>₹<%= order.totalAmount %></td>
+                <td>₹ <%= order.totalAmount %>/-</td>
                 <td>
-                  <a href="/admin/userOrders/<%= order._id %>" class="btn btn-outline-primary btn-sm">View</a>
+                  <a href="/admin/userOrders/<%= order._id %>" class="btn btn-outline-primary btn-sm"><i class="bi bi-eye-fill"></i> View</a>
                 </td>
               </tr>
             <% }) %>

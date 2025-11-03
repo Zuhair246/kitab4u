@@ -87,6 +87,10 @@ const orderSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  finalPayableAmount: {
+    type: Number,
+    default: 0
+  },
   shippingAddress: {
       name: {
             type: String,
@@ -180,7 +184,7 @@ const orderSchema = new mongoose.Schema({
     default: Date.now,
     required: true,
   },
-  CouponApplied: {
+  couponApplied: {
     type: Boolean,
     default: false,
   },

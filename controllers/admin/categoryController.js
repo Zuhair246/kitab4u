@@ -1,4 +1,5 @@
-const Category = require('../../models/categorySchema')
+const Category = require('../../models/categorySchema');
+const CategoryOffer = require("../../models/categoryOfferSchema");
 
 const categoryInfo = async (req,res) => {
     try {
@@ -7,17 +8,29 @@ const categoryInfo = async (req,res) => {
         const limit = 4;
         const skip = (page-1)*limit;
 
-       let filter = {$or:[{isListed:true},{isListed:false}] };
+       let filter = {};
 
         if(req.query.search) {
             filter.name = {$regex: req.query.search, $options:"i"};
         }
 
-        const categoryData = await Category.find(filter)
+        const category = await Category.find(filter)
         .sort ({createdAt: -1})
         .skip (skip)
         .limit(limit)
-        .exec()
+        .lean();
+
+        const offers = await CategoryOffer.find({
+            categoryId: { $in: category.map( c => c._id ) }
+        }).lean();
+
+        const categoryData = category.map(cat => {
+            const offer = offers.find( ofr => ofr.categoryId.toString() === cat._id.toString());
+            return { 
+                            ...cat,
+                             offer: offer || null
+                             };
+        })
 
         const totalCategories = await Category.countDocuments(filter);
         const totalPages = Math.ceil(totalCategories / limit);
@@ -67,7 +80,7 @@ const addCategory = async (req, res) => {
 
 const editCategory = async (req, res) => {
     try {
-        const { id, name, description, status } = req.body;
+        const { id, name, description, status, offerDiscount, offerStart, offerEnd, removeOffer, offerStatus  } = req.body;
 
         if (!id || !name || !description) {
             return res.redirect("/admin/category?error=" + encodeURIComponent("Invalid data for update"));
@@ -87,6 +100,33 @@ const editCategory = async (req, res) => {
             description,
             isListed: status === "active"
         });
+
+        const offer = await CategoryOffer.findOne({ categoryId: id });
+
+        if(removeOffer) {
+            await CategoryOffer.updateMany(
+                { categoryId: id },
+                { $set: { isActive: false } }
+            );
+        }else if(offerDiscount && offerStart && offerEnd) {
+            
+
+            if(offer) {
+                offer.discountPercentage = offerDiscount;
+                offer.startDate = offerStart;
+                offer.endDate = offerEnd;
+                offer.isActive = offerStatus === "true";
+                await offer.save();
+            } else { 
+                await CategoryOffer.create({
+                    categoryId: id,
+                    discountPercentage: offerDiscount,
+                    startDate: offerStart,
+                    endDate: offerEnd,
+                    isActive: offerStatus === 'true'
+                });
+            }
+        }
 
         return res.redirect("/admin/category?success=" + encodeURIComponent("Category updated successfully"));
     } catch (error) {

@@ -2,10 +2,11 @@ const Product = require('../../models/productSchema');
 const Category = require('../../models/categorySchema');
 const User = require('../../models/userSchema');
 const Wishlist = require ('../../models/wishlistSchema')
+const calculateDiscountedPrice = require('../../helpers/offerPriceCalculator');
 
 const productDetails = async (req, res) => {
   try {
-    const userId = req.session.user;
+    const userId = req.session.user || req.user ;
     const userData = await User.findById(userId);
 
     const productId = req.query.id;
@@ -18,10 +19,20 @@ const productDetails = async (req, res) => {
       return res.redirect('/pageNotFound');
     }
    
-    const findCategory = product.categoryId;
-    const categoryOffer = (findCategory && findCategory.categoryOffer) || 0;
-    const productOffer = product.productOffer || 0;
-    const totalOffer = categoryOffer + productOffer;
+    const category = product.categoryId;
+
+    if(product.variants && product.variants.length >0){
+    for(let variant of product.variants) {
+      const offer = await calculateDiscountedPrice({
+        _id: product._id,
+        discountPrice: variant.discountPrice,
+        originalPrice: variant.originalPrice,
+        categoryId: product.categoryId
+      });
+      variant.finalPrice = offer.finalPrice ?? variant.discountPrice;
+      variant.discountPercentage = offer.discountPercentage ?? 0;
+    }
+  }
 
     const quantity = product.variants.reduce((sum, v) => sum + (v.stock || 0), 0);
 
@@ -33,6 +44,19 @@ const productDetails = async (req, res) => {
       .limit(4)
       .lean();
 
+      for(let book of similarProducts) {
+        for(let variant of book.variants) {
+          const offer = await calculateDiscountedPrice({
+            _id: book._id,
+           discountPrice: variant.discountPrice,
+            originalPrice: variant.originalPrice,
+            categoryId: book.categoryId
+          });
+          variant.offerFinalPrice = offer.finalPrice || null;
+          variant.offerDiscountPercentage = offer.discountPercentage;
+        }
+      }
+
     const wishlist = await Wishlist.findOne({ userId });
     const wishlistItems = wishlist ? wishlist.products.map(p => p.productId.toString()) : [];
 
@@ -40,8 +64,7 @@ const productDetails = async (req, res) => {
       user: userData,
       product,
       quantity,
-      totalOffer,
-      category: findCategory,
+      category,
       similarProducts,
       wishlistItems
     });

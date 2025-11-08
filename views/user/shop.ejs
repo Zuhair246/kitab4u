@@ -167,11 +167,13 @@
                 <!-- Price -->
                 <% const paperback = book.variants[0]; %>
                 <div class="mb-2">
-                  <% if (paperback && paperback.originalPrice > paperback.discountPrice) { %>
-                    <span class="text-danger fw-bold me-2">₹<%= paperback.discountPrice %></span>
-                    <span class="text-muted text-decoration-line-through">₹<%= paperback.originalPrice %></span>
+                  <% if (paperback && paperback.discountPercentage > 0) { %>
+                    <span class="text-danger fw-bold me-2">₹<%= paperback.finalPrice %>/-</span>
+                    <span class="text-muted text-decoration-line-through">₹<%= paperback.discountPrice %>/-</span>
+                    <span class="badge bg-success ms-1"><%= paperback.discountPercentage %>%OFF</span>
                   <% } else if (paperback) { %>
-                    <span class="fw-semibold">₹<%= paperback.originalPrice %></span>
+                    <span class="fw-bold text-danger me-2">₹<%= paperback.discountPrice %>/-</span>
+                    <span class=" text-decoration-line-through text-muted me-1">₹<%= paperback.originalPrice %>/-</span>
                   <% } %>
                 </div>
 

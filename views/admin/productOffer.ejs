@@ -1,0 +1,212 @@
+<%- include("../../views/partials/admin/header") %>
+
+<div class="col-md-10 p-4">
+
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+    <h2 class="fw-bold">Product Offers</h2>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addOfferModal">
+      <i class="fas fa-plus me-1"></i> Add Offer
+    </button>
+  </div>
+
+  <!-- Offers Table -->
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-light">
+      <h5 class="mb-0 fw-semibold">Active & Inactive Offers</h5>
+    </div>
+
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Product</th>
+              <th>Discount (%)</th>
+              <th>Start</th>
+              <th>End</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <% if (offers && offers.length > 0) { %>
+              <% offers.forEach(offer => { %>
+                <tr>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <img src="<%= offer.productId.images[0] || '/images/placeholder-book.jpg' %>" 
+                          class="rounded me-2" style="width: 40px; height: 60px; object-fit: cover;">
+                      <span><%= offer.productId.name %></span>
+                    </div>
+                  </td>
+                  <td><span class="badge bg-success"><%= offer.discountPercentage %>%</span></td>
+                  <td><%= new Date(offer.startDate).toLocaleDateString('en-IN') %></td>
+                  <td><%= new Date(offer.endDate).toLocaleDateString('en-IN') %></td>
+                  <td class="text-end">
+                    <button class="btn btn-sm btn-outline-primary me-1" 
+                            data-bs-toggle="modal" data-bs-target="#editOfferModal"
+                            onclick="loadEditOffer('<%= offer._id %>')">
+                      <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger"
+                            onclick="deleteOffer('<%= offer._id %>')">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr>
+                <td colspan="5" class="text-center py-5 text-muted">
+                  <i class="fas fa-tags fa-3x mb-3"></i>
+                  <h5>No product offers yet</h5>
+                </td>
+              </tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div class="d-flex justify-content-center mt-3">
+    <ul class="pagination">
+      <% for (let i = 1; i <= totalPages; i++) { %>
+        <li class="page-item <%= currentPage === i ? 'active' : '' %>">
+          <a class="page-link" href="?page=<%= i %>"><%= i %></a>
+        </li>
+      <% } %>
+    </ul>
+  </div>
+</div>
+
+
+<!-- ADD OFFER MODAL -->
+<div class="modal fade" id="addOfferModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Add Product Offer</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <form action="/admin/productOffers/add" method="POST">
+        <div class="modal-body">
+
+          <div class="mb-3">
+            <label class="form-label">Select Product</label>
+            <select class="form-select" name="productId" required>
+              <option value="">Select product...</option>
+              <% products.forEach(product => { %>
+                <option value="<%= product._id %>"><%= product.name %> - ₹<%= product.variants[0].originalPrice %></option>
+              <% }) %>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Discount (%)</label>
+            <input type="number" class="form-control" name="discountPercentage" min="1" max="100" step="0.1" required>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Start Date</label>
+              <input type="date" class="form-control" name="startDate" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">End Date</label>
+              <input type="date" class="form-control" name="endDate" required>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn btn-primary">Save</button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<!-- EDIT OFFER MODAL -->
+<div class="modal fade" id="editOfferModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Edit Product Offer</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <form action="/admin/productOffers/edit" method="POST">
+        <input type="hidden" id="editOfferId" name="offerId">
+
+        <div class="modal-body">
+
+          <div class="mb-3">
+            <label class="form-label">Product</label>
+            <select class="form-select" id="editProductSelect" name="productId" required></select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Discount (%)</label>
+            <input type="number" class="form-control" id="editDiscountPercentage" name="discountPercentage" min="1" max="100" step="0.1" required>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Start Date</label>
+              <input type="date" class="form-control" id="editStartDate" name="startDate" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">End Date</label>
+              <input type="date" class="form-control" id="editEndDate" name="endDate" required>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn btn-primary">Update</button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+<%- include("../../views/partials/admin/footer") %>
+
+<script>
+  function loadEditOffer(id) {
+    document.getElementById("editOfferId").value = id;
+
+    fetch(`/admin/productOffers/edit`)
+      .then(res => res.json())
+      .then(data => {
+        // Populate dropdown
+        const select = document.getElementById("editProductSelect");
+        select.innerHTML = '';
+        data.products.forEach(p => {
+          select.innerHTML += `<option value="${p._id}" ${p._id === data.offer.productId ? "selected" : ""}>${p.name}</option>`;
+        });
+
+        document.getElementById("editDiscountPercentage").value = data.offer.discountPercentage;
+        document.getElementById("editStartDate").value = data.offer.startDate.split("T")[0];
+        document.getElementById("editEndDate").value = data.offer.endDate.split("T")[0];
+      });
+  }
+
+  function deleteOffer(id) {
+    if(confirm("Delete this offer?")) {
+      window.location = `/admin/productOffers/${id}/deactivate`;
+    }
+  }
+</script>
+
+

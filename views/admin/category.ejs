@@ -69,9 +69,21 @@
                             </td>
 
                             <td class="py-3 px-4 border-0">
+                                <% if (category.offer) { %>
+                                    <span class="badge <%= category.offer.isActive ? 'bg-success' : 'bg-secondary' %>">
+                                    Offer: <%= category.offer.discountPercentage %>% 
+                                    (<%= category.offer.isActive ? 'Active' : 'Inactive' %>)
+                                    </span>
+                                <% } else { %>
+                                    <span class="badge bg-warning text-dark">No Offer</span>
+                                <% } %>
+                            </td>
+
+
+                            <td class="py-3 px-4 border-0">
                                 <button class="btn btn-sm me-2 d-inline-flex align-items-center justify-content-center" 
                                         style="width: 35px; height: 35px; background-color: #e3f2fd; color: #1976d2; border: none; border-radius: 8px;"
-                                        onclick="editCategory('<%= category._id %>', '<%= category.name %>', '<%= category.description %>', '<%= category.isListed ? 'active' : 'inactive' %>')">
+                                        onclick="editCategory('<%= category._id %>', '<%= category.name %>', '<%= category.description %>', '<%= category.isListed ? 'active' : 'inactive' %>' , '<%- JSON.stringify(category.offer || null) %>')">
                                         <i class="fas fa-edit"></i>
                                 </button>
 
@@ -203,6 +215,45 @@
               <option value="inactive">Inactive</option>
             </select>
           </div>
+
+          <hr>
+            <h6 class="fw-bold">Category Offer</h6>
+
+            <div class="mb-3">
+            <label class="form-label">Discount (%)</label>
+            <input type="number" class="form-control" name="offerDiscount" id="offerDiscount" min="1" max="90" placeholder="e.g. 10">
+            </div>
+
+            <div class="mb-3">
+            <label class="form-label">Start Date</label>
+            <input type="date" class="form-control" name="offerStart" id="offerStart">
+            </div>
+
+            <div class="mb-3">
+            <label class="form-label">End Date</label>
+            <input type="date" class="form-control" name="offerEnd" id="offerEnd">
+            </div>
+
+            <% if (cat.offer) { %>
+            <p class="badge <%= offer.isActive ? 'bg-success' : 'bg-secondary' %>">
+                <%= offer.isActive ? 'Active Offer' : 'Inactive Offer' %>
+            </p>
+            <% } %>
+
+            <div class="mb-3">
+            <label class="form-label">Offer Status</label>
+            <select class="form-select" name="offerStatus" id="offerStatus">
+                <option value="true">Active</option>
+                <option value="false">Inactive</option>
+            </select>
+            </div>
+
+
+            <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" name="removeOffer" id="removeOffer">
+            <label class="form-check-label text-danger fw-bold">Remove Offer</label>
+            </div>
+
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -213,7 +264,7 @@
   </div>
 </div>
 
-
+e
 <%-include("../../views/partials/admin/footer")%>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -249,11 +300,18 @@ function clearSearch() {
 // -------------------------
 // ✏️ Edit Category
 // -------------------------
-function editCategory(id, name, description, status) {
+function editCategory(id, name, description, status, offer) {
     document.getElementById('editCategoryId').value = id;
     document.getElementById('editCategoryName').value = name;
     document.getElementById('editCategoryDescription').value = description;
     document.getElementById('editCategoryStatus').value = status;
+
+    //offer details
+    document.getElementById('offerDiscount').value = offer?.discountPercentage || "" ;
+    document.getElementById('offerStart').value = offer?.startDate ? offer.startDate.split("T")[0] : "" ;
+    document.getElementById('offerEnd').value = offer?.endDate ? offer.endDate.split("T")[0] : "" ;
+    document.getElementById('removeOffer').checked = false ;
+    document.getElementById('offerStatus').value = offer?.isActive ? "true" : "false" ;
 
     const editModal = new bootstrap.Modal(document.getElementById('editCategoryModal'));
     editModal.show();

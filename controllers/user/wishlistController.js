@@ -3,6 +3,7 @@ const Product = require('../../models/productSchema');
 const Wishlist = require('../../models/wishlistSchema');
 const flash = require('connect-flash');
 const { options } = require('pdfkit');
+const calculateDiscountedPrice = require('../../helpers/offerPriceCalculator');
 
 const loadWishlist = async (req,res)=>{
     try {
@@ -35,18 +36,30 @@ const loadWishlist = async (req,res)=>{
             
             wishlist.products.sort( (a , b) => new Date(b.addedOn) - new Date(a.addedOn) );
             
-            wishlistItems = wishlist.products.filter( 
-                item => item.productId && item.productId.categoryId
-            ).map(item => ({
-                _id: item.productId._id,
-                variantId: item.variantId,
-                name: item.productId.name,
-                author: item.productId.author,
-                image: item.productId.images[0],
-                originalPrice: item.productId.variants.id(item.variantId)?.originalPrice,
-                discountPrice: item.productId.variants.id(item.variantId)?.discountPrice,
-                stock: item.productId.variants.id(item.variantId)?.stock
-            }));
+            wishlistItems = await Promise.all(
+                wishlist.products.filter( 
+                         item => item.productId && item.productId.categoryId
+            ).map(async item => {
+                const variant = item.productId.variants.id(item.variantId);
+
+                const offer = await calculateDiscountedPrice({
+                    _id: item.productId._id,
+                    originalPrice: variant.originalPrice,
+                    categoryId: item.productId.categoryId
+                });
+                return {
+                    _id: item.productId._id,                     
+                    variantId: item.variantId,
+                    name: item.productId.name,
+                    author: item.productId.author,
+                    image: item.productId.images[0],
+                    originalPrice: variant.originalPrice,
+                    discountPrice: offer.finalPrice,
+                    stock: variant.stock
+            }
+            })
+        );
+            
 
             if(search) {
                 wishlistItems = wishlistItems.filter( item => 

@@ -107,14 +107,36 @@
           </h5>
 
           <!-- Price Section -->
-          <div class="mb-2">
-            <% if (item.originalPrice > item.discountPrice) { %>
-              <span class="text-danger fw-bold me-2">₹<%= item.discountPrice %></span>
-              <span class="text-muted text-decoration-line-through small">₹<%= item.originalPrice %></span>
-            <% } else { %>
-              <span class="fw-bold">₹<%= item.originalPrice %></span>
-            <% } %>
-          </div>
+<div class="mb-2 d-flex align-items-center gap-2">
+
+  <% if (item.originalPrice > item.discountPrice) { %>
+    
+    <!-- Final offer price -->
+    <span class="text-danger fw-bold fs-6">
+      ₹<%= item.discountPrice %>
+    </span>
+
+    <!-- Original price (striked out) -->
+    <span class="text-muted text-decoration-line-through small">
+      ₹<%= item.originalPrice %>
+    </span>
+
+    <!-- Offer % Badge -->
+    <% if (item.discountPercentage && item.discountPercentage > 0) { %>
+      <span class="badge bg-success rounded-pill small">
+        <%= item.discountPercentage %>% OFF
+      </span>
+    <% } %>
+
+  <% } else { %>
+
+    <!-- If no discount -->
+    <span class="fw-bold fs-6">₹<%= item.originalPrice %></span>
+
+  <% } %>
+
+</div>
+
 
           <!-- Stock Status -->
           <p class="mb-3 small <%= item.stock > 0 ? 'text-success' : 'text-danger' %>">

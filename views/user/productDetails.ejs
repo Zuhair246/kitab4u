@@ -54,15 +54,24 @@
         <span class="ms-2 text-muted">(<%= product.totalReviews || 0 %> reviews)</span>
       </div>
 
-      <!-- Price & Discount -->
+<!-- Price & Discount -->
 <div id="priceSection" class="mb-3">
   <% const variant = product.variants && product.variants[0]; %>
-  <% if(variant && variant.discountPrice && variant.discountPrice < variant.originalPrice) { %>
-    <span id="discountPrice" class="fs-4 fw-bold text-danger">₹<%= variant.discountPrice %></span>
-    <span id="originalPrice" class="text-muted text-decoration-line-through ms-2">₹<%= variant.originalPrice %></span>
-    <span id="savings" class="badge bg-success ms-2">Save ₹<%= variant.originalPrice - variant.discountPrice %></span>
-  <% } else if(variant) { %>
-    <span id="originalPriceOnly" class="fs-4 fw-bold">₹<%= variant.originalPrice %></span>
+  <% if(variant){ %>
+    <% if(variant.discountPercentage > 0 && variant.finalPrice < variant.discountPrice){ %>
+      <!-- Offer applied -->
+      <span id="discountPrice" class="fs-4 fw-bold text-danger">₹<%= variant.finalPrice %>/-</span>
+      <span id="originalPrice" class="text-muted text-decoration-line-through ms-2">₹<%= variant.discountPrice %>/-</span>
+      <span id="savings" class="badge bg-success ms-2"><%= variant.discountPercentage %>% OFF</span>
+    <% } else if(variant.discountPrice && variant.discountPrice < variant.originalPrice){ %>
+      <!-- Normal product discount -->
+      <span id="discountPrice" class="fs-4 fw-bold text-danger">₹<%= variant.discountPrice %>/-</span>
+      <span id="originalPrice" class="text-muted text-decoration-line-through ms-2">₹<%= variant.originalPrice %>/-</span>
+      <span id="savings" class="badge bg-success ms-2">Save ₹<%= variant.originalPrice - variant.discountPrice %>/-</span>
+    <% } else { %>
+      <!-- No discount -->
+      <span id="originalPriceOnly" class="fs-4 fw-bold">₹<%= variant.originalPrice %>/-</span>
+    <% } %>
   <% } %>
 </div>
 
@@ -89,6 +98,8 @@
               <button class="btn btn-sm btn-outline-primary me-2 variant-btn"
                           data-original="<%= variant.originalPrice %>"
                           data-discount="<%= variant.discountPrice %>"
+                          data-offer="<%= variant.discountPercentage %>"
+                          data-final="<%= variant.finalPrice %>"
                           data-stock="<%= variant.stock %>"
                           data-variantid="<%= variant._id %>">
                           
@@ -196,12 +207,21 @@
   function updateVariant(button) {
     const original = button.dataset.original;
     const discount = button.dataset.discount;
+    const final = button.dataset.final;
+    const offer = button.dataset.offer;
     const stock = button.dataset.stock;
     const variantId = button.dataset.variantid;
 
     const priceSection = document.getElementById('priceSection');
     priceSection.innerHTML = '';
 
+    if(offer >0 && final < discount){
+      priceSection.innerHTML = `
+      <span class="fs-4 fw-bold text-danger">₹${final}/-</span>
+      <span class="text-muted text-decoration-line-through ms-2">₹${discount}/-</span>
+      <span class="badge bg-success ms-2">${offer}% OFF</span>
+    `;
+    }else{
     if (discount && discount < original) {
       priceSection.innerHTML = `
         <span class="fs-4 fw-bold text-danger">₹${discount}</span>
@@ -211,7 +231,7 @@
     } else {
       priceSection.innerHTML = `<span class="fs-4 fw-bold">₹${original}</span>`;
     }
-
+  }
     const stockBadge = document.querySelector('.badge.mb-3');
     if (stock > 0) {
       stockBadge.className = "badge bg-success mb-3";
@@ -238,16 +258,4 @@
     updateVariant(firstVariant);
   }
 
-//    fetch('/wishlist', {
-//   method: 'POST',
-//   headers: { 'Content-Type': 'application/json' },
-//   body: JSON.stringify({ username: 'test' })
-// })
-// .then(res => res.json())
-// .then(data => {
-//   Toastify({
-//     text: data.message,
-//     style: { background: data.type === 'success' ? 'green' : 'red' }
-//   }).showToast();
-// });
 </script>

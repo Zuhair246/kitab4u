@@ -6,6 +6,7 @@ const categoryController = require('../controllers/admin/categoryController');
 const productController = require('../controllers/admin/productController');
 const orderController = require('../controllers/admin/orderController');
 const couponController = require('../controllers/admin/couponController');
+const productOfferController = require('../controllers/admin/productOfferController');
 const {userAuth, adminAuth} = require('../middlewares/auth');
 const uploadImages = require('../middlewares/imgValid');
 const couponValidator = require('../middlewares/couponValidator')
@@ -55,5 +56,12 @@ router.post('/coupons/add', couponValidator, couponController.addCoupon);
 router.post('/coupons/edit/:id', couponValidator, couponController.editCoupon);
 router.post('/coupons/delete/:id', couponController.deleteCoupon);
 router.post('/coupons/activate/:id', couponController.activateCoupon);
+
+//Product offer managment
+router.get('/productOffers', productOfferController.loadProductOffers);
+router.post('/productOffers/add', productOfferController.addProductOffer);
+router.post('/productOffers/edit', productOfferController.editProductOffer);
+router.post('/productOffers/activate', productOfferController.activateProductOffer);
+router.post('/productOffers/:offerId/deactivate', productOfferController.deactivateProductOffer);
 
 module.exports = router;

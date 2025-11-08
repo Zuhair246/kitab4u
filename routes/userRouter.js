@@ -79,7 +79,7 @@ router.get('/myOrders/:id/invoice', userStatus, orderController.downloadInvoice)
 
 //Order Coupon Management
 router.post('/applyCoupon', couponController.applyCoupon);
-router.post('/removeCoupon', couponController.removeCoupon)
+router.post('/removeCoupon', couponController.removeCoupon);
 
 //Wishlist Management
 router.get('/wishlist', wishlistController.loadWishlist);

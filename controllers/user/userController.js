@@ -1,15 +1,16 @@
-const User = require("../../models/userSchema")
-const Category = require('../../models/categorySchema')
-const Product = require('../../models/productSchema')
-const Wishlist = require('../../models/wishlistSchema')
+const User = require("../../models/userSchema");
+const Category = require('../../models/categorySchema');
+const Product = require('../../models/productSchema');
+const Wishlist = require('../../models/wishlistSchema');
 const mongoose = require('mongoose')
-const flash = require("connect-flash")
-const bcrypt = require("bcrypt")
-const nodemailer = require("nodemailer")
-const dotenv = require('dotenv')
+const flash = require("connect-flash");
+const bcrypt = require("bcrypt");
+const nodemailer = require("nodemailer");
+const dotenv = require('dotenv');
 dotenv.config()
 const session = require("express-session")
 const { generateOtp, sendVerificationEmail, resendOtpVerification } = require("../../helpers/otpService");
+const calculateDiscountedPrice = require('../../helpers/offerPriceCalculator');
 
 // const { router } = require("../../app")
 
@@ -629,6 +630,21 @@ const loadShoppingPage = async (req, res) => {
     pipeline.push({ $skip: skip }, { $limit: limit });
 
     const products = await Product.aggregate(pipeline);
+
+    for(let product of products) {
+      if(product.variants && product.variants.length > 0) {
+         for(let variant of product.variants) {
+          const offer = await calculateDiscountedPrice({
+            _id: product._id,
+            discountPrice: variant.discountPrice,
+            originalPrice: variant.originalPrice,
+            categoryId: product.categoryId
+          });
+          variant.finalPrice = offer.finalPrice;
+          variant.discountPercentage = offer.discountPercentage;
+         }
+      }
+    }
 
     const wishlist = await Wishlist.findOne({ userId });
     const wishlistItems = wishlist ? wishlist.products.map(p => p.productId.toString()) : [];

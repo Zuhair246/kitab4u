@@ -3,7 +3,7 @@ const Product = require("../../models/productSchema");
 const Cart = require("../../models/cartSchema");
 const Wishlist = require("../../models/wishlistSchema");
 const { default: mongoose, model } = require("mongoose");
-const { path } = require("pdfkit");
+const calculateDiscountedPrice  = require('../../helpers/offerPriceCalculator');
 
 const loadCart = async (req, res) => {
   try {
@@ -24,7 +24,7 @@ const loadCart = async (req, res) => {
         model:'Category',
         match: {isListed: true}
       }
-    });
+    }).lean();
 
     let cartItems =[];
     let subtotal = 0;
@@ -32,7 +32,20 @@ const loadCart = async (req, res) => {
       cartItems = cart.items.filter(
         item => item.productId && item.productId.categoryId
       );
-      subtotal = cartItems.reduce((total, item) => total + item.totalPrice , 0);
+      for( let item of cartItems) {
+        const variant = item.productId.variants.find(v => v._id.equals(item.variantId));
+
+        const pricing = await calculateDiscountedPrice({
+          _id: item.productId._id,
+          discountPrice: variant.discountPrice,
+          originalPrice: variant.originalPrice,
+          categoryId: item.productId.categoryId
+        });
+        item.finalPrice = Number(pricing.finalPrice);
+        item.totalPrice = item.finalPrice * item.quantity;
+        subtotal += item.totalPrice; 
+      }
+      // subtotal = cartItems.reduce((total, item) => total + item.totalPrice , 0);
     }
 
     res.render("cart", {

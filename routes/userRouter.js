@@ -69,6 +69,7 @@ router.post('/cart/update', userStatus, cartController.updateQuantity);
 //Order Management
 router.get('/orders', userStatus,orderController.loadOrderPage);
 router.post('/orders', userStatus, orderController.checkout);
+router.post('/verifyPayment', orderController.verifyPayment);
 router.get('/myOrders', userStatus, orderController.orderHistory);
 router.get('/myOrders/:id', userStatus, orderController.orderDetails);
 router.post('/myOrders/:id/cancel', userStatus, orderController.cancelOrder);
@@ -76,6 +77,7 @@ router.post('/myOrders/:orderId/item/:itemId/cancel', userStatus, orderControlle
 router.post('/myOrders/:id/return', userStatus, orderController.returnOrder);
 router.post('/myOrders/:orderId/item/:itemId/return', userStatus,orderController.returnSingleItem)
 router.get('/myOrders/:id/invoice', userStatus, orderController.downloadInvoice);
+router.get('/orderSuccess', orderController.orderSuccess);
 
 //Order Coupon Management
 router.post('/applyCoupon', couponController.applyCoupon);

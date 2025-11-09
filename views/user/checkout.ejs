@@ -223,6 +223,7 @@
 <%- include("../../views/partials/user/footer") %>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
 /* -------------------------
   Utilities & PIN validation
@@ -275,9 +276,7 @@ async function validateAndAutofill(pinInput) {
   return true;
 }
 
-/* -------------------------
-  Delegated event listeners
-----------------------------*/
+
 
 // live pincode validation: works for add & edit forms (delegated)
 document.addEventListener('input', function(e) {
@@ -560,14 +559,71 @@ document.addEventListener("DOMContentLoaded", () => {
   const checkoutForm = document.getElementById("checkoutForm");
 
   if (checkoutForm) {
-    checkoutForm.addEventListener("submit", function (e) {
+    checkoutForm.addEventListener("submit", async function (e) {
+      e.preventDefault();
+
       const method = document.querySelector('input[name="paymentMethod"]:checked');
-      if (!method) {
-        e.preventDefault();
-        Swal.fire("Error", "Please select a payment method", "error");
+      const selectedAddressId = document.getElementById("selectedAddressIdHidden").value;
+      const finalAmount = document.getElementById("finalAmountValue").value;
+
+      if (!method) return Swal.fire("Error", "Please select a payment method", "error");
+
+      if (method.value === "COD") return this.submit();
+
+      try {
+        // Step 1: Create order on backend
+        const res = await fetch("/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ selectedAddressId, paymentMethod: "Online", totalAmount: finalAmount }),
+        });
+
+        const order = await res.json();
+        if (!order.success) throw new Error("Failed to create Razorpay order");
+
+        // Step 2: Open Razorpay checkout
+        const options = {
+          key: order.key,
+          amount: order.amount,
+          currency: order.currency,
+          name: "Kitab4U",
+          description: "Book Purchase",
+          order_id: order.orderId,
+          handler: async function (response) {
+            const verifyRes = await fetch("/verifyPayment", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                orderDbId: order.orderDbId,
+              }),
+            });
+
+            const result = await verifyRes.json();
+            if (result.success) {
+              Swal.fire("Success!", "Payment Successful", "success");
+              setTimeout(() => {
+                window.location.href = `/orderSuccess?orderId=${result.orderId}`;
+              }, 1500);
+            } else {
+              Swal.fire("Failed", result.message, "error");
+            }
+          },
+          theme: { color: "#edc2ba" },
+        };
+
+        const rzp = new Razorpay(options);
+        rzp.open();
+
+      } catch (err) {
+        console.error("Payment initiation error:", err);
+        Swal.fire("Error", "Unable to initiate payment", "error");
       }
     });
   }
 });
 
 </script>
+

@@ -20,7 +20,11 @@ const paymentSchema = new mongoose.Schema({
         required: true
     },
     transactionId: {
-        type: String
+        type: String,
+        unique: true
+    },
+    paymentId: {
+        type: String,
     },
     gateway: {
         type: String

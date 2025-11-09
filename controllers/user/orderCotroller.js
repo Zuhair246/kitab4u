@@ -3,8 +3,11 @@ const Product = require('../../models/productSchema');
 const Cart = require('../../models/cartSchema');
 const Address = require('../../models/addressSchema');
 const Order = require('../../models/orderSchema');
-const Coupon = require('../../models/couponSchema')
-const razorpay = require('../../helpers/razorpay')
+const Payment = require('../../models/paymentSchema');
+const Coupon = require('../../models/couponSchema');
+const calculateDiscountedPrice = require('../../helpers/offerPriceCalculator');
+const razorpay = require('../../config/razorpay');
+const crypto = require('crypto');
 const path = require('path')
 const PDFDocument = require('pdfkit');
 
@@ -48,10 +51,18 @@ const loadOrderPage = async (req, res) => {
             return res.redirect ('/cart?error='+encodeURIComponent('Cart is empty'));
         }
 
-        let items = cartItems.map(item => {
+        let items = await Promise.all( cartItems.map(async (item) => {
             const product = item.productId;
             const variant = product.variants.id(item.variantId);
-            const price = variant.discountPrice || variant.originalPrice;
+
+            const pricing = await calculateDiscountedPrice({
+                _id: product._id,
+                discountPrice: variant.discountPrice,
+                originalPrice: variant.originalPrice,
+                categoryId: product.categoryId
+            });
+
+            const price = pricing.finalPrice || variant.discountPrice || variant.originalPrice;
             const image = product.images && product.images.length>0 ? product.images[0] : null;
 
              return {
@@ -66,7 +77,7 @@ const loadOrderPage = async (req, res) => {
                 isBlocked: product.isBlocked,
                 stock: variant.stock
              }
-        });
+        }));
 
         if(items.some(item => item.isBlocked)){
             return res.redirect('/cart?error='+encodeURIComponent("Some of your products are unavailable \nPlease remove it and proceed"))
@@ -134,10 +145,18 @@ const checkout = async (req,res) => {
             return res.redirect ('/cart?error='+encodeURIComponent('Cart is empty'));
         }
 
-        let items = cartItems.map(item => {
+        let items = await Promise.all( cartItems.map(async item => {
             const product = item.productId;
             const variant = product.variants.id(item.variantId);
-            const price = variant.discountPrice || variant.originalPrice;
+
+            const pricing = await calculateDiscountedPrice({
+                _id: product._id,
+                discountPrice: variant.discountPrice,
+                originalPrice: variant.originalPrice,
+                categoryId: product.categoryId
+            });
+
+            const price = pricing.finalPrice || variant.discountPrice || variant.originalPrice;
             const image = product.images && product.images.length > 0 ? product.images[0] : null;
 
              return {
@@ -152,7 +171,7 @@ const checkout = async (req,res) => {
                 isBlocked: product.isBlocked,
                 stock: variant.stock
              }
-        });
+        }));
 
         if(items.some(item => item.isBlocked)){
             return res.redirect('/cart?error='+encodeURIComponent("Some of your products are Un-available, Please remove it and proceed !"))
@@ -242,13 +261,132 @@ const checkout = async (req,res) => {
             orders
         });
         } else if( paymentMethod ==='Online') {
-            console.log("Online Payment - We will set in Next Week")
+
+            const receiptId = `receipt_${Date.now()}`;
+            const options = {
+                amount : finalPayableAmount * 100,
+                currency: "INR",
+                receipt: receiptId
+            }
+            const razorpayOrder = await razorpay.orders.create(options);
+
+            const newOrder = new Order({
+                userId,
+                orderedItems: items,
+                totalPrice: subtotal,
+                shippingCharge,
+                finalAmount,
+                finalPayableAmount,
+                discount,
+                shippingAddress: selectedAddress,
+                couponApplied: appliedCoupon? true : false,
+                paymentMethod: "Online",
+                paymentStatus: "Pending",
+                status: "Pending",
+                createdAt: new Date()
+            });
+            await newOrder.save();
+
+            const newPayment = new Payment({
+                orderId: newOrder._id,
+                method: 'Online',
+                status: "Pending",
+                amount: finalPayableAmount,
+                gateway: "Razorpay",
+                transactionId: razorpayOrder.id
+            })
+            await newPayment.save();
+
+            newOrder.paymentId = newPayment._id;
+            await newOrder.save();
+
+            await Cart.updateOne( {userId} , { $set: {items: [] } } );
+
+            if(req.session.appliedCoupon?.couponCode){
+                await Coupon.updateOne(
+                    {code: req.session.appliedCoupon.couponCode},
+                    {$addToSet: {usedUsers: userId } }
+                );
+                delete req.session.appliedCoupon;
+            }else {
+                delete req.session.appliedCoupon;
+            }
+
+            return res.json({
+                    success: true,
+                    key: process.env.RAZORPAY_KEY_ID,
+                    amount: razorpayOrder.amount,
+                    currency: razorpayOrder.currency,
+                    orderId: razorpayOrder.id,
+                    orderDbId: newOrder._id,
+            })
         }
-        
         
     } catch (error) {
         console.error('Order checkout error:',error);
-        res.redirect('/pageNotFound');
+        return res.status(500).json({ success: false, message: "Internal sever error placing order"});
+    }
+}
+
+const verifyPayment = async (req, res) => {
+  try {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderDbId } = req.body;
+
+    const hmac = crypto.createHmac("sha256", process.env.RAZORPAY_KEY_SECRET);
+    hmac.update(razorpay_order_id + "|" + razorpay_payment_id);
+    const generatedSignature = hmac.digest("hex");
+
+    if (generatedSignature === razorpay_signature) {
+      // Update Order and Payment
+      await Order.findByIdAndUpdate(orderDbId, { paymentStatus: "Paid", status: "Packed" });
+      await Payment.findOneAndUpdate({ transactionId: razorpay_order_id }, {
+        status: "Paid",
+        paymentId: razorpay_payment_id,
+        responseData: req.body,
+      });
+
+      // Reduce stock only after successful payment
+      const order = await Order.findById(orderDbId).populate("orderedItems.product");
+      for (const item of order.orderedItems) {
+        await Product.updateOne(
+          { _id: item.product, "variants._id": item.variantId },
+          { $inc: { "variants.$.stock": -item.quantity } }
+        );
+      }
+
+      return res.json({ success: true, orderId: orderDbId });
+    } else {
+      await Order.findByIdAndUpdate(orderDbId, { paymentStatus: "Failed" });
+      await Payment.findOneAndUpdate({ transactionId: razorpay_order_id }, {
+        status: "Failed",
+        responseData: req.body,
+      });
+      return res.json({ success: false, message: "Payment verification failed" });
+    }
+  } catch (error) {
+    console.error("Verification error:", error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+const orderSuccess = async( req, res ) => {
+    try {
+        const userId = req.session.user || req.user;
+        if(!userId){
+            return res.redirect('/login');
+        }
+        const user = await User.findById(userId);
+        const orderId = req.query.orderId;
+
+        const orders = await Order.findById(orderId).populate('orderedItems.product');
+        res.render('orderSuccess', {
+            user,
+            orders,
+            orderId
+        })
+    } catch (error) {
+        console.log('Order success page load error:', error);
+        
     }
 }
 
@@ -712,6 +850,7 @@ module.exports = {
     cancelSingleItem,
     returnOrder,
     returnSingleItem,
-    downloadInvoice
-
+    downloadInvoice,
+    verifyPayment,
+    orderSuccess
 }

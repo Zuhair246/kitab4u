@@ -147,7 +147,7 @@ const orderSchema = new mongoose.Schema({
                 ],
     default: 'Pending'
   },
-  payementId: {
+  paymentId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Payment'
   },

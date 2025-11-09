@@ -86,6 +86,15 @@ const editCategory = async (req, res) => {
             return res.redirect("/admin/category?error=" + encodeURIComponent("Invalid data for update"));
         }
 
+        const startDate = new Date(offerStart);
+        const endDate = new Date(offerEnd)
+        const today = new Date();
+        if(startDate < today || endDate < today){
+            return res.redirect("/admin/category?error=" + encodeURIComponent("Start date or End date should not be past!"));
+        }else if(endDate < startDate) {
+            return res.redirect("/admin/category?error=" + encodeURIComponent("End date should not be before start date!"));
+        }
+
         const existingCategory = await Category.findOne({
             name: { $regex: new RegExp("^" + name + "$", "i") },
             _id: { $ne: id }  //  ignore the category being edited

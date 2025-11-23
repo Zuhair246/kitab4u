@@ -9,7 +9,17 @@
       <strong>Order ID:</strong> <%= order.orderId %><br>
       <strong>Order Date:</strong> <%= order.orderDateFormatted %><br>
       <strong>Expected Delivery:</strong> <%= order.expectedDeliveryDateFormatted %> <br>
-      <strong>Payment Method:</strong> <%= order.paymentMethod %>
+      <strong>Payment Method:</strong> <%= order.paymentMethod %> <br>
+      <strong>Payment Status:</strong> <%= order.paymentStatus %>
+      <%if(order.status==='Pending'){ %>
+        <div class="text-center">
+          <p class="badge bg-danger rounded-pill fs-6"><i class="bi bi-exclamation-square-fill"></i> Payment Failed</p>
+          <form id="retryPayment">
+            <input type="hidden" name="orderId" value="<%= order._id %>" id="retryOrderId">
+            <button type="submit" class="btn btn-outline-success fw-semibold"><i class="bi bi-arrow-clockwise"></i> Retry Payment</button>
+          </form>
+        </div>
+        <%}%>
       <% if( order.status==='Delivered' || order.status==='Returned' || order.status==='Return Requested' ) { %>
       <div class="mt-3 ms-3 text-end">
         <a href="/myOrders/<%= order._id %>/invoice" class="btn btn-success">
@@ -33,7 +43,7 @@
   </div>
 <% } else { %>
   <%
-    let stages = ['Order Placed','Packed','Shipped','Out for Delivery','Delivered'];
+    let stages = ['Pending','Placed','Packed','Shipped','Out for Delivery','Delivered'];
     if (['Returned'].includes(order.status)) {
         stages.push('Returned');
     }
@@ -496,4 +506,27 @@
     }
   }
 
+  document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("retryPayment").addEventListener("submit", async (e) => {
+      e.preventDefault();
+    
+      const orderId = document.getElementById("retryOrderId").value;
+    
+      const res = await fetch("/retryPayment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId })
+      });
+    
+      const data = await res.json();
+    
+      if (!data.success) {
+        return Swal.fire("Error", data.message, "error");
+      }
+    
+      // 🔥 REDIRECT BACK TO CHECKOUT WITH NEW RAZORPAY ORDER ID
+      window.location.href =
+        `/orders?retry=1&orderId=${data.orderDbId}&rzpOrder=${data.orderId}`;
+    });
+  })
 </script>

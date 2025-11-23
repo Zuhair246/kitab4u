@@ -61,7 +61,7 @@
   </div>
 <% } else { %>
   <% 
-    let stages = ['Order Placed','Packed','Shipped','Out for Delivery','Delivered'];
+    let stages = ['Pending','Placed','Packed','Shipped','Out for Delivery','Delivered'];
     if (['Returned'].includes(order.status)) {
       stages.push('Returned');
     }

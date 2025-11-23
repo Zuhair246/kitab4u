@@ -2,8 +2,8 @@ const User = require('../../models/userSchema');
 const Order = require('../../models/orderSchema');
 const Product = require('../../models/productSchema');
 const Payment = require('../../models/paymentSchema');
-const { name } = require('ejs');
-const { image } = require('pdfkit');
+const {addToWallet} = require('../../helpers/walletHelper')
+
 
 const orderListing = async (req, res) => {
     try {
@@ -207,10 +207,18 @@ const orderCancelRequest = async (req, res) => {
             }
         }
         }
+
+        if(action === 'approve' && order.paymentMethod === 'Online' && order.paymentStatus==='Paid') {
+            await addToWallet(order.userId, order.finalPayableAmount, 'Credit', `Refund for Cancelled Order #${order.orderId}`);
+            order.paymentStatus = "Refunded";
+        }
+
         await order.save();
+
         if(action !== 'approve'){
             return res.status(400).json( { success: false, message: "Cancel Rejected"})
         }
+
         return res.status(200).json( { success: true, message: "Order cancel approved" } );
     } catch (error) {
         console.log('Admin order cancel approval error:',error);
@@ -247,11 +255,28 @@ const itemCancelRequest = async (req, res) => {
                 variant.stock += item.quantity;
                 await product.save();
             }
+
+            if(order.paymentMethod === 'Online' && order.paymentStatus === 'Paid') {
+                let itemRefundAmount = item.price * item.quantity;
+                if(order.couponApplied && order.discount >0 && order.finalPayableAmount >0){
+                    const share = (item.price * item.quantity) / order.totalPrice;
+                    const itemDiscount = order.discount * share;
+                    itemRefundAmount -= itemDiscount;
+                }
+                if(allCancelled){
+                    order.paymentStatus = 'Refunded';
+                }
+                await addToWallet(order.userId, itemRefundAmount, 'Credit', `Refund for Cancelling ( ${item.name} ) of Order #${order.orderId}`);
+            }
         }
+
+
         await order.save();
+
         if(action !== 'approve'){
             return res.status(400).json({success: false, message: "Item cancel Rejected"})
         }
+
         return res.status(200).json( { success: true, message: "Item cancel approved" } );
     } catch (error) {
         console.log('Admin Item cancel approval error:', error);
@@ -284,10 +309,18 @@ const orderReturnRequest = async (req, res) => {
                 }
             }
         }
+
+        if(action === 'approve'){
+            await addToWallet(order.userId, order.finalPayableAmount - order.shippingCharge, 'Credit', `Refund for Returned Order #${order.orderId}`);
+            order.paymentStatus = 'Refunded';
+        }
+
         await order.save();
+
         if(action !== 'approve'){
             return res.status(400).josn( { success: false, message: "Return not Rejected"})
         }
+
         return res.status(200).json( { success: true, message: "Order Return Approved!"})
     } catch (error) {
         console.log('Admin Order Return Approval Error:', error);
@@ -324,7 +357,19 @@ const itemReturnRequest = async (req, res) => {
                 variant.stock += item.quantity;
                 await product.save();
             }
+
+            let itemRefundAmount = item.price * item.quantity;
+            if(order.couponApplied && order.discount >0 && order.finalPayableAmount >0){
+                const share = (item.price * item.quantity) / order.totalPrice;
+                const itemDiscount = order.discount * share;
+                itemRefundAmount -= itemDiscount;
+            }
+            if(allReturned){
+                order.paymentStatus = "Refunded";
+            }
+            await addToWallet(order.userId, itemRefundAmount, 'Credit', `Refund for Returned item ( ${item.product} ) from Order #${order.orderId}`);
         }
+
         await order.save()
         if(action !== 'approve'){
             return res.status(400).json({success: false, message: "Item return Rejected"})

@@ -163,7 +163,7 @@
 
               <small id="couponMessage" class="text-success fw-semibold"></small>
             </div>
-            <input type="hidden" id="finalAmountValue" value="<%= finalAmount %>">
+            <input type="hidden" name="finalAmount" id="finalAmountValue" value="<%= session.appliedCoupon ? session.appliedCoupon.discountFinalAmount : finalAmount %>">
           </div>
           <%}%>
 
@@ -315,8 +315,7 @@ document.addEventListener('submit', async function(e) {
       const result = await res.json();
 
       if (!result || !result.success) {
-        Swal.fire({ icon: 'error', title: 'Failed', text: (result && result.message) || 'Could not add address' });
-        return;
+        window.location.href = result.redirect;
       }
 
       // Build new address card HTML and insert
@@ -532,9 +531,13 @@ function copyCouponCode(code, event) {
   .then(res => res.json())
   .then(data => {
     if (data.success) {
-      Swal.fire("Success ", data.message, "success");
+      Swal.fire("Success ", data.message, "success")
+      .then(()=>{
+        location.reload()
+      })
       document.getElementById("couponMessage").innerText = `Applied: ${data.couponCode}`;
-      location.reload(); // update totals on page
+      document.getElementById("finalAmount").textContent = data.discountFinalAmount;
+      document.getElementById("discountValue").textContent = data.discount;
     } else {
       Swal.fire("Failed ", data.message, "error");
     }
@@ -556,6 +559,15 @@ async function removeCoupon() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  const urlParams = new URLSearchParams(window.location.search);
+const retryMode = urlParams.get("retry");
+const retryOrderDbId = urlParams.get("orderId");
+const retryRzpOrderId = urlParams.get("rzpOrder");
+
+if (retryMode && retryRzpOrderId) {
+  openRetryPaymentPopup();
+}
+
   const checkoutForm = document.getElementById("checkoutForm");
 
   if (checkoutForm) {
@@ -564,24 +576,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const method = document.querySelector('input[name="paymentMethod"]:checked');
       const selectedAddressId = document.getElementById("selectedAddressIdHidden").value;
-      const finalAmount = document.getElementById("finalAmountValue").value;
 
       if (!method) return Swal.fire("Error", "Please select a payment method", "error");
 
+      // COD → normal form submit
       if (method.value === "COD") return this.submit();
 
       try {
-        // Step 1: Create order on backend
+        // -------------------------------------------
+        // 1️⃣ Step 1: Create order in backend
+        // -------------------------------------------
         const res = await fetch("/orders", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ selectedAddressId, paymentMethod: "Online", totalAmount: finalAmount }),
+          body: JSON.stringify({ selectedAddressId, paymentMethod: "Online" }),
         });
 
         const order = await res.json();
         if (!order.success) throw new Error("Failed to create Razorpay order");
 
-        // Step 2: Open Razorpay checkout
+        // -------------------------------------------
+        // 2️⃣ Step 2: Razorpay Payment Window
+        // -------------------------------------------
         const options = {
           key: order.key,
           amount: order.amount,
@@ -589,7 +605,11 @@ document.addEventListener("DOMContentLoaded", () => {
           name: "Kitab4U",
           description: "Book Purchase",
           order_id: order.orderId,
+
           handler: async function (response) {
+            // -------------------------
+            // Success — verify
+            // -------------------------
             const verifyRes = await fetch("/verifyPayment", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -602,19 +622,37 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             const result = await verifyRes.json();
+
             if (result.success) {
               Swal.fire("Success!", "Payment Successful", "success");
               setTimeout(() => {
                 window.location.href = `/orderSuccess?orderId=${result.orderId}`;
               }, 1500);
             } else {
-              Swal.fire("Failed", result.message, "error");
+              // Verification failed → retry option
+              window.location.href= `/loadRetryPayment?orderId=${order.orderDbId}`;
             }
           },
-          theme: { color: "#edc2ba" },
+
+          // -------------------------------------------
+          // FAILURE HANDLING (user closes / bank error)
+          // -------------------------------------------
+          modal: {
+            ondismiss: function () {
+              window.location.href= `/loadRetryPayment?orderId=${order.orderDbId}`
+            }
+          },
+
+          theme: { color: "#edc2ba" }
         };
 
         const rzp = new Razorpay(options);
+
+        // Razorpay internal failure event
+        rzp.on("payment.failed", function (response) {
+          window.location.href= `/loadRetryPayment?orderId=${order.orderDbId}`
+        });
+
         rzp.open();
 
       } catch (err) {
@@ -624,6 +662,50 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
+async function openRetryPaymentPopup() {
+  const orderDbId = retryOrderDbId;
+
+  const options = {
+    key: order.key,
+    amount: order.amount,
+    currency: order.currency,
+    name: "Kitab4U",
+    description: "Retry Payment",
+    order_id: retryRzpOrderId,
+
+    handler: async function (response) {
+      const verifyRes = await fetch("/verifyPayment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          razorpay_order_id: response.razorpay_order_id,
+          razorpay_payment_id: response.razorpay_payment_id,
+          razorpay_signature: response.razorpay_signature,
+          orderDbId
+        }),
+      });
+
+      const result = await verifyRes.json();
+
+      if (result.success) {
+        window.location.href= `/orderSuccess?orderId=${result.orderId}`;
+      } else {
+        window.location.href= `/loadRetryPayment?orderId=${orderDbId}`;
+      }
+    },
+
+    modal: {
+      ondismiss: function () {
+        window.location.href = `/loadRetryPayment?orderId=${orderDbId}`;
+      }
+    }
+  };
+
+  const rzp = new Razorpay(options);
+  rzp.open();
+}
+
 
 </script>
 

@@ -5,8 +5,9 @@ const productController = require('../controllers/user/productController');
 const profileController = require('../controllers/user/profileController');
 const cartController = require('../controllers/user/cartController');
 const orderController = require('../controllers/user/orderCotroller');
-const couponController = require('../controllers/admin/couponController')
-const wishlistController = require('../controllers/user/wishlistController')
+const couponController = require('../controllers/admin/couponController');
+const wishlistController = require('../controllers/user/wishlistController');
+const walletController = require('../controllers/user/walletController');
 const {userAuth }= require('../middlewares/auth');
 const checkProductAvailability = require('../middlewares/productAuth');
 const userStatus = require('../middlewares/userStatus');
@@ -70,6 +71,8 @@ router.post('/cart/update', userStatus, cartController.updateQuantity);
 router.get('/orders', userStatus,orderController.loadOrderPage);
 router.post('/orders', userStatus, orderController.checkout);
 router.post('/verifyPayment', orderController.verifyPayment);
+router.get('/loadRetryPayment', orderController.loadRetryPayment)
+router.post('/retryPayment', orderController.retryPayment);
 router.get('/myOrders', userStatus, orderController.orderHistory);
 router.get('/myOrders/:id', userStatus, orderController.orderDetails);
 router.post('/myOrders/:id/cancel', userStatus, orderController.cancelOrder);
@@ -82,6 +85,9 @@ router.get('/orderSuccess', orderController.orderSuccess);
 //Order Coupon Management
 router.post('/applyCoupon', couponController.applyCoupon);
 router.post('/removeCoupon', couponController.removeCoupon);
+
+//Wallet Management
+router.get('/loadWallet', walletController.loadWallet);
 
 //Wishlist Management
 router.get('/wishlist', wishlistController.loadWishlist);

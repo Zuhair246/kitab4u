@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
 const { v4: uuidv4 } = require("uuid");
-const Address = require('../models/addressSchema');
 const { address } = require("../controllers/user/profileController");
 
 const orderSchema = new mongoose.Schema({
@@ -49,6 +48,7 @@ const orderSchema = new mongoose.Schema({
         type: String,
         enum: [      
           "Pending",
+          "Placed",
           "Packed",
           "Shipped",
           "Out for Delivery",
@@ -160,6 +160,7 @@ const orderSchema = new mongoose.Schema({
     required: true,
     enum: [
       "Pending",
+      "Placed",
       "Packed",
       "Shipped",
       "Out for Delivery",

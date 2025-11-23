@@ -53,9 +53,7 @@ const orderSchema = new mongoose.Schema({
           "Shipped",
           "Out for Delivery",
           "Delivered",
-          'Cancel Requested',
           "Cancelled",
-          "Cancel Rejected",
           "Return Requested",
           "Returned",
           "Return Rejected"
@@ -165,9 +163,7 @@ const orderSchema = new mongoose.Schema({
       "Shipped",
       "Out for Delivery",
       "Delivered",
-      'Cancel Requested',
       "Cancelled",
-      "Cancel Rejected",
       "Return Requested",
       "Returned",
       "Return Rejected"

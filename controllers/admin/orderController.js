@@ -126,8 +126,13 @@ const updateOrderStatus = async (req, res) => {
         if(!order) return res.status(404).json({success: false, message: 'Order not found'});
 
         order.status = status;
-        order.orderedItems.forEach(item => (item.itemStatus = status));
+        const activeItems = order.orderedItems.filter(
+            item => !["Cancelled", "Returned"].includes(item.itemStatus)
+        )
+        activeItems.forEach(item => (item.itemStatus = status));
         await order.save();
+        console.log(activeItems);
+        
 
         for(const item of order.orderedItems) {
             const product = await Product.findById(item.product);
@@ -183,107 +188,107 @@ const updateOrderStatus = async (req, res) => {
 //     }
 // }
 
-const orderCancelRequest = async (req, res) => {
-    try {
-        const { orderId } = req.params;
-        const { action } = req.body;
+// const orderCancelRequest = async (req, res) => {
+//     try {
+//         const { orderId } = req.params;
+//         const { action } = req.body;
 
-        const order = await Order.findById(orderId);
-        if(!order) {
-            return res.status(400).json({success: false, message: "Order not found!"});
-        }
+//         const order = await Order.findById(orderId);
+//         if(!order) {
+//             return res.status(400).json({success: false, message: "Order not found!"});
+//         }
 
-        order.status = action === 'approve' ? 'Cancelled' : 'Cancel Rejected';
+//         order.status = action === 'approve' ? 'Cancelled' : 'Cancel Rejected';
 
-        for(const item of order.orderedItems) {
-            item.itemStatus = action === 'approve' ? 'Cancelled' : 'Cancel Rejected';
+//         for(const item of order.orderedItems) {
+//             item.itemStatus = action === 'approve' ? 'Cancelled' : 'Cancel Rejected';
 
-            if(action === 'approve') {
-            const product = await Product.findById(item.product);
-            const variant = product?.variants.id(item.variantId);
-            if(variant) {
-                variant.stock += item.quantity;
-                await product.save();
-            }
-        }
-        }
+//             if(action === 'approve') {
+//             const product = await Product.findById(item.product);
+//             const variant = product?.variants.id(item.variantId);
+//             if(variant) {
+//                 variant.stock += item.quantity;
+//                 await product.save();
+//             }
+//         }
+//         }
 
-        if(action === 'approve' && order.paymentMethod === 'Online' && order.paymentStatus==='Paid') {
-            await addToWallet(order.userId, order.finalPayableAmount, 'Credit', `Refund for Cancelled Order #${order.orderId}`);
-            order.paymentStatus = "Refunded";
-        }
+//         if(action === 'approve' && order.paymentMethod === 'Online' && order.paymentStatus==='Paid') {
+//             await addToWallet(order.userId, order.finalPayableAmount, 'Credit', `Refund for Cancelled Order #${order.orderId}`);
+//             order.paymentStatus = "Refunded";
+//         }
 
-        await order.save();
+//         await order.save();
 
-        if(action !== 'approve'){
-            return res.status(400).json( { success: false, message: "Cancel Rejected"})
-        }
+//         if(action !== 'approve'){
+//             return res.status(400).json( { success: false, message: "Cancel Rejected"})
+//         }
 
-        return res.status(200).json( { success: true, message: "Order cancel approved" } );
-    } catch (error) {
-        console.log('Admin order cancel approval error:',error);
-        res.status(500).json({ success: false, message: "Internal Sever Error" } );        
-    }
-} 
+//         return res.status(200).json( { success: true, message: "Order cancel approved" } );
+//     } catch (error) {
+//         console.log('Admin order cancel approval error:',error);
+//         res.status(500).json({ success: false, message: "Internal Sever Error" } );        
+//     }
+// } 
 
-const itemCancelRequest = async (req, res) => {
-    try {
-        const { orderId, itemId } = req.params;
-        const { action } = req.body;
+// const itemCancelRequest = async (req, res) => {
+//     try {
+//         const { orderId, itemId } = req.params;
+//         const { action } = req.body;
 
-        const order = await Order.findById(orderId);
-        if(!order) {
-            return res.status(400).json({ success: false, message: "Cancel Item's Order not found"})
-        }
+//         const order = await Order.findById(orderId);
+//         if(!order) {
+//             return res.status(400).json({ success: false, message: "Cancel Item's Order not found"})
+//         }
 
-        const item = order.orderedItems.id(itemId);
-       if (!item) {
-            return res.status(400).json({ success: false, message: "Item not found"});
-        }
+//         const item = order.orderedItems.id(itemId);
+//        if (!item) {
+//             return res.status(400).json({ success: false, message: "Item not found"});
+//         }
 
-        item.itemStatus = action === 'approve' ? "Cancelled" : "Cancel Rejected";
+//         item.itemStatus = action === 'approve' ? "Cancelled" : "Cancel Rejected";
 
-        const allCancelled = order.orderedItems.every(item => item.itemStatus === 'Cancelled');
-        if(allCancelled){
-            order.status = 'Cancelled';
-        }
+//         const allCancelled = order.orderedItems.every(item => item.itemStatus === 'Cancelled');
+//         if(allCancelled){
+//             order.status = 'Cancelled';
+//         }
 
-        if(action === 'approve') {
-            const product = await Product.findById(item.product);
-            const variant = product?.variants.id(item.variantId);
-            if(variant) {
-                variant.stock += item.quantity;
-                await product.save();
-            }
+//         if(action === 'approve') {
+//             const product = await Product.findById(item.product);
+//             const variant = product?.variants.id(item.variantId);
+//             if(variant) {
+//                 variant.stock += item.quantity;
+//                 await product.save();
+//             }
 
-            if(order.paymentMethod === 'Online' && order.paymentStatus === 'Paid') {
-                let itemRefundAmount = item.price * item.quantity;
-                if(order.couponApplied && order.discount >0 && order.finalPayableAmount >0){
-                    const share = (item.price * item.quantity) / order.totalPrice;
-                    const itemDiscount = order.discount * share;
-                    itemRefundAmount -= itemDiscount;
-                }
-                if(allCancelled){
-                    order.paymentStatus = 'Refunded';
-                }
-                await addToWallet(order.userId, itemRefundAmount, 'Credit', `Refund for Cancelling ( ${item.name} ) of Order #${order.orderId}`);
-            }
-        }
+//             if(order.paymentMethod === 'Online' && order.paymentStatus === 'Paid') {
+//                 let itemRefundAmount = item.price * item.quantity;
+//                 if(order.couponApplied && order.discount >0 && order.finalPayableAmount >0){
+//                     const share = (item.price * item.quantity) / order.totalPrice;
+//                     const itemDiscount = order.discount * share;
+//                     itemRefundAmount -= itemDiscount;
+//                 }
+//                 if(allCancelled){
+//                     order.paymentStatus = 'Refunded';
+//                 }
+//                 await addToWallet(order.userId, itemRefundAmount, 'Credit', `Refund for Cancelling ( ${item.name} ) of Order #${order.orderId}`);
+//             }
+//         }
 
 
-        await order.save();
+//         await order.save();
 
-        if(action !== 'approve'){
-            return res.status(400).json({success: false, message: "Item cancel Rejected"})
-        }
+//         if(action !== 'approve'){
+//             return res.status(400).json({success: false, message: "Item cancel Rejected"})
+//         }
 
-        return res.status(200).json( { success: true, message: "Item cancel approved" } );
-    } catch (error) {
-        console.log('Admin Item cancel approval error:', error);
-        return res.status(500).json({ success: false, message: "Internal Server error" } );
+//         return res.status(200).json( { success: true, message: "Item cancel approved" } );
+//     } catch (error) {
+//         console.log('Admin Item cancel approval error:', error);
+//         return res.status(500).json({ success: false, message: "Internal Server error" } );
         
-    }
-}
+//     }
+// }
 
 const orderReturnRequest = async (req, res) => {
     try {
@@ -386,8 +391,6 @@ module.exports = {
     orderListing,
     viewOrderDetails,
     updateOrderStatus,
-    orderCancelRequest,
-    itemCancelRequest,
     orderReturnRequest,
     itemReturnRequest
 }

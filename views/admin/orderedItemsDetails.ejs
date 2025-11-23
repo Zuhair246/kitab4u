@@ -41,9 +41,13 @@
                   <!-- Item-Level Status Update --> 
   <div class="col-md-3 text-center">  
   <form class="d-inline-block">
-
-    <span class="badge bg-info mb-3 text-dark"><%= item.itemStatus %></span>
-
+    <%if(item.itemStatus=='Cancelled'){ %>
+      <span class="badge bg-danger mb-3 fs-6"><%= item.itemStatus %></span>
+    <%}else if(item.itemStatus=='Returned'){ %>
+      <span class="badge bg-secondary mb-3 fs-6"><%= item.itemStatus %></span>
+      <%}else{ %>
+    <span class="badge bg-primary mb-3 fs-6"><%= item.itemStatus %></span>
+    <%}%>    
     <div class="d-flex justify-content-center gap-1">
       <% if(item.itemStatus === 'Return Requested') { %>
       <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#returnModal-<%= item._id %>">Return</button>
@@ -139,6 +143,7 @@
       <select name="status" id="orderStatusSelect-<%= order._id %>" class="form-select form-select-sm mb-2 status-select"
               onchange="this.style.backgroundColor=this.options[this.selectedIndex].dataset.color;" data-id="<%= order._id %>">
         <option value="Pending" data-color="#d1ecf1" <%= order.status === 'Pending' ? 'selected' : '' %>>Pending</option>
+        <option value="Placed" data-color="#d1ecf4" <%= order.status === 'Placed' ? 'selected' : '' %>>Placed</option>
         <option value="Packed" data-color="#fff3cd" <%= order.status === 'Packed' ? 'selected' : '' %>>Packed</option>
         <option value="Shipped" data-color="#cce5ff" <%= order.status === 'Shipped' ? 'selected' : '' %>>Shipped</option>
         <option value="Out for Delivery" data-color="#ffeeba" <%= order.status === 'Out for Delivery' ? 'selected' : '' %>>Out for Delivery</option>

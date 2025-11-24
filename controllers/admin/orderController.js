@@ -131,8 +131,6 @@ const updateOrderStatus = async (req, res) => {
         )
         activeItems.forEach(item => (item.itemStatus = status));
         await order.save();
-        console.log(activeItems);
-        
 
         for(const item of order.orderedItems) {
             const product = await Product.findById(item.product);
@@ -366,13 +364,13 @@ const itemReturnRequest = async (req, res) => {
             let itemRefundAmount = item.price * item.quantity;
             if(order.couponApplied && order.discount >0 && order.finalPayableAmount >0){
                 const share = (item.price * item.quantity) / order.totalPrice;
-                const itemDiscount = order.discount * share;
+                const itemDiscount = Math.round(order.discount * share);
                 itemRefundAmount -= itemDiscount;
             }
             if(allReturned){
                 order.paymentStatus = "Refunded";
             }
-            await addToWallet(order.userId, itemRefundAmount, 'Credit', `Refund for Returned item ( ${item.product} ) from Order #${order.orderId}`);
+            await addToWallet(order.userId, itemRefundAmount, 'Credit', `Refund for Returned item "${item.name}" from Order #${order.orderId}`);
         }
 
         await order.save()

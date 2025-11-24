@@ -377,11 +377,10 @@ const checkout = async (req, res) => {
         createdAt: new Date(),
       })
       
-     wallet.balance -= finalPayableAmount;
-     await addToWallet(userId, finalPayableAmount, 'Debit', `Paid towards the Order: ${newOrder._id}`)
-    await wallet.save();
+    //  wallet.balance -= finalPayableAmount;
+     await addToWallet(userId, finalPayableAmount, 'Debit', `Paid towards the Order: #${newOrder._id}`);
     
-          for (const item of items) {
+      for (const item of items) {
         await Product.updateOne(
           { _id: item.product, "variants._id": item.variantId },
           { $inc: { "variants.$.stock": -item.quantity } }
@@ -793,15 +792,29 @@ const cancelOrder = async (req, res) => {
     order.status = "Cancelled";
     order.cancelReason = reason;
 
-    order.orderedItems.forEach((item) => {
-      item.itemStatus = "Cancelled";
-    });
+for(let item of order.orderedItems) {
+  item.itemStatus = "Cancelled";
+  item.cancelReason = reason;
+
+  const product = await Product.findById(item.product);
+  const variant = product?.variants.id(item.variantId);
+  if(variant) {
+    variant.stock += item.quantity;
+    await product.save();
+  }
+}
+
+if(order.paymentMethod=='Online' || order.paymentMethod=="Wallet") {
+  if(order.paymentStatus=="Paid"){
+    await addToWallet(order.userId, order.finalPayableAmount, "Credit", `Refund for order: #${order.orderId}`)
+  }
+}
 
     await order.save();
 
     return res.json({
       success: true,
-      message: "Cancellation request submitted successfully",
+      message: "Order Cancelled Successfully",
     });
   } catch (error) {
     console.error("Order cancelling error: ", error);
@@ -858,6 +871,33 @@ const cancelSingleItem = async (req, res) => {
       order.cancelReason = reason;
     }
 
+    const product = await Product.findById(item.product);
+    const variant = product?.variants.id(item.variantId);
+    if(variant){
+      variant.stock += item.quantity;
+      await product.save();
+    }
+
+    let itemRefundAmount = 0;
+    if(order.paymentMethod=="Online" || order.paymentMethod=="Wallet") {
+      if(order.paymentStatus=="Paid") {
+        itemRefundAmount = item.price * item.quantity;
+        if(order.couponApplied && order.discount>0 && order.finalPayableAmount >0) {
+          const share = (item.price * item.quantity) / order.totalPrice;
+          const itemDiscount = order.discount * share;
+          itemRefundAmount -= itemDiscount;
+        }
+        if(allCancelled) {
+          order.paymentStatus = "Refunded"
+        }
+        if(allCancelled && order.totalPrice < 700) {
+          itemRefundAmount += order.shippingCharge;
+        }
+        order.totalPrice -= item.price * item.quantity;
+        order.finalPayableAmount -= itemRefundAmount;
+        await addToWallet(order.userId, itemRefundAmount, "Credit", `Refund for cancelled item: "${item.name}" in the order: #${order.orderId}`)
+      }
+    }
     await order.save();
 
     return res.json({ success: true, message: `"${item.name} Cancelled"` });

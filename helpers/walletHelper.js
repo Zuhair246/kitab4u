@@ -1,8 +1,10 @@
 const Wallet = require('../models/walletSchema');
+const User = require('../models/userSchema');
 
 async function  addToWallet (userId, amount, transactionType, description) {
     try {
         let wallet = await Wallet.findOne({userId});
+        let user = await User.findById(userId)
 
         if(!wallet){
             wallet = new Wallet ({
@@ -11,8 +13,12 @@ async function  addToWallet (userId, amount, transactionType, description) {
                 transactions: []
             })
         }
-
+if(transactionType=="Credit"){
         wallet.balance += amount;
+}else if(transactionType=="Debit"){
+        wallet.balance -= amount;
+    }
+
 
         wallet.transactions.push({
             transactionType,
@@ -21,7 +27,11 @@ async function  addToWallet (userId, amount, transactionType, description) {
             description
         });
         await wallet.save();
-        console.log(`₹${amount} added to wallet of ${userId}`);
+        if(transactionType == 'Credit'){
+            console.log(`₹${amount} credited to wallet of ${user.name}`);
+        }else{
+            console.log(`₹${amount} debited from wallet of ${user.name}`);
+        }
         return wallet; 
 
     } catch (error) {

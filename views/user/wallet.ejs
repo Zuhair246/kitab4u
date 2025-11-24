@@ -35,7 +35,7 @@
           <!-- Wallet Balance & Add Money -->
           <div class="text-center mb-4">
             <div class="wallet-balance fs-4 fw-bold text-success mb-3">
-              Current Balance: ₹<%= wallet.balance %>
+              Current Balance: ₹<%= wallet.balance %>/-
             </div>
             <button class="btn btn-success px-4 py-2 rounded-pill" data-bs-toggle="modal" data-bs-target="#addMoneyModal">
               <i class="bi bi-plus-circle me-2"></i>Add Money
@@ -60,9 +60,9 @@
                     <tr>
                       <td><strong><%= transaction.transactionType %></strong></td>
                       <% if (transaction.transactionType === 'Credit') { %>
-                        <td class="text-success">+₹<%= transaction.amount %></td>
+                        <td class="text-success fw-semibold">+₹<%= transaction.amount %></td>
                       <% } else { %>
-                        <td class="text-danger">-₹<%= transaction.amount %></td>
+                        <td class="text-danger fw-semibold">-₹<%= transaction.amount %></td>
                       <% } %>
                       <td><%= new Date(transaction.date).toLocaleDateString('en-IN') %></td>
                       <td><%= transaction.description %></td>

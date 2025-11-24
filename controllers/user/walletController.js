@@ -1,5 +1,5 @@
 const User = require('../../models/userSchema');
-const Walllet = require('../../models/walletSchema');
+const Wallet = require('../../models/walletSchema');
 
 const loadWallet = async (req, res) =>{
     try {
@@ -7,9 +7,9 @@ const loadWallet = async (req, res) =>{
         if (!userId) {
             return res.redirect('/login')
         }
-        const user = User.findById(userId);
+        const user = await User.findById(userId);
 
-        let wallet = await Walllet.findOne({userId: userId});
+        let wallet = await Wallet.findOne({userId});
 
         if(!wallet){
             wallet = {
@@ -17,14 +17,18 @@ const loadWallet = async (req, res) =>{
                 transactions: []
             }
         };
+
+        const sortedTransaction = wallet.transactions.sort(
+            (a,b) => new Date(b.date) - new Date(a.date)
+        )
         
         const currentPage = parseInt(req.query.page) || 1 ;
-        const transactionsPerPage = 20;
+        const transactionsPerPage = 5;
         const totalTransactions = wallet.transactions.length;
         const totalPages = Math.ceil(totalTransactions / transactionsPerPage);
 
         const startIndex = (currentPage -1) * transactionsPerPage;
-        const paginatedTransactions = wallet.transactions.slice(startIndex, startIndex+transactionsPerPage).reverse();
+        const paginatedTransactions = sortedTransaction.slice(startIndex, startIndex+transactionsPerPage);
 
         res.render('wallet', {
             user,

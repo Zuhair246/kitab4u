@@ -316,7 +316,7 @@ const orderReturnRequest = async (req, res) => {
         }
 
         if(action === 'approve'){
-            await addToWallet(order.userId, order.finalPayableAmount - order.shippingCharge, 'Credit', `Refund for Returned Order #${order.orderId}`);
+            await addToWallet(order.userId, order.finalPayableAmount - order.shippingCharge, 'Credit', `Refund for Returned Order: #${order.orderId}`);
             order.paymentStatus = 'Refunded';
         }
 

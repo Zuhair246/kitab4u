@@ -61,7 +61,7 @@
                 </label>
               </div>
             </div>
-            <div class="border rounded p-3 payment-option" data-target="online">
+            <div class="border rounded p-3 mb-2 payment-option" data-target="online">
               <div class="form-check w-100">
                 <input class="form-check-input" type="radio" name="paymentMethod" id="online" value="Online">
                 <label class="form-check-label fw-semibold w-100 p-0" for="online">
@@ -69,6 +69,14 @@
                 </label>
               </div>
             </div>
+            <div class="border rounded p-3 payment-option" data-target="wallet">
+              <div class="form-check w-100">
+                <input class="form-check-input" type="radio" name="paymentMethod" id="wallet" value="wallet">
+                <label class="form-check-label fw-semibold w-100 p-0" for="wallet">
+                  <i class="bi bi-wallet2 me-2 fs-3 text-primary"></i>Wallet Payment
+                </label>
+              </div>
+            </div>            
           </div>
 
           <!-- Hidden field -->
@@ -275,8 +283,6 @@ async function validateAndAutofill(pinInput) {
   pinInput.classList.add('is-valid');
   return true;
 }
-
-
 
 // live pincode validation: works for add & edit forms (delegated)
 document.addEventListener('input', function(e) {
@@ -582,6 +588,35 @@ if (retryMode && retryRzpOrderId) {
       // COD → normal form submit
       if (method.value === "COD") return this.submit();
 
+      // Wallet Payment
+      if(method.value === "wallet") {
+        try {
+          const res = await fetch("/orders", {
+            method: "POST",
+            headers: {"Content-Type" : "application/json"},
+            body: JSON.stringify({
+              selectedAddressId,
+              paymentMethod: "Wallet"
+            })
+          });
+
+          const result = await res.json();
+
+          if(result.success) {
+            Swal.fire("Success!", "Wallet Payment Successful", "success");
+            setTimeout(()=> {
+              window.location.href = `/orderSuccess?orderId=${result.orderId}`
+            },1500);
+          }else{
+            Swal.fire("Error", result.message || "Wallet Payment failed", "error");            
+          }
+        } catch (error) {
+          Swal.fire("Error", "Something went wrong!", "error");
+        }
+        return;
+      }
+
+     // Razorpay setup 
       try {
         // -------------------------------------------
         // 1️⃣ Step 1: Create order in backend

@@ -4,6 +4,8 @@ const Cart = require("../../models/cartSchema");
 const Address = require("../../models/addressSchema");
 const Order = require("../../models/orderSchema");
 const Payment = require("../../models/paymentSchema");
+const Wallet = require("../../models/walletSchema");
+const { addToWallet } = require('../../helpers/walletHelper')
 const Coupon = require("../../models/couponSchema");
 const calculateDiscountedPrice = require("../../helpers/offerPriceCalculator");
 const razorpay = require("../../config/razorpay");
@@ -350,12 +352,59 @@ const checkout = async (req, res) => {
         orderId: razorpayOrder.id,
         orderDbId: newOrder._id,
       });
+    }else if(paymentMethod === "Wallet"){
+      const wallet = await Wallet.findOne({userId});
+      if (!wallet) {
+        return res.status(400).json({ success: false, message:"Wallet not found!" })
+      }
+      if(wallet.balance < finalPayableAmount){
+        return res.status(400).json({ success: false, message: "Insufficient wallet balance!"})
+      }
+
+      const newOrder = await Order.create({
+        userId,
+        orderedItems: items,
+        totalPrice: subtotal,
+        shippingCharge,
+        finalAmount,
+        finalPayableAmount,
+        discount,
+        shippingAddress: selectedAddress,
+        couponApplied: !!appliedCoupon,
+        paymentMethod: "Wallet",
+        paymentStatus: "Paid",
+        status: "Placed",
+        createdAt: new Date(),
+      })
+      
+     wallet.balance -= finalPayableAmount;
+     await addToWallet(userId, finalPayableAmount, 'Debit', `Paid towards the Order: ${newOrder._id}`)
+    await wallet.save();
+    
+          for (const item of items) {
+        await Product.updateOne(
+          { _id: item.product, "variants._id": item.variantId },
+          { $inc: { "variants.$.stock": -item.quantity } }
+        );
+      }
+
+      await Cart.updateOne({ userId }, { $set: { items: [] } });
+
+      if (req.session.appliedCoupon?.couponCode) {
+        await Coupon.updateOne(
+          { code: req.session.appliedCoupon.couponCode },
+          { $addToSet: { usedUsers: userId } }
+        );
+        delete req.session.appliedCoupon;
+      } else {
+        delete req.session.appliedCoupon;
+      }
+
+    return res.status(200).json({ success: true, orderId: newOrder._id})
     }
   } catch (error) {
     console.error("Order checkout error:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal sever error placing order" });
+    return res.status(500).json({ success: false, message: "Internal sever error placing order" });
   }
 };
 

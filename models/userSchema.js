@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { v4: uuidv4 } = require('uuid')
 
 const userSchema = new mongoose.Schema({
     name: {
@@ -45,14 +46,15 @@ const userSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "Cart"
     }],
-    wallet: [{
-        type: Number,
-        default: 0
-    }],
-    wishlist: [{
+    wallet: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Wallet",
+        default: null
+    },
+    wishlist: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Wishlist"
-    }],
+    },
     orderHistory: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: "order"
@@ -63,13 +65,14 @@ const userSchema = new mongoose.Schema({
     },
     referralCode: {
         type: String,
+        unique: true,
+        default: () => "K4U-" + uuidv4().replace(/-/g,"").substring(0,7).toUpperCase(),
+        index: true
     },
-    redeemed: {
-        type: Boolean
-    },
-    redeemedUsers: {
+    referredBy: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User"
+        ref: "User",
+        default: null
     },
     searchHistory: [{
         category: {

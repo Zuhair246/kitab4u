@@ -896,6 +896,10 @@ const cancelSingleItem = async (req, res) => {
         order.totalPrice -= item.price * item.quantity;
         order.finalPayableAmount -= itemRefundAmount;
         await addToWallet(order.userId, itemRefundAmount, "Credit", `Refund for cancelled item: "${item.name}" in the order: #${order.orderId}`)
+        if(order.totalPrice < 700) {
+          order.shippingCharge = 50;
+          order.finalPayableAmount += 50;
+        }
       }
     }
     await order.save();
@@ -1087,6 +1091,12 @@ const downloadInvoice = async (req, res) => {
       .fontSize(12)
       .fillColor("#f90000ff")
       .text(`Order Status: ${order.status}`)
+      .moveDown(1);
+
+    doc
+      .fontSize(12)
+      .fillColor("#2596be")
+      .text(`Payment Method: ${order.paymentMethod}`)
       .moveDown(1);
 
     doc

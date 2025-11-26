@@ -431,8 +431,7 @@ const verifyPayment = async (req, res) => {
       if (paymentDoc) {
         paymentDoc.status = "Failed";
         paymentDoc.paymentId = razorpay_payment_id || null;
-        paymentDoc.transactionId =
-          razorpay_order_id || paymentDoc.transactionId;
+        paymentDoc.transactionId = razorpay_order_id || paymentDoc.transactionId;
         paymentDoc.responseData = responseSnapshot;
         await paymentDoc.save();
       }

@@ -1,4 +1,6 @@
 <%- include('../../views/partials/user/header') %>
+<link rel="stylesheet" href="../../styles/user/wallet.css">
+<link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
 
 <div class="container my-5">
   <div class="row">
@@ -107,14 +109,14 @@
 <div class="modal fade" id="addMoneyModal" tabindex="-1" aria-labelledby="addMoneyModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <form id="addMoneyForm" method="POST" action="/wallet/add-money">
+      <form id="addMoneyForm" method="POST" action="/wallet/addMoney">
         <div class="modal-header">
           <h5 class="modal-title" id="addMoneyModalLabel">Add Money to Wallet</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
           <label for="amount" class="form-label">Enter Amount (₹)</label>
-          <input type="number" name="amount" id="amount" class="form-control" min="1" placeholder="Enter amount" required>
+          <input type="text" name="amount" id="amount" class="form-control" min="1" placeholder="Enter amount" maxlength="4">
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -129,48 +131,30 @@
 
 <%- include('../../views/partials/user/footer') %>
 
-<!-- Optional Custom CSS -->
-<style>
-  .wallet-balance {
-    background-color: #f1f9f1;
-    padding: 15px;
-    border-radius: 8px;
-    display: inline-block;
-  }
-
-  .btn-success {
-    background-color: #198754 !important;
-    border: none;
-  }
-
-  .btn-success:hover {
-    background-color: #157347 !important;
-  }
-
-  @media (max-width: 768px) {
-    .card {
-      padding: 1.5rem;
-    }
-  }
-</style>
-
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <!-- Razorpay Script Placeholder -->
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
-  // Future: Hook this form to Razorpay payment initiation
-  // Example (pseudo):
-  /*
   document.getElementById("addMoneyForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const amount = document.getElementById("amount").value;
     
-    const response = await fetch("/wallet/create-order", {
+    const response = await fetch("/wallet/addMoney", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ amount })
     });
     
     const data = await response.json();
+
+    if(!data.success){
+      return Swal.fire({
+        icon: 'error',
+        title: 'Error!',
+        text: data.message || "Something went wrong"
+      })
+    }
+    
     const options = {
       key: data.key,
       amount: data.amount,
@@ -178,12 +162,45 @@
       order_id: data.orderId,
       name: "Kitab4U Wallet",
       description: "Add Money to Wallet",
-      handler: function (response) {
-        window.location.href = `/wallet/success?paymentId=${response.razorpay_payment_id}`;
+      handler: async function (response) {   
+        const verifyRes = await fetch("/wallet/verifyPayment", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    razorpay_order_id: response.razorpay_order_id,
+                    razorpay_payment_id: response.razorpay_payment_id,
+                    razorpay_signature: response.razorpay_signature,
+                    amount: data.amount
+                })
+            });
+
+            const verifyData = await verifyRes.json();
+            if (verifyData.success) {
+              return Swal.fire({
+                icon: 'success',
+                title: "Success",
+                text: verifyData.message || "Money added to your walllet",
+                timer: 1500,
+                showConfirmButton: false,
+              }).then(()=> window.location.reload());             
+            } else {
+                Swal.fire({
+                  icon: 'error',
+                  title: "Payment Failed!",
+                  text: verifyData.message || "Payment verification failed"
+                })
+            }
       },
     };
     const rzp = new Razorpay(options);
+    //Payment failure
+    rzp.on("payment.failed", function (response) {
+      Swal.fire({
+        icon: 'error',
+        title: "Payment Failed!",
+        text: response.error.description || "Your payment couldn't be completed."
+      })
+    })
     rzp.open();
   });
-  */
 </script>

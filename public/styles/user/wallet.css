@@ -1,0 +1,21 @@
+ .wallet-balance {
+    background-color: #f1f9f1;
+    padding: 15px;
+    border-radius: 8px;
+    display: inline-block;
+  }
+
+  .btn-success {
+    background-color: #198754 !important;
+    border: none;
+  }
+
+  .btn-success:hover {
+    background-color: #157347 !important;
+  }
+
+  @media (max-width: 768px) {
+    .card {
+      padding: 1.5rem;
+    }
+  }

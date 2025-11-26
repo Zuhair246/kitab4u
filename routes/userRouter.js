@@ -88,6 +88,8 @@ router.post('/removeCoupon', couponController.removeCoupon);
 
 //Wallet Management
 router.get('/loadWallet', walletController.loadWallet);
+router.post('/wallet/addMoney', walletController.addMoney);
+router.post('/wallet/verifyPayment', walletController.verifyPayment);
 
 //Wishlist Management
 router.get('/wishlist', wishlistController.loadWishlist);

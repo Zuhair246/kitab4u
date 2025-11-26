@@ -2,6 +2,9 @@ const User = require("../../models/userSchema");
 const Category = require('../../models/categorySchema');
 const Product = require('../../models/productSchema');
 const Wishlist = require('../../models/wishlistSchema');
+const Wallet = require('../../models/walletSchema');
+const Referral = require('../../models/referralSchema');
+const { addToWallet } = require('../../helpers/walletHelper');
 const mongoose = require('mongoose')
 const flash = require("connect-flash");
 const bcrypt = require("bcrypt");
@@ -109,13 +112,13 @@ const loadSignup = async ( req,res) => {
 }
 
 const signup = async (req, res) => {
-    let { name, email, phone, password, confirmPassword } = req.body;
+    let { name, email, phone, password, confirmPassword, referralCode } = req.body;
 
         console.log(req.body);
 
     if (!name || !email || !phone || !password || !confirmPassword) {
         req.flash("error", "Please fill all the details");
-        req.flash("formData", { name, email, password, phone });
+        req.flash("formData", { name, email, password, phone, referralCode });
         return res.redirect("/signup");
     }
 
@@ -123,7 +126,7 @@ const signup = async (req, res) => {
     const nameRegex = /^(?!.*\s{2,})(?!\s)([A-Za-z]+(?:\s[A-Za-z]+)*)$/;
     if (!nameRegex.test(name) || name.replace(/\s/g, '').length < 5) {
         req.flash("error", "Name should be at least 5 letters and contain only alphabets with spaces only between words");
-       req.flash("formData", { name, email, password, phone });
+       req.flash("formData", { name, email, password, phone, referralCode });
         return res.redirect("/signup");
     }
 
@@ -131,46 +134,58 @@ const signup = async (req, res) => {
     const checkEmail = new RegExp(`^[\\w.-]+@[\\w.-]+\\.(${allowedDomains})$`);
     if (!checkEmail.test(email)) {
         req.flash("error", "Invalid Email");
-        req.flash("formData", { name, email, password, phone });
+        req.flash("formData", { name, email, password, phone, referralCode });
         return res.redirect("/signup");
     }
 
     const checkPassword = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).{7,}$/
-
     if (!checkPassword.test(password)) {
         req.flash("error", "Password must be 7 characters with atleast one alphabet, one number and non-alphanumeric character");
-        req.flash("formData", { name, email, password, phone });
+        req.flash("formData", { name, email, password, phone, referralCode });
         return res.redirect("/signup");
     }
 
     if (password !== confirmPassword) {
         req.flash("error", "Passwords do not match");
-        req.flash("formData", { name, email, password, phone });
+        req.flash("formData", { name, email, password, phone, referralCode });
         return res.redirect("/signup");
     }
 
 const checkPhone = /^(?!([0-9])\1{9})([6-9][0-9]{9})$/;
-
 if (!checkPhone.test(phone)) {
     req.flash("error", "Invalid Phone number format");
-    req.flash("formData", { name, email, password, phone });
+    req.flash("formData", { name, email, password, phone, referralCode });
     return res.redirect("/signup");
 }
 
-
     try {
         const existingUser = await User.findOne({ email });
-
         if (existingUser && !existingUser.isBlocked) {
             req.flash("error", "User email already exists");
-            req.flash("formData", { name, email, password, phone });
+            req.flash("formData", { name, email, password, phone, referralCode });
             return res.redirect("/signup");
         }
 
-        const existingPhone = await User.findOne({ phone: User.phone });
+        const existingPhone = await User.findOne({ phone });
         if (existingPhone) {
           req.flash('error', "Phone number already exist");
+          req.flash("formData", { name, email, password, phone, referralCode });
           return res.redirect('/signup')
+        }
+
+        if(referralCode){
+          const referredUser = await User.findOne({referralCode});
+          if(!referredUser){
+            req.flash('error', "Referral code doesn't exist!");
+            req.flash("formData", { name, email, password, phone, referralCode });
+            return res.redirect('/signup')            
+          }
+          if(referredUser.email == email){
+            req.flash('error', "You cannot use your own referral code!");
+            req.flash("formData", { name, email, password, phone});
+            return res.redirect('/signup')                   
+          }
+          req.session.referrer = referredUser._id;
         }
 
         const otp = generateOtp();
@@ -218,6 +233,7 @@ const verifyOtp = async (req, res) => {
 
     if (otp === req.session.userOtp) {
       const user = req.session.userData;
+      const referrer = req.session.referrer || null;
 
       const hashedPassword = await bcrypt.hash(user.password, 10);
       const newUser = new User({
@@ -225,13 +241,41 @@ const verifyOtp = async (req, res) => {
         email: user.email,
         phone: user.phone,
         password: hashedPassword,
-        isVerified: true
+        isVerified: true,
+        referredBy: referrer
       });
 
       await newUser.save();
       req.session.user = newUser;
       console.log(req.session.user.name);
-      
+      if(referrer){
+        const alreadyRedeemed = await Referral.findOne({
+          referredUser: referrer,
+          redeemedUsers: newUser._id
+        });
+        if(!alreadyRedeemed) {
+          await addToWallet(referrer, 100, "Credit", `Referral reward from ${newUser.name}`);
+          await addToWallet(newUser._id, 50, "Credit", `Welcome reward for Referral code redemption`);
+          
+          await Referral.findOneAndUpdate(
+            {
+              referredUser: referrer,
+              redeemedUsers: { $nin: [newUser._id] }
+            },
+            {
+              $push: {redeemedUsers: newUser._id},
+              $inc: {totalEarned: 100}
+            },
+            {upsert: true, new: true}
+          )
+        } else {
+          console.warn("User already redeemed for this referrral user referral code")
+        }
+      }
+
+        delete req.session.userOtp;
+        delete req.session.otpExpiry;
+        delete req.session.referrer;
 
       return res.json({ 
         success: true, 
@@ -241,6 +285,7 @@ const verifyOtp = async (req, res) => {
     } else {
       return res.json({ success: false, message: 'Invalid OTP! Please try again!' });
     }
+  
   } catch (error) {
     console.error('OTP verification error:', error);
     return res.status(500).json({ 
@@ -367,7 +412,6 @@ const logout = async (req, res) => {
     return res.redirect("/pageNotFound");
   }
 };
-
 
 const loadVerifyEmail = async (req,res) => {
     try {

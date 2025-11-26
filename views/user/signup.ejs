@@ -45,6 +45,7 @@
                     <input type="tel" class="form-control" name="phone" value="<%= formData ? formData.phone : '' %>" placeholder="Phone Number" id="phone" maxlength="10" pattern="[0-9]{10}">
                     <input type="password" class="form-control" name="password" value="<%= formData ? formData.password : '' %>" placeholder="Password" id="password">
                     <input type="password" class="form-control" name="confirmPassword" placeholder="Confirm Password" id="confirmPassword">
+                    <input type="text" class="form-control" name="referralCode" value="<%= formData ? formData.referralCode : '' %>" placeholder="Do you have a Referal Code ?" id="referralCode" maxlength="15">
                     
                     <button type="submit" class="btn create-btn" id="createBtn">Create Account</button>
                 </form>

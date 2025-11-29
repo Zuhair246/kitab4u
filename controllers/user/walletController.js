@@ -64,7 +64,7 @@ const addMoney = async ( req, res ) => {
             currency: "INR",
             receipt: `wallet_${Date.now()}`
         };
-        const order = await razorpay.orders.create(options);
+        const order = await razorpay.orders.create(options);  //razorpay return an id from here which we send --to--> frontend API.
 
         return res.json({
             success: true,
@@ -126,8 +126,28 @@ const verifyPayment = async (req, res) => {
     }
 }
 
+const loadreferral = async (req, res) => {
+    try {
+        const userId = req.session.user?._id || req.user?._id;
+        if(!userId) {
+            return res.redirect('/login');
+        }
+        const user = await User.findById(userId);
+        const referralCode = user.referralCode;
+        console.log(referralCode);
+        res.render('referral', {
+            user
+        })
+        
+    } catch (error) {
+        console.log("Referal page load error:", error);
+        return res.redirect('/pageNotFound')
+    }
+}
+
 module.exports = {
     loadWallet,
     addMoney,
-    verifyPayment
+    verifyPayment,
+    loadreferral
 }

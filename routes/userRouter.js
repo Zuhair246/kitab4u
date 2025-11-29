@@ -68,7 +68,7 @@ router.post('/cart/remove' , userStatus, cartController.removeFromCart)
 router.post('/cart/update', userStatus, cartController.updateQuantity);
 
 //Order Management
-router.get('/orders', userStatus,orderController.loadOrderPage);
+router.get('/orders', userStatus,orderController.loadCheckoutPage);
 router.post('/orders', userStatus, orderController.checkout);
 router.post('/verifyPayment', orderController.verifyPayment);
 router.get('/loadRetryPayment', orderController.loadRetryPayment)
@@ -90,6 +90,7 @@ router.post('/removeCoupon', couponController.removeCoupon);
 router.get('/loadWallet', walletController.loadWallet);
 router.post('/wallet/addMoney', walletController.addMoney);
 router.post('/wallet/verifyPayment', walletController.verifyPayment);
+router.get('/referral', walletController.loadreferral);
 
 //Wishlist Management
 router.get('/wishlist', wishlistController.loadWishlist);

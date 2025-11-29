@@ -13,7 +13,7 @@ const crypto = require("crypto");
 const path = require("path");
 const PDFDocument = require("pdfkit");
 
-const loadOrderPage = async (req, res) => {
+const loadCheckoutPage = async (req, res) => {
   try {
     const userId = req.session.user || req.user;
     if (!userId) {
@@ -83,6 +83,7 @@ const loadOrderPage = async (req, res) => {
           name: product.name,
           coverType: variant.coverType,
           quantity: item.quantity,
+          salePrice: variant.discountPrice,
           price: price,
           image: image,
           totalPrice: item.quantity * price,
@@ -195,6 +196,7 @@ const checkout = async (req, res) => {
           name: product.name,
           coverType: variant.coverType,
           quantity: item.quantity,
+          salePrice: variant.discountPrice,
           price: price,
           totalPrice: item.quantity * price,
           image: image,
@@ -1232,7 +1234,7 @@ const downloadInvoice = async (req, res) => {
 };
 
 module.exports = {
-  loadOrderPage,
+  loadCheckoutPage,
   checkout,
   orderHistory,
   orderDetails,

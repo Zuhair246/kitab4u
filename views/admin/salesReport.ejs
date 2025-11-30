@@ -1,4 +1,10 @@
 <%- include('../../views/partials/admin/header') %>
+<% let queryString = `&range=${range || ''}&startDate=${startDate || ''}&endDate=${endDate || ''}`; %>
+
+<style>
+  .text-purple { color: #9c27b0; }
+</style>
+
 
 <!-- Main Content Area -->
 <div class="col-md-10">
@@ -126,17 +132,15 @@
   <!-- KPI GRID END -->
 
   <!-- Sales Trend Chart Placeholder -->
-  <div class="card shadow-sm border-0 mb-4">
-    <div class="card-header bg-light">
-      <h5 class="mb-0 fw-semibold">Sales Trend</h5>
-    </div>
-    <div class="card-body">
-      <div class="text-center py-5">
-        <i class="bi bi-bar-chart-line text-primary" style="font-size: 4rem;"></i>
-        <p class="text-muted mt-3">Sales trend chart will be displayed here</p>
-      </div>
-    </div>
+<div class="card shadow-sm border-0 mb-4">
+  <div class="card-header bg-light">
+    <h5 class="mb-0 fw-semibold">Sales Trend</h5>
   </div>
+  <div class="card-body">
+    <canvas id="salesTrendChart" height="120"></canvas>
+  </div>
+</div>
+
 
   
 
@@ -194,40 +198,96 @@
   </div>
     <div class="card-body p-0">
       <div class="table-responsive">
-        <table class="table table-hover mb-0">
+        <table class="table table-hover mb-0 text-center">
           <thead class="table-light">
             <tr>
               <th>Order ID</th>
               <th>Date</th>
               <th>Customer</th>
-              <th class="text-end">Gross Amount</th>
               <th class="text-end">Discount</th>
-              <th class="text-end">Net Amount</th>
+              <th class="text-end">Paid Amount</th>
+              <th class="text-end">Payment Method</th>
               <th class="text-center">Status</th>
             </tr>
           </thead>
           <tbody id="salesTableBody">
-            <!-- Data rendered dynamically -->
+            <% if (detailed && detailed.length > 0 ) { %>
+              <% detailed.forEach( order => { %>
+                <tr>
+                  <td>#<%= order.orderId %></td>
+                  <td class="text-center"><%= order.createdAt.toLocaleDateString() %></td>
+                  <td><%= order.userId.name %></td>
+
+                  <td class="text-end text-danger">-₹<%= order.discount.toFixed(2) %>/-</td>
+                  <% if (order.finalPayableAmount>0) { %>
+                    <td class="text-end">₹<%= order.finalPayableAmount.toFixed(2) %>/-</td>
+                  <% }else { %>
+                    <td class="text-end">₹<%= order.finalAmount.toFixed(2) %>/-</td>
+                  <% } %> 
+                  <td class="text-center text-info"><%= order.paymentMethod %></td>
+
+                    <% if (order.status == "Delivered" ) { %>
+                      <td class="text-center text-success"><%= order.status %></td>
+                    <% } else { %>
+                      <td class="text-center text-danger"><%= order.status %></td>
+                    <% } %>
+                </tr>
+              <% }) %>  
+
+            <% } else { %>
+              <tr>
+                <td colspan="7" class="text-center text-muted py-4">
+                  No orders for seleted date range !
+                </td>
+              </tr>
+            <% } %>  
           </tbody>
           <tfoot class="table-light">
-            <tr class="fw-bold">
+            <tr class="fw-bold fs-5">
               <td colspan="3">TOTAL</td>
-              <td class="text-end">₹1,301.50</td>
-              <td class="text-end text-danger">-₹85.00</td>
-              <td class="text-end">₹1,216.50</td>
-              <td></td>
+              <td class="text-end text-danger">-₹<%= totalDiscount.toFixed(2) %>/-</td>
+              <td class="text-end ">₹<%= totalAmount.toFixed(2) %>/-</td>
+              <!-- <td class="text-end">₹1,216.50</td>
+              <td></td> -->
             </tr>
           </tfoot>
         </table>
+        <nav>
+          <ul class="pagination justify-content-center">
+
+            <% if (pagination.page > 1) { %>
+              <li class="page-item">
+                <a class="page-link"
+                      href="?page=<%= pagination.page - 1 %>&limit=<%= pagination.limit %><%= queryString %>">Previous</a>
+
+              </li>
+            <% } %> 
+
+          <% for (let i = 1 ; i <= pagination.totalPages; i++ ) { %>
+            <li class="page-item <%= i === pagination.page ? 'active' : '' %>">
+              <a class="page-link"
+                    href="?page=<%= i %>&limit=<%= pagination.limit %><%= queryString %>">
+                    <%= i %>
+                  </a>
+            </li>
+          <% } %>
+
+          <% if (pagination.page < pagination.totalPages) { %>
+            <li class="page-item">
+              <a class="page-link"
+                    href="?page=<%= pagination.page + 1 %>&limit=<%= pagination.limit %><%= queryString %>">Next</a>
+            </li>
+          <% } %>
+
+          </ul>
+        </nav>
       </div>
     </div>
   </div>
 
 </div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<style>
-  .text-purple { color: #9c27b0; }
-</style>
 
 <script>
   // Show custom date inputs only if custom is selected
@@ -240,6 +300,171 @@
       document.getElementById("customDateInputs").style.display = "none";
     });
   });
+
+  document.getElementById("generateReportBtn").addEventListener("click", async () => {
+
+    // 1. Get range (which radio is selected)
+    const range = document.querySelector('input[name="range"]:checked').id;
+
+    // 2. Get custom dates only if custom is selected
+    let startDate = null;
+    let endDate = null;
+
+    if (range === "custom") {
+      startDate = document.getElementById("startDate").value;
+      endDate = document.getElementById("endDate").value;
+
+      if (!startDate || !endDate) {
+        alert("Please select both start and end date!");
+        return;
+      }
+    }
+
+    // 3. Send request to backend
+    const res = await fetch("/admin/salesReport", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ range, startDate, endDate })
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+      alert("Error generating report!");
+      return;
+    }
+
+    // 4. Render the returned values to the table
+    renderSalesTable(data.sales);
+  });
+
+  // Function to load new table rows after filtering
+  function renderSalesTable(sales) {
+    const tbody = document.getElementById("salesTableBody");
+    tbody.innerHTML = "";
+
+    sales.forEach(order => {
+      tbody.innerHTML += `
+      <tr>
+        <td>#${order.orderId}</td>
+        <td>${new Date(order.createdAt).toLocaleDateString()}</td>
+        <td>${order.userId?.name || 'Unknown'}</td>
+        <td class="text-end">-₹${order.discount.toFixed(2)}</td>
+        <td class="text-end">₹${order.finalPayableAmount}</td>
+        <td>${order.paymentMethod}</td>
+        <td class="${order.status === 'Delivered' ? 'text-success' : 'text-danger'}">${order.status}</td>
+      </tr>
+      `;
+    });
+  }
+
+function getFilters() {
+  const range = document.querySelector("input[name='range']:checked")?.id;
+  const startDate = document.getElementById("startDate")?.value;
+  const endDate = document.getElementById("endDate")?.value;
+
+  const params = new URLSearchParams();
+
+  if (range) params.append("range", range);
+  if (startDate) params.append("startDate", startDate);
+  if (endDate) params.append("endDate", endDate);
+
+  return params.toString();
+}
+
+  // PDF DOWNLOAD
+  document.getElementById("downloadPdfBtn").addEventListener("click", () => {
+    const query = getFilters();
+    window.location.href = `/admin/salesReport/downloadPDF?${query}`
+  });
+
+  // EXCEL DOWNLOAD
+  document.getElementById("downloadExcelBtn").addEventListener("click", () => {
+    const query = getFilters();
+    window.location.href = `/admin/salesReport/downloadExcel?${query}` 
+  });
+
+  // Helper function — collects current filters + pagination
+  function buildQueryURL(base) {
+    const range = document.querySelector("input[name='range']:checked")?.id;
+    const startDate = document.getElementById("startDate")?.value;
+    const endDate = document.getElementById("endDate")?.value;
+
+    const params = new URLSearchParams();
+
+    if (range) params.append("range", range);
+    if (startDate) params.append("startDate", startDate);
+    if (endDate) params.append("endDate", endDate);
+
+    return `${base}?${params.toString()}`;
+  }
+
+let salesChart;
+
+// Initialize chart
+function renderChart(labels, data) {
+    const ctx = document.getElementById("salesTrendChart").getContext("2d");
+
+    if (salesChart) {
+        salesChart.destroy();  // destroy old chart before drawing new
+    }
+
+    salesChart = new Chart(ctx, {
+        type: "line",
+        data: {
+            labels: labels,
+            datasets: [{
+                label: "Sales Amount (₹)",
+                data: data,
+                borderWidth: 2,
+                tension: 0.3,
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+}
+
+
+// Fetch chart data based on range
+async function loadChart(range, startDate = "", endDate = "") {
+    try {
+        const params = new URLSearchParams({ range, startDate, endDate });
+
+        const res = await fetch(`/admin/salesReport/chartData?${params.toString()}`);
+        const { labels, data } = await res.json();
+
+        renderChart(labels, data);
+    } catch (error) {
+        console.error("Chart load error:", error);
+    }
+}
+
+
+// Trigger chart loading on filter change
+document.querySelectorAll("input[name='range']").forEach((radio) => {
+    radio.addEventListener("change", () => {
+        const range = radio.id;
+
+        const startDate = document.getElementById("startDate").value;
+        const endDate = document.getElementById("endDate").value;
+
+        loadChart(range, startDate, endDate);
+    });
+});
+
+
+// Load weekly by default
+window.onload = () => {
+    loadChart("weekly");
+};
+
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

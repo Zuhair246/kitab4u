@@ -40,7 +40,11 @@
             </div>
 
             <div class="col-auto text-end fs-5 fw-semibold">
+              <%if (order.finalPayableAmount>0){ %>
               ₹ <%= order.finalPayableAmount %>/-
+              <%} else {%>
+              ₹ <%= order.totalPrice %>/-
+              <%}%>
             </div>
 
           </div>

@@ -54,18 +54,12 @@ const getKPIData = async function getKPIData ( dateFilter ) {
 
         {
             $addFields:{
-                // grossAmount: {
-                //     $multiply: ["$orderedItems.salePrice" , "$orderedItems.quantity"]
-                // },
                 itemDiscount: {
                     $multiply: [
                         { $subtract: ["$orderedItems.salePrice" , "$orderedItems.price"] },
                         "$orderedItems.quantity"
                     ]
                 },
-                // couponDiscount: "$discount",
-                // shippingCharge: "$shippingCharge",
-                // netAmount: "$finalPayableAmount"
             }
         },
 
@@ -82,7 +76,6 @@ const getKPIData = async function getKPIData ( dateFilter ) {
                 totalCouponDiscount: { $sum: "$discount" },
 
                 totalShippingCharge: { $sum: "$shippingCharge"},
-
 
                 deliveredOrders: {
                     $sum: {
@@ -132,19 +125,12 @@ const getKPIData = async function getKPIData ( dateFilter ) {
 
             }
         }
+
     ]);
     return data[0] || {};
 };
 
-const getDetailedOrders = async function getDetailedOrders (dateFilter) {
-    return await Order.find(dateFilter)
-                                .populate("userId" , "name, email")
-                                .sort( { createdAt: -1 })
-                                .lean();
-}
-
 module.exports = {
   getDateFilter,
   getKPIData,
-  getDetailedOrders
 } 

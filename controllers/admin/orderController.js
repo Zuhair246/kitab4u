@@ -132,7 +132,7 @@ const updateOrderStatus = async (req, res) => {
         activeItems.forEach(item => (item.itemStatus = status));
         await order.save();
 
-        for(const item of order.orderedItems) {
+        for(const item of activeItems) {
             const product = await Product.findById(item.product);
             if(!product) continue;
 
@@ -163,7 +163,8 @@ const orderReturnRequest = async (req, res) => {
 
         order.status = action === 'approve' ? "Returned" : "Return Rejected";
 
-        for (const item of order.orderedItems) {
+        const activeItems = order.orderedItems.filter(item => !['Cancelled', 'Returned'].includes(item.itemStatus))
+        for (const item of activeItems) {
             item.itemStatus = action === 'approve' ? "Returned" : "Return Rejected";
 
             if(action === 'approve'){
@@ -173,6 +174,7 @@ const orderReturnRequest = async (req, res) => {
                     variant.stock += item.quantity;
                     await product.save();
                 }
+                order.finalPayableAmount -= finalPayableAmount;
             }
         }
 
@@ -234,6 +236,8 @@ const itemReturnRequest = async (req, res) => {
                 order.paymentStatus = "Refunded";
             }
             await addToWallet(order.userId, itemRefundAmount, 'Credit', `Refund for Returned item "${item.name}" from Order #${order.orderId}`);
+            order.finalPayableAmount -= itemRefundAmount;
+            await order.save()
         }
 
         await order.save()

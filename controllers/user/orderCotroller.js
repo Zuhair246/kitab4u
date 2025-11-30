@@ -790,20 +790,23 @@ const cancelOrder = async (req, res) => {
         });
     }
 
+    for(let item of order.orderedItems) {
+      item.itemStatus = "Cancelled";
+      item.cancelReason = reason;
+    
+      const product = await Product.findById(item.product);
+      const variant = product?.variants.id(item.variantId);
+      if(order.status !== 'Pending'){
+        if(variant) {
+          variant.stock += item.quantity;
+          await product.save();
+        }
+      }
+    }
+
     order.status = "Cancelled";
     order.cancelReason = reason;
 
-for(let item of order.orderedItems) {
-  item.itemStatus = "Cancelled";
-  item.cancelReason = reason;
-
-  const product = await Product.findById(item.product);
-  const variant = product?.variants.id(item.variantId);
-  if(variant) {
-    variant.stock += item.quantity;
-    await product.save();
-  }
-}
 
 if(order.paymentMethod=='Online' || order.paymentMethod=="Wallet") {
   if(order.paymentStatus=="Paid"){
@@ -861,9 +864,7 @@ const cancelSingleItem = async (req, res) => {
         });
     }
 
-    item.itemStatus = "Cancelled";
-    item.cancelReason = reason;
-
+    
     const allCancelled = order.orderedItems.every(
       (it) => it.itemStatus === "Cancelled"
     );
@@ -871,13 +872,16 @@ const cancelSingleItem = async (req, res) => {
       order.status = "Cancelled";
       order.cancelReason = reason;
     }
-
+    
     const product = await Product.findById(item.product);
     const variant = product?.variants.id(item.variantId);
-    if(variant){
+    if(variant && order.status !== "Pending"){
       variant.stock += item.quantity;
       await product.save();
     }
+    
+    item.itemStatus = "Cancelled";
+    item.cancelReason = reason;
 
     let itemRefundAmount = 0;
     if(order.paymentMethod=="Online" || order.paymentMethod=="Wallet") {
@@ -950,7 +954,8 @@ const returnOrder = async (req, res) => {
     }
 
     order.status = "Return Requested";
-    order.orderedItems.forEach((item) => {
+    const activeItems = order.orderedItems.filter(item => ![ 'Cancelled' , 'Returned' ].includes(item.itemStatus))
+    activeItems.forEach((item) => {
       item.itemStatus = "Return Requested";
     });
     order.returnReason = reason;

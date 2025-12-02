@@ -216,7 +216,7 @@
                 <tr>
                   <td>#<%= order.orderId %></td>
                   <td class="text-center"><%= order.createdAt.toLocaleDateString() %></td>
-                  <td><%= order.userId.name %></td>
+                  <td><%= order.userId?.name %></td>
 
                   <td class="text-end text-danger">-₹<%= order.discount.toFixed(2) %>/-</td>
                   <% if (order.finalPayableAmount>0) { %>

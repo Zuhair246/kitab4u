@@ -4,6 +4,7 @@ const Product = require('../../models/productSchema');
 const Wishlist = require('../../models/wishlistSchema');
 const Wallet = require('../../models/walletSchema');
 const Referral = require('../../models/referralSchema');
+const { OK, BAD_REQUEST, NOT_FOUND,SERVER_ERROR } = require('../../helpers/statusCodes')
 const { addToWallet } = require('../../helpers/walletHelper');
 const mongoose = require('mongoose')
 const flash = require("connect-flash");
@@ -67,7 +68,7 @@ const loadHomePage = async (req,res) => {
       // if (!userData) {
       //   return res.render("homePage", {books: productData}); 
       // }
-      return res.render("homePage", { 
+      return res.status(OK).render("homePage", { 
                                                         user: userData, 
                                                         books: productData,
                                                         currentPage: page,
@@ -76,31 +77,21 @@ const loadHomePage = async (req,res) => {
                                                       });
     }
 
-    res.render("homePage", {
+    res.status(OK).render("homePage", {
                                             books: productData,
                                             currentPage: page,
                                             totalPages,
                                             searchQuery
                                             });
     }catch (error) {
-
-        console.log("Home Page Not Loading:", error)
-        res.status(500).send("Server error")
-        res.send('/pageNotFound')
-    }
-}
-
-const pageNotFound = async (req,res)=>  {
-    try{
-        res.render("404-page")
-    }catch (error) {
-        res.redirect('/pageNotFound')
+        console.log("Error Home Page Loading:", error);
+        return next(error);
     }
 }
 
 const loadSignup = async ( req,res) => {
     try{
-        return res.render ('sinup', {
+        return res.render ('signup', {
         error: req.flash("error"),
         success: req.flash("success"),
         formData: req.flash("formData")[0] || {}
@@ -118,7 +109,7 @@ const signup = async (req, res) => {
     if (!name || !email || !phone || !password || !confirmPassword) {
         req.flash("error", "Please fill all the details");
         req.flash("formData", { name, email, password, phone, referralCode });
-        return res.redirect("/signup");
+        return res.status(400).redirect("/signup");
     }
 
     // Name: only letters, single spaces between words, no leading/trailing space
@@ -715,7 +706,6 @@ const loadShoppingPage = async (req, res) => {
 
 module.exports = {
     loadHomePage,
-    pageNotFound,
     loadSignup,
     signup,
     verifyOtp,

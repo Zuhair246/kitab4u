@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
-const { v4: uuidv4 } = require("uuid");
-const { address } = require("../controllers/user/profileController");
+const { orderID } = require('../helpers/nanoGenerator');
 
 const orderSchema = new mongoose.Schema({
   userId: {
@@ -10,7 +9,7 @@ const orderSchema = new mongoose.Schema({
   },
   orderId: {
     type: String,
-    default: () => uuidv4(),
+    default: orderID,
     unique: true,
   },
   orderedItems: [

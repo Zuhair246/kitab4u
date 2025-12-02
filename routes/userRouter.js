@@ -15,7 +15,6 @@ const upload = require('../middlewares/upload');
 const { route } = require('../app');
 const passport = require('passport');
 
-router.get('/pageNotFound',userController.pageNotFound)
 
 //User Auths and Registration
 router.get('/', userController.loadHomePage)

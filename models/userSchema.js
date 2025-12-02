@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { v4: uuidv4 } = require('uuid')
+const { referralCode } = require('../helpers/nanoGenerator')
 
 const userSchema = new mongoose.Schema({
     name: {
@@ -66,7 +66,7 @@ const userSchema = new mongoose.Schema({
     referralCode: {
         type: String,
         unique: true,
-        default: () => "K4U-" + uuidv4().replace(/-/g,"").substring(0,7).toUpperCase(),
+        default: referralCode,
         index: true
     },
     referredBy: {

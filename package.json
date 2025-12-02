@@ -21,6 +21,7 @@
     "mongodb": "^6.18.0",
     "mongoose": "^8.17.1",
     "multer": "^2.0.2",
+    "nanoid": "^5.1.6",
     "nocache": "^4.0.0",
     "nodemailer": "^7.0.5",
     "nodemon": "^3.1.10",
@@ -28,7 +29,6 @@
     "passport-google-oauth20": "^2.0.0",
     "pdfkit": "^0.17.2",
     "razorpay": "^2.9.6",
-    "sharp": "^0.34.3",
-    "uuid": "^13.0.0"
+    "sharp": "^0.34.3"
   }
 }

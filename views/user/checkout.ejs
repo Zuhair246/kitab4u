@@ -692,7 +692,7 @@ if (retryMode && retryRzpOrderId) {
 
       } catch (err) {
         console.error("Payment initiation error:", err);
-        Swal.fire("Error", "Unable to initiate payment", "error");
+        Swal.fire("Error", err.message || "Unable to initiate payment", "error");
       }
     });
   }

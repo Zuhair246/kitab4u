@@ -100,14 +100,13 @@ const pageNotFound = async (req,res)=>  {
 
 const loadSignup = async ( req,res) => {
     try{
-        return res.render ('signup', {
+        return res.render ('sinup', {
         error: req.flash("error"),
         success: req.flash("success"),
         formData: req.flash("formData")[0] || {}
     })
     }catch (error) {
-        console.log("Home page not loading: ",error);
-        res.status(500).send('Server Error')
+       return next(error)
     }
 }
 

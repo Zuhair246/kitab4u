@@ -1,16 +1,18 @@
-const dotenv = require('dotenv')
+const dotenv = require('dotenv');
 dotenv.config();
-const express = require('express')
+const express = require('express');
 const app = express()
-const path = require('path')
-const session=require('./middlewares/session')
-const db = require('./config/db')
-const userRouter = require("./routes/userRouter")
-const adminRouter = require('./routes/adminRouter')
-const ejs = require('ejs')
-const flash = require('connect-flash')
+const path = require('path');
+const session=require('./middlewares/session');
+const db = require('./config/db');
+const userRouter = require("./routes/userRouter");
+const adminRouter = require('./routes/adminRouter');
+const ejs = require('ejs');
+const flash = require('connect-flash');
 const passport = require("./config/passport");
-const nocache = require('nocache')
+const nocache = require('nocache');
+const pageNotFound = require('./middlewares/404middleware');
+const serverError = require('./middlewares/500errorHandling');
 
 db()
 
@@ -30,8 +32,11 @@ app.set('view engine', 'ejs');
 app.set("views", [path.join(__dirname,'views/user'), path.join(__dirname,"views/admin")])
 app.use(express.static(path.join(__dirname,"public")))
 
-app.use('/', userRouter)
-app.use('/admin', adminRouter)
+app.use('/', userRouter);
+app.use('/admin', adminRouter);
+
+app.use(pageNotFound);
+app.use(serverError);
 
 app.listen(process.env.PORT, ()=>{
     console.log("Server Running");

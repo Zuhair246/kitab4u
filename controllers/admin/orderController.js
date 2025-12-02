@@ -174,7 +174,7 @@ const orderReturnRequest = async (req, res) => {
                     variant.stock += item.quantity;
                     await product.save();
                 }
-                order.finalPayableAmount -= finalPayableAmount;
+                // order.finalPayableAmount -= finalPayableAmount;
             }
         }
 

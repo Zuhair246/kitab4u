@@ -256,6 +256,15 @@ const checkout = async (req, res) => {
       discount = Math.round(appliedCoupon.discountAmount);
     }
 
+     if(appliedCoupon){
+        const couponFromDb = await Coupon.findOne({ code: appliedCoupon.couponCode});
+        if(!couponFromDb || !couponFromDb.isActive){
+          return res.status(400).json({ 
+                      success: false, 
+                      message: "Coupon is unavailable at the moment \nPlease remove the coupon and proceed!"})
+        }
+      }
+
     const finalPayableAmount =
       discountFinalAmount > 0 ? discountFinalAmount : finalAmount;
 
@@ -851,7 +860,7 @@ const cancelSingleItem = async (req, res) => {
         .status(400)
         .json({
           success: false,
-          message: "This item cannot be cancelled after shipping",
+          message: "Item cannot be cancelled after shipping",
         });
     }
 
@@ -884,27 +893,28 @@ const cancelSingleItem = async (req, res) => {
     item.cancelReason = reason;
 
     let itemRefundAmount = 0;
-    if(order.paymentMethod=="Online" || order.paymentMethod=="Wallet") {
-      if(order.paymentStatus=="Paid") {
-        itemRefundAmount = item.price * item.quantity;
+    let itemDiscount = 0;
+     itemRefundAmount = item.price * item.quantity;
         if(order.couponApplied && order.discount>0 && order.finalPayableAmount >0) {
           const share = (item.price * item.quantity) / order.totalPrice;
-          const itemDiscount = order.discount * share;
+           itemDiscount = Math.round(order.discount * share);
           itemRefundAmount -= itemDiscount;
         }
-        if(allCancelled) {
-          order.paymentStatus = "Refunded"
+        order.totalPrice -= item.price * item.quantity;
+        order.finalPayableAmount -= itemRefundAmount;
+        if(order.shippingCharge == 0  && order.totalPrice < 700) {
+          order.shippingCharge = 50;
+          order.finalPayableAmount += 50;
         }
         if(allCancelled && order.totalPrice < 700) {
           itemRefundAmount += order.shippingCharge;
         }
-        order.totalPrice -= item.price * item.quantity;
-        order.finalPayableAmount -= itemRefundAmount;
-        await addToWallet(order.userId, itemRefundAmount, "Credit", `Refund for cancelled item: "${item.name}" in the order: #${order.orderId}`)
-        if(order.totalPrice < 700) {
-          order.shippingCharge = 50;
-          order.finalPayableAmount += 50;
+    if(order.paymentMethod=="Online" || order.paymentMethod=="Wallet") {
+      if(order.paymentStatus=="Paid") {
+        if(allCancelled) {
+          order.paymentStatus = "Refunded"
         }
+        await addToWallet(order.userId, itemRefundAmount, "Credit", `Refund for cancelled item: "${item.name}" in the order: #${order.orderId}`)
       }
     }
     await order.save();
@@ -1141,10 +1151,11 @@ const downloadInvoice = async (req, res) => {
       .text("Item", 50, doc.y, { continued: true })
       .text("Qty", 280, doc.y, { continued: true })
       .text("Price", 350, doc.y, { continued: true })
-      .text("Total", 450);
+      .text("Total", 400, doc.y, { continued: true })
+      .text("Status", 450);
 
     doc.moveDown(0.3);
-    doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke("#aaa");
+    doc.moveTo(50, doc.y).lineTo(600, doc.y).stroke("#aaa");
     doc.moveDown(0.5);
 
     // Items
@@ -1153,10 +1164,11 @@ const downloadInvoice = async (req, res) => {
       const itemY = doc.y;
       const total = item.price * item.quantity;
 
-      doc.text(`${item.name} (${item.coverType})`, 50, itemY, { width: 200 });
-      doc.text(`${item.quantity}`, 300, itemY, { width: 50 });
-      doc.text(`Rs: ${item.price}`, 400, itemY, { width: 80 });
-      doc.text(`Rs: ${total}`, 500, itemY, { width: 100 }).moveDown(0.3);
+      doc.text(`${item.name} (${item.coverType})`, 50, itemY, { width: 250 });
+      doc.text(`${item.quantity}`, 310, itemY, { width: 50 });
+      doc.text(`Rs: ${item.price}`, 390, itemY, { width: 80 });
+      doc.text(`Rs: ${total}`, 470, itemY, { width: 100 });
+      doc.text(`${item.itemStatus}`, 540, itemY, { width: 100 }).moveDown(0.3);
     });
 
     doc.moveDown(1);

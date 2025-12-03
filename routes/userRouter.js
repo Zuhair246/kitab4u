@@ -8,11 +8,9 @@ const orderController = require('../controllers/user/orderCotroller');
 const couponController = require('../controllers/admin/couponController');
 const wishlistController = require('../controllers/user/wishlistController');
 const walletController = require('../controllers/user/walletController');
-const {userAuth }= require('../middlewares/auth');
 const checkProductAvailability = require('../middlewares/productAuth');
 const userStatus = require('../middlewares/userStatus');
 const upload = require('../middlewares/upload');
-const { route } = require('../app');
 const passport = require('passport');
 
 

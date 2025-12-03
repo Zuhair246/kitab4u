@@ -8,7 +8,7 @@ const orderController = require("../controllers/admin/orderController");
 const couponController = require("../controllers/admin/couponController");
 const productOfferController = require("../controllers/admin/productOfferController");
 const salesController = require('../controllers/admin/salesController')
-const { userAuth, adminAuth } = require("../middlewares/auth");
+const { adminAuth } = require("../middlewares/adminAuth");
 const uploadImages = require("../middlewares/imgValid");
 const couponValidator = require("../middlewares/couponValidator");
 // const upload = require('../middlewares/upload')
@@ -63,7 +63,7 @@ router.post("/productOffers/:offerId/deactivate", adminAuth, productOfferControl
 //Sales Report
 router.get('/salesReport', adminAuth, salesController.loadSales);
 router.post('/salesReport', adminAuth, salesController.filterSales);
-router.get('/salesReport/downloadPDF', salesController.downloadSalesPDF);
+router.get('/salesReport/downloadPDF', adminAuth, salesController.downloadSalesPDF);
 router.get('/salesReport/downloadExcel', salesController.downloadSalesExcel);
 router.get("/salesReport/chartData", adminAuth, salesController.chartDataController);
 

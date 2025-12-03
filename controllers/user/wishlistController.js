@@ -1,8 +1,6 @@
 const User = require('../../models/userSchema');
 const Product = require('../../models/productSchema');
 const Wishlist = require('../../models/wishlistSchema');
-const flash = require('connect-flash');
-const { options } = require('pdfkit');
 const calculateDiscountedPrice = require('../../helpers/offerPriceCalculator');
 
 const loadWishlist = async (req,res)=>{
@@ -100,9 +98,9 @@ const loadWishlist = async (req,res)=>{
         });
         
     } catch (error) {
-        console.log('Wishlist page load error:', error);
-        return res.status(500).redirect('/pageNotFound')
-            }
+      const err = new Error("Wishlist page load server error");
+      return next (err);
+     }
 }
 
 const addToWishlist = async (req, res) => {
@@ -165,8 +163,8 @@ const addToWishlist = async (req, res) => {
         return res.redirect(previousPage);
 
     } catch (error) {
-        console.log('Add to wishlist error:', error);
-        return res.status(500).json({success: false, message: "Internal server error in addToWishlist"})
+      const err = new Error("Add to wishlist server error");
+      return next (err);
     }
 }
 
@@ -183,8 +181,8 @@ const removeFromWishlist = async (req, res) => {
         return res.json({ success: true});
         
     } catch (error) {
-        console.log("Remove wishlist item error");
-        res.status(500).json({ success: false, message: "Internal sever error in remove wishlist item."})
+      const err = new Error("Remove from wishlist server error");
+      return next (err);
     }
 }
 

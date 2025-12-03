@@ -1,12 +1,10 @@
-const Product = require('../../models/productSchema')
-const Category = require ('../../models/categorySchema')
-
-const User = require('../../models/userSchema')
-const fs = require('fs')
-const path = require('path')
-const sharp = require('sharp')
-const multer = require('multer')
-const upload = multer({dest: "temp/"})
+const Product = require('../../models/productSchema');
+const Category = require ('../../models/categorySchema');
+const fs = require('fs');
+const path = require('path');
+const sharp = require('sharp');
+const multer = require('multer');
+const upload = multer({dest: "temp/"});
 
 const getProductAddPage = async (req, res) => {
     try {
@@ -17,8 +15,8 @@ const getProductAddPage = async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Get Product Add Page error:", error);
-        res.redirect('/pageNotFound')
+        const err = new Error("Add Product Page load server error");
+        throw err;
     }
 }
 
@@ -96,8 +94,9 @@ const addProduct = async (req, res) => {
         
         return res.redirect('/admin/listProducts?success=' + encodeURIComponent('Product added successfully'));
     } catch (error) {
-        console.error('Add Product error:', error);
-        return res.redirect('/admin/addProducts?error=' + encodeURIComponent('Internal server error'));
+        const err = new Error("Add product server error");
+        err.redirect = `/admin/addProducts?error=` + encodeURIComponent("Add product internal server error");
+        throw err;
     }
 };
 
@@ -131,8 +130,9 @@ const getProductList = async (req, res) => {
             success: req.query.success || null
         });
     } catch (error) {
-        console.error('Product list error:', error);
-        res.redirect('/pageNotFound');
+        const err = new Error("Admin list products server error");
+        err.redirect = `/admin/listProducts?error=` + encodeURIComponent("Admin list products internal server error");
+        throw err;
     }
 };
 
@@ -151,8 +151,9 @@ const getEditProduct = async (req, res) => {
             cat,
         });
     } catch (error) {
-        console.error("Error loading edit product page:", error);
-        res.redirect('/admin/listProducts?error=' + encodeURIComponent('Internal server error'));
+        const err = new Error("Edit product server error");
+        err.redirect = `/admin/listProducts?error=` + encodeURIComponent("Edit product internal server error");
+        throw err;
     }
 };
 
@@ -257,10 +258,9 @@ const editProduct = async (req, res) => {
       "/admin/listProducts?success=" + encodeURIComponent("Product updated successfully")
     );
   } catch (error) {
-    console.error("Edit Product error:", error);
-    return res.redirect(
-      `/admin/editProduct/${req.params.id}?error=` + encodeURIComponent("Internal server error")
-    );
+        const err = new Error("Edit product server error");
+        err.redirect = `/admin/editProduct/${req.params.id}?error=` + encodeURIComponent("Edit product internal server error");
+        throw err;
   }
 };
 
@@ -282,8 +282,9 @@ const deleteProduct = async (req, res) => {
         const message = product.isBlocked ? 'Product unlisted successfully' : 'Product listed successfully';
         return res.redirect('/admin/listProducts?success=' + encodeURIComponent(message));
     } catch (error) {
-        console.error('Toggle Product error:', error);
-        return res.redirect('/admin/listProducts?error=' + encodeURIComponent('Internal server error'));
+        const err = new Error("Unlist product server error");
+        err.redirect = `/admin/listProducts?error=` + encodeURIComponent("Unlist product internal server error");
+        throw err;
     }
 };
 

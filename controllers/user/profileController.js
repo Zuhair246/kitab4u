@@ -21,8 +21,8 @@ const profile = async (req,res) => {
       success: req.flash("success")
     })
   } catch (error) {
-    console.error('User Profile load error:' ,error)
-    res.redirect('/pageNotFound')
+    const err = new Error("User profile load server error");
+    return next (err);
   }
 }
 
@@ -40,8 +40,8 @@ const editProfile = async (req,res) => {
         formData: req.flash("formData")[0] || {}
     })
   } catch (error) {
-    console.error("Edit profile error:", error);
-    res.redirect('/pageNotFound')
+    const err = new Error("Load edit profile server error");
+    return next (err);
     
   }
 }
@@ -112,8 +112,8 @@ req.flash('info', "OTP sent to new email, Please verify...");
   return res.redirect('/profile');
 }
   } catch (error) {
-    console.error("Profile update error:", error)
-    return res.redirect('/profile/edit')
+    const err = new Error("Update profile server error");
+    return next (err);
   }
 }
 
@@ -144,8 +144,8 @@ const verifyOtp = async (req,res) => {
   });
 }
   } catch (error) {
-    console.error("Update email otp error:", error)
-    return res.redirect('/profile/verifyOtp')
+    const err = new Error("Update email OTP server error");
+    return next (err);
   }
 }
 
@@ -200,12 +200,9 @@ const resendOtp = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Resend OTP error:", error);
-    return res.json({
-      success: false,
-      message: "Failed to resend OTP. Please try again.",
-      redirect: "/profile/verifyOtp",
-    });
+    const err = new Error("Email update Resend OTP server error");
+    err.redrect = "/profile/verifyOtp";
+    return next (err);
   }
 };
 
@@ -223,8 +220,8 @@ const loadChangePassword = async (req,res) => {
         formData: req.flash("formData")[0] || {}
     })
   } catch (error) {
-    console.log("change load password error:" ,error);
-    
+      const err = new Error("Load Change password server error");
+      return next (err);
   }
 }
 
@@ -281,8 +278,8 @@ const changePassword = async (req,res) => {
     }
 
   } catch (error) {
-    console.log("Change password error:", error);
-    
+      const err = new Error("Changing password server error");
+      return next (err);
   }
 }
 
@@ -300,8 +297,8 @@ const loadForgotOldPassword = async (req, res) => {
             formData: req.flash("formData")[0] || {}
     })
   } catch (error) {
-    console.log("Load Forgot Password Page error: ", error);
-    
+      const err = new Error("Forgot old password load server error");
+      return next (err);
   }
 }
 
@@ -329,8 +326,8 @@ const forgotOldPassword = async (req,res) => {
         });
 
   } catch (error) {
-    console.error("forgot old password error:", error);
-    res.redirect('/pageNotFound');
+      const err = new Error("Forgot old password verification server error");
+      return next (err);
   }
 }
 
@@ -373,8 +370,9 @@ const setNewPassword = async (req, res) => {
     }
 
     } catch (error) {
-    console.error("Set new password error:", error);
-    res.redirect("/profile/forgotOldPassword")
+        const err = new Error("Update email OTP server error");
+        err.redirect = "/profile/forgotOldPassword";
+        return next (err);
   }
 }
 
@@ -420,8 +418,9 @@ const updateProfileImage = async (req, res) => {
     req.flash("success", "Profile picture updated");
     res.redirect("/profile");
   } catch (error) {
-    console.error("Profile image update error:", error);
-    res.redirect("/pageNotFound");
+        const err = new Error("Update profile image server error");
+        err.redirect = "/profile/edit";
+        return next (err);
   }
 };
 
@@ -457,31 +456,10 @@ const updateProfileImage = async (req, res) => {
     });
 
   } catch (error) {
-    console.log("User Address load error:", error);
-    return res.redirect('/pageNotFound');
+      const err = new Error("User address load server error");
+      return next (err);
   }
 };
-
-//  const loadAddAddress = async (req,res) => {
-//   try {
-//     const userId = req.session.user || req.user;
-//     if(!userId){
-//       return res.redirect('/login')
-//     }
-//     const user = await User.findById(userId);
-
-//      res.render('addAddress', {
-//       user,
-//       formData: req.flash("formData")[0] || {},
-//       error: req.flash("error"),
-//       success: req.flash("success"),
-//     })
-//   } catch (error) {
-//     console.log("Add address page load error:", error);
-//     return res.redirect('/pageNotFound')
-    
-//   }
-//  }
 
  const addAddress = async (req,res) => {
   try {
@@ -607,11 +585,8 @@ const defaultFlag = isDefault === 'on';
     res.redirect('/profile/address?success=Address added successfully')
     
   } catch (error) {
-    if(req.headers['content- type'] === 'application/json') {
-      return res.json({success: false, message: "Server Error"})
-    }
-    console.log("Adding address error:",error);
-    res.redirect('/pageNotFound')
+      const err = new Error("User add address server error");
+      return next (err);
   }
  }
 
@@ -624,8 +599,8 @@ const defaultFlag = isDefault === 'on';
   await Address.updateOne({'address._id':id},{$set:{'address.$.isDeleted':true}})
   return res.redirect("/profile/address?success=Address deleted successfully");
   } catch (error) {
-    console.log("Delete address error:", error);
-    res.redirect("/pageNotFound")
+      const err = new Error("User delete address server error");
+      return next (err);
   }
  }
 
@@ -743,11 +718,9 @@ try {
     return isAjax ? res.json({ success: true, message: msg }) : res.redirect('/profile/address?success=' + encodeURIComponent(msg));
     
   } catch (error) {
-    console.log("Edit address error:", error);
-    if (req.headers['content-type'] === 'application/json') {
-      return res.json({ success: false, message: "Server Error" });
-    }
-    res.redirect('/pageNotFound');
+      const err = new Error("User edit address server error");
+      err.redirect = "/profile/address";
+      return next (err);
   }
 };
 

@@ -1,6 +1,4 @@
 const Coupon = require('../../models/couponSchema');
-const User = require('../../models/userSchema');
-const Order = require('../../models/orderSchema')
 
 const loadCoupons = async (req, res) => {
     try {
@@ -14,8 +12,8 @@ const loadCoupons = async (req, res) => {
         })
         
     } catch (error) {
-        console.log('Error fetching coupons:', error);
-        return res.redirect('/pageNotFound')
+        const err = new Error("Admin coupon page load server error!");
+        return next (err);
     }
 };
 
@@ -32,8 +30,9 @@ const addCoupon = async (req, res) => {
 
         return res.status(201).json({success: true, message: "New Coupon Added"});
     } catch (error) {
-        console.log('Error coupon adding:', error);
-        return res.status(500).json({success: false, message: "Internal server while adding coupon"})
+        const err = new Error("Add coupon server error");
+        err.redirect = "/admin/coupons?error=" + encodeURIComponent("Add coupon internal server error");
+        return next (err);
     }
 }
 
@@ -54,8 +53,9 @@ const editCoupon = async (req, res) => {
         return res.status(200).json({ success: true, message: "Coupon updated successfully!"})
 
     } catch (error) {
-        console.log("Error editing coupon:", error);
-        return res.status(500).json({success: false, message: "Internal server error when editing coupon"})
+        const err = new Error("Edit coupon server error");
+        err.redirect = "/admin/coupons?error=" + encodeURIComponent("Edit coupon internal server error");
+        return next (err);
     }
 }
 
@@ -68,8 +68,9 @@ const deleteCoupon = async (req, res) => {
         }
         return res.status(200).json({ success: true, message: "Coupon removed"})
     } catch (error) {
-        console.log("Error coupon deleting:",error);
-        return res.status(500).json({success: false, message: "Internal server error coupon deletion"})
+        const err = new Error("Delete coupon server error");
+        err.redirect = "/admin/coupons?error=" + encodeURIComponent("Delete coupon internal server error");
+        return next (err);
     }
 }
 
@@ -82,8 +83,9 @@ const activateCoupon = async (req, res) => {
         }
         return res.status(200).json({ success: true, message: "Coupon re-activated!"});
     } catch (error) {
-        console.log("Error activating coupon:", error);
-        return res.status(500).json({ success: false, message: "Internal server error while activating coupon"})
+        const err = new Error("Activate coupon server error");
+        err.redirect = "/admin/coupons?error=" + encodeURIComponent("Activate coupon internal server error");
+        return next (err);
     }
 }
 
@@ -130,9 +132,9 @@ const applyCoupon = async (req, res) => {
 
         res.status(200).json({ success: true, discountFinalAmount: discountedPrice, discount: discountAmount, couponCode: code, message: "Coupon applied"});
     } catch (error) {
-        console.log("Error coupon apply: ", error);
-        res.status(500).json({ success: false, message: "Server error occured while applying coupon!"})
-        
+        const err = new Error("Apply coupon server error");
+        err.redirect = "/orders?error=" + encodeURIComponent("Apply coupon internal server error");
+        return next (err);
     }
 }
 
@@ -146,8 +148,9 @@ const removeCoupon = async (req, res) => {
         })
         
     } catch (error) {
-        console.log('Remove coupon error:', error);
-        return res.status(500).json({ success: false, message: "Remove coupon server error!"})
+        const err = new Error("Remove coupon server error");
+        err.redirect = "/orders?error=" + encodeURIComponent("Remove coupon internal server error");
+        return next (err);
     }
 }
 

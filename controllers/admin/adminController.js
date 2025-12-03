@@ -10,8 +10,8 @@ const loadLogin = async (req,res) => {
         }
         res.render('adminLogin', {message: null})
     } catch (error) {
-        console.log("Admin login loading error:", error);
-        res.status(500).send("Internal server error")
+        const err = new Error("Admin login page load server error");
+        return next(err);
     }
 }
 
@@ -35,7 +35,8 @@ const login = async (req,res) => {
         }
        
     } catch (error) {
-        console.log("Login page error:",error);
+        const err = new Error("Admin login server error");
+        return next(err);
     }
 }
 
@@ -44,18 +45,25 @@ const loadDashboard = async (req, res) => {
         try {
             res.render('dashboard')
         } catch (error) {
-            res.render('pageNotFound')
+            const err = new Error("Admin dashboard load server error");
+            return next(err);
         }
+    }else{
+        return redirect('/admin')
     }
 }
 
  const logout = async (req,res) => {
     try {
-        req.session.admin = null;
-        return res.redirect('/admin');
+        req.session.destroy((err) => {
+            if(err) {
+                const err = new Error("Failed to logout admin");
+                return next(err);
+            }
+        })
     } catch (error) {
-        console.log("Unexpexxted server error during admin logout:", error);
-        res.redirect('/pageNotFound')
+        const err = new Error("Admin logout server error");
+        return next(err);
     }
  }
 

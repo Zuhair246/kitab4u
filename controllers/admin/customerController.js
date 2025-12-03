@@ -18,7 +18,7 @@ const customerInfo = async (req, res) => {
             isAdmin: false,
             $or: [
                 { name: { $regex: search, $options: "i" } },
-                { email: { $regex: search, $options: "i" } }
+                { email: { $regex: search, $options: "i" } },
             ]
         };
 
@@ -38,9 +38,9 @@ const customerInfo = async (req, res) => {
             search
         });
 
-    } catch (err) {
-        console.log(err);
-        res.status(500).send("Server Error");
+    } catch (error) {
+        const err = new Error("Customer info load server error!");
+        throw err;
     }
 };
 
@@ -50,7 +50,9 @@ const customerBlocked = async (req,res) => {
         await User.updateOne({_id: id}, {$set:{isBlocked: true}});
         res.redirect('/admin/users')
     } catch (error) {
-        res.redirect('/pageNotFound')
+        const err = new Error("Customer blocking server error");
+        err.redirect = "/admin/users?error=" + encodeURIComponent("Customer blocking internal server error");
+        throw err;
     }
 }
 
@@ -60,7 +62,9 @@ const customerUnBlocked = async (req, res) => {
         await User.updateOne({_id: id}, {$set:{isBlocked:false}})
         res.redirect('/admin/users')
     } catch (error) {
-        res.redirect('/pageNotFound')
+        const err = new Error("Customer UnBlocking server error");
+        err.redirect = "/admin/users?error=" + encodeURIComponent("Customer UnBlocking internal server error");
+        throw err;
     }
 }
 

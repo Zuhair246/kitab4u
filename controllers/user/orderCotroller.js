@@ -136,8 +136,8 @@ const loadCheckoutPage = async (req, res) => {
       allAddresses,
     });
   } catch (error) {
-    console.log("Order page load error:", error);
-    res.redirect("/pageNotFound");
+    const err = new Error("Order page load server error!");
+    return next (err);
   }
 };
 
@@ -413,8 +413,8 @@ const checkout = async (req, res) => {
     return res.status(200).json({ success: true, orderId: newOrder._id})
     }
   } catch (error) {
-    console.error("Order checkout error:", error);
-    return res.status(500).json({ success: false, message: "Internal sever error placing order" });
+    const err = new Error("Order checkout server error");
+    return next (err)
   }
 };
 
@@ -514,10 +514,8 @@ const verifyPayment = async (req, res) => {
       });
     }
   } catch (error) {
-    console.error("Verification error:", error);
-    res
-      .status(500)
-      .json({ success: false, message: "Internal Server Error for Razorpay" });
+    const err = new Error("Payment verification server error!");
+    return next (err);
   }
 };
 
@@ -537,10 +535,8 @@ const loadRetryPayment = async (req, res) => {
       order,
     });
   } catch (error) {
-    console.log("Retry payment page load error", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Inrernal server error" });
+    const err = new Error("Retry payment page load server error")
+    return next (err);
   }
 };
 
@@ -596,13 +592,8 @@ const retryPayment = async (req, res) => {
       orderDbId: orderId,
     });
   } catch (error) {
-    console.error("Retry Payment Error:", error);
-    return res
-      .status(500)
-      .json({
-        success: false,
-        message: "Internal server error while retry payment.",
-      });
+    const err = new Error("Internal server error while retry payment.")
+    return next (err);
   }
 };
 
@@ -624,7 +615,8 @@ const orderSuccess = async (req, res) => {
       orderId,
     });
   } catch (error) {
-    console.log("Order success page load error:", error);
+    const err = new Error("Order success page load server error!");
+    return next(err);
   }
 };
 
@@ -701,8 +693,8 @@ const orderHistory = async (req, res) => {
       currentPage: page,
     });
   } catch (error) {
-    console.log("order history page load error:", error);
-    return res.redirect("/pageNotFound");
+    const err = new Error("Order history page loading server error")
+    return next (err);
   }
 };
 
@@ -762,8 +754,8 @@ const orderDetails = async (req, res) => {
       order,
     });
   } catch (error) {
-    console.log("Order details page error: ", error);
-    return res.redirect("/pageNotFound");
+    const err = new Error("Order details page loading server error");
+    return next (err);
   }
 };
 
@@ -830,8 +822,8 @@ if(order.paymentMethod=='Online' || order.paymentMethod=="Wallet") {
       message: "Order Cancelled Successfully",
     });
   } catch (error) {
-    console.error("Order cancelling error: ", error);
-    return res.redirect("/pageNotFound");
+    const err = new Error("Order cancelling server error");
+    return next (err);
   }
 };
 
@@ -921,8 +913,8 @@ const cancelSingleItem = async (req, res) => {
 
     return res.json({ success: true, message: `"${item.name} Cancelled"` });
   } catch (error) {
-    console.log("Single item cancel error:", error);
-    return res.redirect("/pageNotFound");
+    const err = new Error("Single item cancelling server error");
+    return next (err);
   }
 };
 
@@ -976,8 +968,8 @@ const returnOrder = async (req, res) => {
       .status(200)
       .json({ success: true, message: "Return requested successfully" });
   } catch (error) {
-    console.log("Order returning error:", error);
-    return res.redirect("/pageNotFound");
+    const err = new Error("Order return request server error");
+    return next (err);
   }
 };
 
@@ -1045,13 +1037,8 @@ const returnSingleItem = async (req, res) => {
       .status(200)
       .json({ success: true, message: `Return requested for ${item.name}` });
   } catch (error) {
-    console.log("Single item return error:", error);
-    return res
-      .status(500)
-      .json({
-        success: false,
-        message: "Sever error while returning single item",
-      });
+    const err = new Error("Item return request server error");
+    return next (err);
   }
 };
 
@@ -1245,8 +1232,8 @@ const downloadInvoice = async (req, res) => {
 
     doc.end();
   } catch (error) {
-    console.log("Invoice download error:", error);
-    return res.redirect("/myOrders");
+    const err = new Error("Invoice download server error!");
+    return next (err);
   }
 };
 

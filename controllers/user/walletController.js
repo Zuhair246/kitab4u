@@ -41,8 +41,8 @@ const loadWallet = async (req, res) =>{
             totalPages
         })
     } catch (error) {
-        console.log('Error loading wallet:', error);
-        return res.redirect('/pageNotFound')
+      const err = new Error("Wallet loading server error");
+      return next (err);
     }
 }
 
@@ -74,8 +74,8 @@ const addMoney = async ( req, res ) => {
             currency: order.currency
         })        
     } catch (error) {
-        console.log('Error adding money to the wallet:', error);
-        return res.status(500).json({ success: false, message: "Internal server error for add money to wallet"})
+      const err = new Error("Add money to wallet server error");
+      return next (err);
     }
 }
 
@@ -121,8 +121,8 @@ const verifyPayment = async (req, res) => {
             });
         }
     } catch (error) {
-        console.log("Wallet - Razorpay Verification error:", error);
-        return res.status(500).json({ success: false, message: "Internal server error in add to wallet verification!"})
+      const err = new Error("Wallet - Razorpay verification server error");
+      return next (err);
     }
 }
 
@@ -140,8 +140,8 @@ const loadreferral = async (req, res) => {
         })
         
     } catch (error) {
-        console.log("Referal page load error:", error);
-        return res.redirect('/pageNotFound')
+      const err = new Error("Load Referral Page Server Error");
+      return next (err);
     }
 }
 

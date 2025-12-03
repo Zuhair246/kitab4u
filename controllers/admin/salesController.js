@@ -65,8 +65,8 @@ const loadSales = async (req, res) => {
             endDate
         })
     } catch (error) {
-        console.log('Sales page load error:', error);
-        return res.redirect('/pageNotFound')
+        const err = new Error("Load Sales Report server error!");
+        throw err;
     }
 }
 
@@ -102,8 +102,9 @@ const filterSales = async (req, res) => {
             endDate
         });
     } catch (error) {
-        console.log("Sales filtering error:", error);
-        return res.status(500).json("Internal Server Error!")
+        const err = new Error("Sales report filter server error");
+        err.redirect = "/admin/salesReport?error=Server error";
+        throw err;
     }
 }
 
@@ -138,8 +139,9 @@ const downloadSalesPDF = async (req, res) => {
 
         doc.end();
     } catch (error) {
-        console.log("PDF download error:", error);
-        return res.status(500).json("Internal Server Error!");
+        const err = new Error("PDF download server error");
+        err.redirect = "/admin/salesReport?error=Server error";
+        throw err;
     }
 };
 
@@ -188,8 +190,9 @@ const downloadSalesExcel = async (req, res) => {
         await workbook.xlsx.write(res);
         res.end();
     } catch (error) {
-        console.log("Excel download error:", error);
-        return res.status(500).json("Internal Server Error!");
+        const err = new Error("Excel download server error");
+        err.redirect = "/admin/salesReport?error=Server error";
+        throw err;
     }
 };
 
@@ -213,8 +216,9 @@ const chartDataController = async (req, res) => {
         return res.json({ labels, data });
 
     } catch (error) {
-        console.log("Chart Data Error:", error);
-        return res.status(500).json({ error: "Error loading chart data" });
+        const err = new Error("Chart report load server error");
+        err.redirect = "/admin/salesReport?error=Server error";
+        throw err;
     }
 };
 

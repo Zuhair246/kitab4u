@@ -24,12 +24,12 @@ const loadProductOffers = async (req, res) => {
             offers,
             success: req.query.success,
             error: req.query.error,
-            currentPage:1,
-            totalPages:1
+            currentPage,
+            totalPages
         });
     } catch (error) {
-        console.log('Product offer loading error:', error);
-        return res.redirect("/admin");
+        const err = new Error("Product offer listing server error");
+        throw err;
     }
 }
 
@@ -53,8 +53,9 @@ const addProductOffer = async (req, res) => {
 
         return res.redirect("/admin/productOffers?success=Product offer added");
     } catch (error) {
-        console.log("Error adding product offer:", error);
-        return res.redirect("/admin/productOffers?error=Server error");
+        const err = new Error("Add product offer server error");
+        err.redirect = "/admin/productOffers?error=Server error";
+        throw err;
     }
 }
 
@@ -78,8 +79,9 @@ const editProductOffer = async (req, res) => {
 
         return res.redirect("/admin/productOffers?success=Product offer updated");
     } catch (error) {
-        console.log('Error edit product offer:', error);
-        return res.redirect("/admin/productOffers?error=Server error");
+        const err = new Error("Edit product offer server error");
+        err.redirect = "/admin/productOffers?error=Server error";
+        throw err;
     }
 }
 
@@ -94,8 +96,9 @@ const activateProductOffer = async (req, res) => {
         
         return res.redirect("/admin/productOffers?success=Offer activated");
     } catch (error) {
-        console.log("Error product offer activation:", error);
-        return res.redirect("/admin/productOffers?error=Server error");
+        const err = new Error("Activate product offer server error");
+        err.redirect = "/admin/productOffers?error=Server error";
+        throw err;
     }
 }
 
@@ -109,8 +112,9 @@ const deactivateProductOffer = async (req, res) => {
         await ProductOffer.findByIdAndUpdate(offerId, { isActive: false })
         return res.redirect("/admin/productOffers?success=Offer removed");
     } catch (error) {
-        console.log("Errror product offer removal:", error);
-        return res.redirect("/admin/productOffers?error=Server error");
+        const err = new Error("Deactivate product offer server error");
+        err.redirect = "/admin/productOffers?error=Server error";
+        throw err;
     }
 }
 

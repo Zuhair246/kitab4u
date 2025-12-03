@@ -69,8 +69,8 @@ const productDetails = async (req, res) => {
       wishlistItems
     });
   } catch (error) {
-    console.log("Product Detail Error:", error);
-    res.redirect('/pageNotFound');
+    const err = new Error("Product details server error");
+    return next (err);
   }
 };
 
@@ -115,8 +115,8 @@ const loadSearchResults = async (req, res) => {
       search: query
     });
   } catch (error) {
-    console.log("Search error:", error);
-    res.redirect("/pageNotFound");
+    const err = new Error("Shop page searching server error");
+    return next (err);
   }
 };
 

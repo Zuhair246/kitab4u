@@ -94,8 +94,8 @@ const orderListing = async (req, res) => {
         });
 
     } catch (error) {
-        console.log('Admin Side Order Listing Error:' ,error);
-        return res.redirect('/pageNotFound')
+        const err = new Error("Admin order listing server error");
+        throw err;
     }
 }
 
@@ -112,8 +112,8 @@ const viewOrderDetails = async (req, res) => {
             order
         })
     } catch (error) {
-        console.log("Admin order details error:", error);
-        return res.redirect('/pageNotFound')
+        const err = new Error("Admin order details loading server error");
+        throw err;
     }
 }
 
@@ -146,8 +146,9 @@ const updateOrderStatus = async (req, res) => {
         }
         return res.status(200).json({ success: true, message: "Order status updated successfully" });
     } catch (error) {
-        console.log("Update order status by admin error:", error);
-        res.status(500).json({ success: false, message: 'Internal Server Error' });
+        const err = new Error("Admin order status update server error");
+        err.redirect = `/admin/userOrders/${req.params.orderId}?error=` + encodeURIComponent("Admin order status update internal server error");
+        throw err;
     }
 }
 
@@ -191,8 +192,9 @@ const orderReturnRequest = async (req, res) => {
 
         return res.status(200).json( { success: true, message: "Order Return Approved!"})
     } catch (error) {
-        console.log('Admin Order Return Approval Error:', error);
-        return res.status(500).json({ success: false, message: "Internal server error for order return"})
+        const err = new Error("Admin order return request update server error");
+        err.redirect = `/admin/userOrders/${req.params.orderId}?error=` + encodeURIComponent("Admin order return request update internal server error");
+        throw err;
     }
 }
 
@@ -247,8 +249,9 @@ const itemReturnRequest = async (req, res) => {
         return res.status(200).json( { success: true, message: "Item return approved" } );
 
     } catch (error) {
-        console.log("Admin Item Return Approval Error:",error);
-        return res.status(500).json({ success: false, message: "Internal server error while item return approval"})
+        const err = new Error("Admin item return request update server error");
+        err.redirect = `/admin/userOrders/${req.params.orderId}?error=` + encodeURIComponent("Admin item return request update internal server error");
+        throw err;
     }
 }
 

@@ -56,8 +56,8 @@ const loadCart = async (req, res) => {
       error: req.query.error || null,
     });
   } catch (error) {
-    console.log("Cart page load error:", error);
-    res.redirect("/pageNotFound");
+    const err = new Error("Cart page loading server error");
+    return next (err);
   }
 };
 
@@ -156,8 +156,8 @@ const addTocart = async (req, res) => {
       "/cart?success=" + encodeURIComponent("Product added to cart")
     );
   } catch (error) {
-    console.log("Add to cart error:", error);
-    res.redirect("/pageNotFound");
+    const err = new Error("Add to cart internal server error");
+    return next (err);
   }
 };
 
@@ -174,8 +174,8 @@ const removeFromCart = async (req, res) => {
     return res.json({ success: true });
 
   } catch (error) {
-    console.log("cart item removig error:", error);
-    return res.status(500).json({success: false, message: "Server error while removing item"})
+    const err = new Error("Cart item removig server error");
+    return next(err);
   }
 };
 
@@ -201,9 +201,9 @@ const updateQuantity = async (req, res) => {
       return res.redirect('/cart?error='+encodeURIComponent("Item is Unlisted \nRemove it from the cart"))
     }
 
-const variant = cartItem.productId.variants.find(
-  v => v._id.toString() === cartItem.variantId.toString()
-);
+  const variant = cartItem.productId.variants.find(
+    v => v._id.toString() === cartItem.variantId.toString()
+  );
 
     if (action === "inc") {
       if (cartItem.quantity < variant.stock && cartItem.quantity < 5) {
@@ -222,10 +222,9 @@ const variant = cartItem.productId.variants.find(
     await cart.save();
     res.redirect("/cart");
   } catch (error) {
-    console.log("Quantity updating error:", error);
-    res.redirect(
-      "/cart?error=" + encodeURIComponent("Unable to update quantity")
-    );
+    const err = new Error("Quantity updating server error")
+    err.redirect = "/cart?error=" + encodeURIComponent("Unable to update quantity");
+    return next (err)
   }
 };
 

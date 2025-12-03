@@ -46,8 +46,8 @@ const categoryInfo = async (req,res) => {
         })
     
     } catch (error) {
-        console.error("Category management error:", error)
-        res.redirect('/pageNotFound')
+        const err = new Error("Admin category page load server error");
+        return next(err);
         
     }
 }
@@ -73,8 +73,9 @@ const addCategory = async (req, res) => {
 
         return res.redirect("/admin/category?success=" + encodeURIComponent("Category added successfully"));
     } catch (error) {
-        console.error("Error adding category:", error);
-        return res.redirect("/admin/category?error=" + encodeURIComponent("Internal server error"));
+        const err = new Error("Add category server error");
+        err.redirect = "/admin/category?error=" + encodeURIComponent("Add category internal server error")
+        return next(err);
     }
 };
 
@@ -139,8 +140,9 @@ const editCategory = async (req, res) => {
 
         return res.redirect("/admin/category?success=" + encodeURIComponent("Category updated successfully"));
     } catch (error) {
-        console.error("Edit Category error:", error);
-        return res.redirect("/admin/category?error=" + encodeURIComponent("Internal server error"));
+        const err = new Error("Edit category server error");
+        err.redirect = "/admin/category?error=" + encodeURIComponent("Edit category internal server error!")
+        return next(err);
     }
 };
 
@@ -156,8 +158,9 @@ const deleteCategory = async (req, res) => {
 
         return res.redirect("/admin/category?success=Category deleted/unlisted successfully");
     } catch (error) {
-        console.error("Delete Category error:", error);
-        return res.redirect("/admin/category?error=Internal server error");
+        const err = new Error("Delete category server error!");
+        err.redirect = "/admin/category?error=" + encodeURIComponent("Delete category internal server error!");
+        return next(err);
     }
 };
 
@@ -173,8 +176,9 @@ const activateCategory = async (req, res) => {
 
         return res.redirect("/admin/category?success=" + encodeURIComponent("Category activated successfully"));
     } catch (error) {
-        console.error("Activate Category error:", error);
-        return res.redirect("/admin/category?error=" + encodeURIComponent("Internal server error"));
+        const err = new Error("Activate category server error");
+        err.redirect = "/admin/category?error=" + encodeURIComponent("Activate category internal server error!");
+        return next (err);
     }
 };
 

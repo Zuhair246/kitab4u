@@ -65,9 +65,6 @@ const loadHomePage = async (req,res) => {
       ];
     }
       
-      // if (!userData) {
-      //   return res.render("homePage", {books: productData}); 
-      // }
       return res.status(OK).render("homePage", { 
                                                         user: userData, 
                                                         books: productData,
@@ -77,27 +74,28 @@ const loadHomePage = async (req,res) => {
                                                       });
     }
 
-    res.status(OK).render("homePage", {
+    return res.status(OK).render("homePage", {
                                             books: productData,
                                             currentPage: page,
                                             totalPages,
                                             searchQuery
                                             });
     }catch (error) {
-        console.log("Error Home Page Loading:", error);
-        return next(error);
+        const err = new Error("Server error in loading Home Page")
+        throw err;
     }
 }
 
 const loadSignup = async ( req,res) => {
     try{
-        return res.render ('signup', {
+        return res.status(OK).render ('signup', {
         error: req.flash("error"),
         success: req.flash("success"),
         formData: req.flash("formData")[0] || {}
     })
     }catch (error) {
-       return next(error)
+       const err = new Error("Failed to load signup page");
+       throw err;
     }
 }
 
@@ -109,7 +107,7 @@ const signup = async (req, res) => {
     if (!name || !email || !phone || !password || !confirmPassword) {
         req.flash("error", "Please fill all the details");
         req.flash("formData", { name, email, password, phone, referralCode });
-        return res.status(400).redirect("/signup");
+        return res.status(BAD_REQUEST).redirect("/signup");
     }
 
     // Name: only letters, single spaces between words, no leading/trailing space
@@ -117,7 +115,7 @@ const signup = async (req, res) => {
     if (!nameRegex.test(name) || name.replace(/\s/g, '').length < 5) {
         req.flash("error", "Name should be at least 5 letters and contain only alphabets with spaces only between words");
        req.flash("formData", { name, email, password, phone, referralCode });
-        return res.redirect("/signup");
+        return res.status(BAD_REQUEST).redirect("/signup");
     }
 
     const allowedDomains = 'com|in|org|net|co|gov|edu|co\\.in|ac\\.in|gov\\.in|io|ai|dev|app|shop|biz|info|me|tv|cloud';
@@ -125,27 +123,27 @@ const signup = async (req, res) => {
     if (!checkEmail.test(email)) {
         req.flash("error", "Invalid Email");
         req.flash("formData", { name, email, password, phone, referralCode });
-        return res.redirect("/signup");
+        return res.status(BAD_REQUEST).redirect("/signup");
     }
 
     const checkPassword = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).{7,}$/
     if (!checkPassword.test(password)) {
         req.flash("error", "Password must be 7 characters with atleast one alphabet, one number and non-alphanumeric character");
         req.flash("formData", { name, email, password, phone, referralCode });
-        return res.redirect("/signup");
+        return res.status(BAD_REQUEST).redirect("/signup");
     }
 
     if (password !== confirmPassword) {
         req.flash("error", "Passwords do not match");
         req.flash("formData", { name, email, password, phone, referralCode });
-        return res.redirect("/signup");
+        return res.status(BAD_REQUEST).redirect("/signup");
     }
 
 const checkPhone = /^(?!([0-9])\1{9})([6-9][0-9]{9})$/;
 if (!checkPhone.test(phone)) {
     req.flash("error", "Invalid Phone number format");
     req.flash("formData", { name, email, password, phone, referralCode });
-    return res.redirect("/signup");
+    return res.status(BAD_REQUEST).redirect("/signup");
 }
 
     try {
@@ -153,14 +151,14 @@ if (!checkPhone.test(phone)) {
         if (existingUser && !existingUser.isBlocked) {
             req.flash("error", "User email already exists");
             req.flash("formData", { name, email, password, phone, referralCode });
-            return res.redirect("/signup");
+            return res.status(BAD_REQUEST).redirect("/signup");
         }
 
         const existingPhone = await User.findOne({ phone });
         if (existingPhone) {
           req.flash('error', "Phone number already exist");
           req.flash("formData", { name, email, password, phone, referralCode });
-          return res.redirect('/signup')
+          return res.status(BAD_REQUEST).redirect("/signup");
         }
 
         if(referralCode){
@@ -168,12 +166,12 @@ if (!checkPhone.test(phone)) {
           if(!referredUser){
             req.flash('error', "Referral code doesn't exist!");
             req.flash("formData", { name, email, password, phone, referralCode });
-            return res.redirect('/signup')            
+            return res.status(BAD_REQUEST).redirect("/signup");      
           }
           if(referredUser.email == email){
             req.flash('error', "You cannot use your own referral code!");
             req.flash("formData", { name, email, password, phone});
-            return res.redirect('/signup')                   
+            return res.status(BAD_REQUEST).redirect("/signup");              
           }
           req.session.referrer = referredUser._id;
         }
@@ -197,8 +195,7 @@ if (!checkPhone.test(phone)) {
         console.log("OTP Sent:",otp)
 
     } catch (error) {
-        console.error("signup error:", error);
-        res.redirect("/pageNotFound")
+        return res.next(error)
     }
 };
 
@@ -277,11 +274,8 @@ const verifyOtp = async (req, res) => {
     }
   
   } catch (error) {
-    console.error('OTP verification error:', error);
-    return res.status(500).json({ 
-      success: false, 
-      message: 'Failed to verify OTP. Please try again.' 
-    });
+    const err = new Error("Internal server error in verifying OTP");
+    throw err;
   }
 };
 
@@ -323,14 +317,11 @@ const resendOtp = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Resend OTP error:", error);
-    return res.json({
-      success: false,
-      message: "Failed to resend OTP. Please try again.",
-      redirect: "/verify-otp",
-    });
-  }
-};
+    const err = new Error("Resend otp internal server error");
+    err.redirect = "/verifyOtp";
+    return next(err);
+ };
+}
 
 const loadLogin = async (req,res) => {
     try {
@@ -342,12 +333,8 @@ const loadLogin = async (req,res) => {
         }
         
     } catch (error) {
-
-        console.log("Login Page Not Found")
-        res.status(500).send("Server error")
-
-        res.redirect('/pageNotFound')
-
+      const err = new Error("Login page loading server error!")
+      return next(err);
     }
 }
 
@@ -384,22 +371,25 @@ const login = async (req,res) => {
         
         res.redirect('/')
     } catch (error) {
-        
-        console.error('login error:', error)
-        res.render('login', {message: "Login Failed! Please try again!" })
-
+        const err = new Error("Login Failed due to server error! Please try again!");
+        err.redirect = "/login";
+        return next(err);
     }
 }
 
 const logout = async (req, res) => {
   try {
     req.session.destroy((err) => {
-      if (err) return res.redirect("/pageNotFound");
+      if (err) {
+        const error = new Error("Failed to logout user, Please try again later!")
+        return next(error);
+      }
       res.clearCookie("user.sid");
       return res.redirect("/login");
     });
   } catch (error) {
-    return res.redirect("/pageNotFound");
+    const err = new Error(`Logout internal server error, \nPleaese try again later!`);
+    throw err;
   }
 };
 
@@ -410,9 +400,7 @@ const loadVerifyEmail = async (req,res) => {
         success: req.flash("success")
     });
     } catch (error) {
-     console.log('Verify email loading error:', error);
-     res.status(500).send("Server error")
-        
+        return next (error);
     }
 }
 
@@ -461,8 +449,7 @@ const verifyEmail = async (req,res) => {
             return res.redirect('/verifyEmail')
         }
     } catch (error) {
-          console.error("email verification error:", error);
-      return  res.redirect("/pageNotFound")
+          return next (error);
     }
 }
 
@@ -497,11 +484,8 @@ const verifyEmail = async (req,res) => {
       return res.json({ success: false, message: 'Invalid OTP! Please try again!' });
     }
   } catch (error) {
-    console.error('Reset password OTP verification error:', error);
-    return res.status(500).json({ 
-      success: false, 
-      message: 'Failed to verify OTP. Please try again.' 
-    });
+    const err = new Error('Failed to verify OTP. Please try again.');
+    return next(err)
   }
 };
 
@@ -512,9 +496,8 @@ const loadNewPassword = async (req,res) => {
         success: req.flash("success")
     });
   } catch (error) {
-         console.log('New password loading error:', error);
-     res.status(500).send("Server error")
-        
+       const err = new Error("New password loading error:")
+       return next(err);
   }
 }
 
@@ -553,8 +536,8 @@ const newPassword = async (req,res) => {
     return res.redirect("/login");
     
   } catch (error) {
-            console.error("new password setting error:", error);
-        res.redirect("/pageNotFound")
+      const err = new Error("New password setting error");
+      return next (err);
   }
 }
 
@@ -698,8 +681,8 @@ const loadShoppingPage = async (req, res) => {
       error: req.query.error || null
     });
   } catch (error) {
-    console.log("Shop page error:", error);
-    res.redirect("/pageNotFound");
+    const err = new Error("Shop page loading Internal server error!");
+    return next (err);
   }
 };
 

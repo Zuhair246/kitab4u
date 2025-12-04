@@ -113,14 +113,8 @@ const editCategory = async (req, res) => {
 
         const offer = await CategoryOffer.findOne({ categoryId: id });
 
-        if(removeOffer) {
-            await CategoryOffer.updateMany(
-                { categoryId: id },
-                { $set: { isActive: false } }
-            );
-        }else if(offerDiscount && offerStart && offerEnd) {
-            
-
+ if(offerDiscount && offerStart && offerEnd) {
+    
             if(offer) {
                 offer.discountPercentage = offerDiscount;
                 offer.startDate = offerStart;

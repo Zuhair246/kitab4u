@@ -57,7 +57,7 @@ router.post("/coupons/activate/:id", adminAuth, couponController.activateCoupon)
 router.get("/productOffers", adminAuth, productOfferController.loadProductOffers);
 router.post("/productOffers/add", adminAuth, productOfferController.addProductOffer);
 router.post("/productOffers/edit", adminAuth, productOfferController.editProductOffer);
-router.post("/productOffers/activate", adminAuth, productOfferController.activateProductOffer);
+router.post("/productOffers/:offerId/activate", adminAuth, productOfferController.activateProductOffer);
 router.post("/productOffers/:offerId/deactivate", adminAuth, productOfferController.deactivateProductOffer);
 
 //Sales Report

@@ -1,5 +1,6 @@
 const Product = require('../../models/productSchema');
 const ProductOffer = require('../../models/productOfferSchema');
+const { BAD_REQUEST, OK, NOT_FOUND } = require('../../helpers/statusCodes')
 
 const loadProductOffers = async (req, res) => {
     try {
@@ -38,7 +39,7 @@ const addProductOffer = async (req, res) => {
         const { productId, discountPercentage, startDate, endDate } = req.body;
 
         if ( !productId || !discountPercentage || !startDate || !endDate ) {
-            return res.redirect("/admin/productOffers?error=Missing fields");
+            return res.status(BAD_REQUEST).json({ success: false, message: "Fill all the fields"});
         }
 
         await ProductOffer.deleteMany({ productId });
@@ -65,10 +66,10 @@ const editProductOffer = async (req, res) => {
         console.log('Loading edit for offer:', offerId);
         
         if(!offerId){
-            return res.redirect("/admin/productOffers?error=Offer not found!");
+            return res.status(BAD_REQUEST).json({ success: false, message: "Offer not found!"});
         }
         if(!discountPercentage || !startDate || !endDate){
-            return res.redirect("/admin/productOffers?error=Missing fields");
+            return res.status(BAD_REQUEST).json({ success: false, message: "Fill all the fields"});
         }
 
         await ProductOffer.findByIdAndUpdate(offerId, {
@@ -77,7 +78,7 @@ const editProductOffer = async (req, res) => {
             endDate
         });
 
-        return res.redirect("/admin/productOffers?success=Product offer updated");
+        return res.status(OK).json({ success: true, message: "Offer updated"});
     } catch (error) {
         const err = new Error("Edit product offer server error");
         err.redirect = "/admin/productOffers?error=Server error";
@@ -87,14 +88,14 @@ const editProductOffer = async (req, res) => {
 
 const activateProductOffer = async (req, res) => {
     try {
-        const { offerId } = req.body;
+        const { offerId } = req.params;
         if(!offerId){
-            return res.redirect("/admin/productOffers?error=Offer not found!");
+            return res.status(BAD_REQUEST).json({ success: false, message: "Offer not found!"})
         }
 
         await ProductOffer.findByIdAndUpdate(offerId, { isActive: true });
         
-        return res.redirect("/admin/productOffers?success=Offer activated");
+        return res.status(OK).json({ success: true, message: "Offer Activated"})
     } catch (error) {
         const err = new Error("Activate product offer server error");
         err.redirect = "/admin/productOffers?error=Server error";
@@ -106,11 +107,11 @@ const deactivateProductOffer = async (req, res) => {
     try {
         const { offerId } = req.params;
         if(!offerId){
-            return res.redirect("/admin/productOffers?error=Offer not found!");
+            return res.status(BAD_REQUEST).json({ success: false, message: "Offer not found!"})
         }
-
+        
         await ProductOffer.findByIdAndUpdate(offerId, { isActive: false })
-        return res.redirect("/admin/productOffers?success=Offer removed");
+        return res.status(OK).json({ success: true, message: "Offer Deactivated"})
     } catch (error) {
         const err = new Error("Deactivate product offer server error");
         err.redirect = "/admin/productOffers?error=Server error";

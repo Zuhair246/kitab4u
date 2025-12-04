@@ -227,7 +227,7 @@
 
             <div class="mb-3">
             <label class="form-label">Discount: (%)</label>
-            <input type="number" class="form-control" name="offerDiscount" id="offerDiscount" min="1" max="90" placeholder="e.g. 10">
+            <input type="number" class="form-control" name="offerDiscount" id="offerDiscount" min="1" max="70" placeholder="e.g. 10">
             </div>
 
             <div class="mb-3">
@@ -252,11 +252,6 @@
                 <option value="true">Active</option>
                 <option value="false">Inactive</option>
             </select>
-            </div>
-
-            <div class="form-check mb-3">
-            <input class="form-check-input" type="checkbox" name="removeOffer" id="removeOffer">
-            <label class="form-check-label text-danger fw-bold">Remove Offer</label>
             </div>
 
         </div>
@@ -327,7 +322,6 @@ function editCategory(id, name, description, status, offer) {
     document.getElementById('offerDiscount').value = offer?.discountPercentage || "" ;
     document.getElementById('offerStart').value = offer?.startDate ? offer.startDate.split("T")[0] : "" ;
     document.getElementById('offerEnd').value = offer?.endDate ? offer.endDate.split("T")[0] : "" ;
-    document.getElementById('removeOffer').checked = false ;
     document.getElementById('offerStatus').value = offer?.isActive ? "true" : "false" ;
 
     const editModal = new bootstrap.Modal(document.getElementById('editCategoryModal'));

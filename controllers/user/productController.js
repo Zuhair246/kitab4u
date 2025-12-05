@@ -16,7 +16,7 @@ const productDetails = async (req, res) => {
       .lean();
 
     if (!product) {
-      return res.redirect('/pageNotFound');
+      return res.status(404).json({ success: false, message: "Product not found!" })
     }
    
     const category = product.categoryId;
@@ -60,7 +60,7 @@ const productDetails = async (req, res) => {
     const wishlist = await Wishlist.findOne({ userId });
     const wishlistItems = wishlist ? wishlist.products.map(p => p.productId.toString()) : [];
 
-    res.render('productDetails', {
+     return res.status(200).render('productDetails', {
       user: userData,
       product,
       quantity,
@@ -105,7 +105,7 @@ const loadSearchResults = async (req, res) => {
     const totalProductsCount = await Product.countDocuments(searchCondition);
     const totalPages = Math.ceil(totalProductsCount / limit);
 
-    res.render("shop", {
+     return res.status(200).render("shop", {
       user: userData,
       books: products,
       category: categories.map(c => ({ _id: c._id, name: c.name })),

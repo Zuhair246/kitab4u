@@ -81,20 +81,23 @@ const addCategory = async (req, res) => {
 
 const editCategory = async (req, res) => {
     try {
-        const { id, name, description, status, offerDiscount, offerStart, offerEnd, removeOffer, offerStatus  } = req.body;
+        const { id, name, description, status, offerDiscount, offerStart, offerEnd, offerStatus  } = req.body;
 
         if (!id || !name || !description) {
             return res.redirect("/admin/category?error=" + encodeURIComponent("Invalid data for update"));
         }
 
         const startDate = new Date(offerStart);
-        const endDate = new Date(offerEnd)
+        const endDate = new Date(offerEnd);
         const today = new Date();
         if(startDate < today || endDate < today){
-            return res.redirect("/admin/category?error=" + encodeURIComponent("Start date or End date should not be past!"));
+            return res.redirect("/admin/category?error=" + encodeURIComponent("Start date or Expiry date should not be past!"));
         }else if(endDate < startDate) {
-            return res.redirect("/admin/category?error=" + encodeURIComponent("End date should not be before start date!"));
+            return res.redirect("/admin/category?error=" + encodeURIComponent("Expiry date should not be before Start date!"));
         }
+
+        startDate.setHours(0, 0, 0, 0);
+        endDate.setHours(23, 59, 59, 999);
 
         const existingCategory = await Category.findOne({
             name: { $regex: new RegExp("^" + name + "$", "i") },
@@ -117,16 +120,16 @@ const editCategory = async (req, res) => {
     
             if(offer) {
                 offer.discountPercentage = offerDiscount;
-                offer.startDate = offerStart;
-                offer.endDate = offerEnd;
+                offer.startDate = startDate;
+                offer.endDate = endDate;
                 offer.isActive = offerStatus === "true";
                 await offer.save();
             } else { 
                 await CategoryOffer.create({
                     categoryId: id,
                     discountPercentage: offerDiscount,
-                    startDate: offerStart,
-                    endDate: offerEnd,
+                    startDate: startDate,
+                    endDate: endDate,
                     isActive: offerStatus === 'true'
                 });
             }

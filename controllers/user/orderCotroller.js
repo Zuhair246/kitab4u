@@ -12,17 +12,18 @@ const razorpay = require("../../config/razorpay");
 const crypto = require("crypto");
 const path = require("path");
 const PDFDocument = require("pdfkit");
+const { OK, BAD_REQUEST, FORBIDDEN, UNAUTHORIZED, NOT_FOUND, CONFLICT, PAYMENT_REQUIRED } = require('../../helpers/statusCodes')
 
 const loadCheckoutPage = async (req, res) => {
   try {
     const userId = req.session.user || req.user;
     if (!userId) {
-      return res.redirect("/login");
+      return res.status(UNAUTHORIZED).redirect("/login");
     }
 
     const user = await User.findById(userId);
     if (!user) {
-      return res.redirect("/login");
+      return res.status(UNAUTHORIZED).redirect("/login");
     }
 
     const addressDocs = await Address.find({ userId: user._id }).lean();
@@ -55,7 +56,7 @@ const loadCheckoutPage = async (req, res) => {
     }
 
     if (!cartItems || cartItems.length === 0) {
-      return res.redirect("/cart?error=" + encodeURIComponent("Cart is empty"));
+      return res.status(BAD_REQUEST).redirect("/cart?error=" + encodeURIComponent("Cart is empty"));
     }
 
     let items = await Promise.all(
@@ -94,14 +95,14 @@ const loadCheckoutPage = async (req, res) => {
     );
 
     if (items.some((item) => item.isBlocked)) {
-      return res.redirect(
+      return res.status(CONFLICT).redirect(
         "/cart?error=" +
           encodeURIComponent(
             "Some of your products are unavailable \nPlease remove it and proceed"
           )
       );
     } else if (items.some((item) => item.stock <= 0)) {
-      return res.redirect(
+      return res.status(CONFLICT).redirect(
         "/cart?error=" +
           encodeURIComponent(
             "Some of the products in cart are out of stock, Please remove it and proceed"
@@ -122,7 +123,7 @@ const loadCheckoutPage = async (req, res) => {
       usedUsers: { $ne: userId },
     });
     let session = req.session;
-    res.render("checkout", {
+    return res.status(OK).render("checkout", {
       user,
       items,
       subtotal,
@@ -146,7 +147,7 @@ const checkout = async (req, res) => {
     const userId = req.session.user || req.user;
     const user = await User.findById(userId);
     if (!user) {
-      return res.redirect("/login");
+      return res.status(UNAUTHORIZED).redirect("/login");
     }
 
     const { selectedAddressId, paymentMethod } = req.body;
@@ -168,7 +169,7 @@ const checkout = async (req, res) => {
     }
 
     if (!cartItems || cartItems.length === 0) {
-      return res.redirect("/cart?error=" + encodeURIComponent("Cart is empty"));
+      return res.status(CONFLICT).redirect("/cart?error=" + encodeURIComponent("Cart is empty"));
     }
 
     let items = await Promise.all(
@@ -207,14 +208,14 @@ const checkout = async (req, res) => {
     );
 
     if (items.some((item) => item.isBlocked)) {
-      return res.redirect(
+      return res.status(CONFLICT).redirect(
         "/cart?error=" +
           encodeURIComponent(
             "Some of your products are Un-available, Please remove it and proceed !"
           )
       );
     } else if (items.some((item) => item.stock <= 0)) {
-      return res.redirect(
+      return res.status(CONFLICT).redirect(
         "/cart?error=" +
           encodeURIComponent(
             "Some of your products in cart are out of stock, Please remove it and proceed...."
@@ -235,7 +236,7 @@ const checkout = async (req, res) => {
     ).lean();
 
     if (!addressDoc || !addressDoc.address[0]) {
-      return res.redirect(
+      return res.status(BAD_REQUEST).redirect(
         "/orders?error=" + encodeURIComponent("Invalid Address Selection")
       );
     }
@@ -259,7 +260,7 @@ const checkout = async (req, res) => {
      if(appliedCoupon){
         const couponFromDb = await Coupon.findOne({ code: appliedCoupon.couponCode});
         if(!couponFromDb || !couponFromDb.isActive){
-          return res.status(400).json({ 
+          return res.status(BAD_REQUEST).json({ 
                       success: false, 
                       message: "Coupon is unavailable at the moment \nPlease remove the coupon and proceed!"})
         }
@@ -269,7 +270,7 @@ const checkout = async (req, res) => {
       discountFinalAmount > 0 ? discountFinalAmount : finalAmount;
 
     if (!paymentMethod) {
-      return res.redirect(
+      return res.status(BAD_REQUEST).redirect(
         "/orders?error=" + encodeURIComponent("Please Select a Payment Method")
       );
     }
@@ -311,7 +312,7 @@ const checkout = async (req, res) => {
         delete req.session.appliedCoupon;
       }
 
-      return res.render("orderSuccess", {
+      return res.status(OK).render("orderSuccess", {
         orderId: newOrder.orderId,
         user,
         orders,
@@ -355,7 +356,7 @@ const checkout = async (req, res) => {
       newOrder.paymentId = newPayment._id;
       await newOrder.save();
 
-      return res.json({
+      return res.status(OK).json({
         success: true,
         key: process.env.RAZORPAY_KEY_ID,
         amount: razorpayOrder.amount,
@@ -422,9 +423,12 @@ const verifyPayment = async (req, res) => {
   try {
     const userId = req.session.user || req.user;
     if (!userId) {
-      return res.redirect("/login");
+      return res.status(UNAUTHORIZED).redirect("/login");
     }
     const user = await User.findById(userId);
+    if(!user) {
+      return res.status(UNAUTHORIZED).json({ success: false, message: "User not found!"})
+    }
 
     const {
       razorpay_order_id,
@@ -434,6 +438,9 @@ const verifyPayment = async (req, res) => {
     } = req.body;
 
     const paymentDoc = await Payment.findOne({ orderId: orderDbId });
+    if(paymentDoc?.status === "Paid") {
+      return res.status(CONFLICT).json({ success: false, message: "Payment already processed!"})
+    }
 
     const responseSnapshot = { ...req.body };
 
@@ -450,7 +457,7 @@ const verifyPayment = async (req, res) => {
         paymentStatus: "Failed",
         status: "Pending",
       });
-      return res.json({
+      return res.status(PAYMENT_REQUIRED).json({
         success: false,
         redirect: `/loadRetryPayment?orderId=${orderDbId}`,
       });
@@ -477,6 +484,9 @@ const verifyPayment = async (req, res) => {
       const order = await Order.findById(orderDbId).populate(
         "orderedItems.product"
       );
+      if(!order){
+        return res.status(NOT_FOUND).json({ success: false, message: "Order not found!"})
+      }
       for (const item of order.orderedItems) {
         await Product.updateOne(
           { _id: item.product, "variants._id": item.variantId },
@@ -496,7 +506,7 @@ const verifyPayment = async (req, res) => {
         delete req.session.appliedCoupon;
       }
 
-      return res.json({ success: true, orderId: orderDbId });
+      return res.status(OK).json({ success: true, orderId: orderDbId });
     } else {
       //Signature exists but mismatch happened
       if (paymentDoc) {
@@ -508,7 +518,7 @@ const verifyPayment = async (req, res) => {
         paymentStatus: "Failed",
         status: "Pending",
       });
-      return res.json({
+      return res.status(UNAUTHORIZED).json({
         success: false,
         redirect: `/loadRetryPayment?orderId=${orderDbId}`,
       });
@@ -523,14 +533,14 @@ const loadRetryPayment = async (req, res) => {
   try {
     const userId = req.session.user || req.user;
     if (!userId) {
-      return res.redirect("/login");
+      return res.status(UNAUTHORIZED).redirect("/login");
     }
     const user = await User.findById(userId);
     const { orderId } = req.query;
     const order = await Order.findById(orderId)
       .populate("orderedItems.product")
       .lean();
-    res.render("retryPayment", {
+    return res.status(OK).render("retryPayment", {
       user,
       order,
     });
@@ -583,7 +593,7 @@ const retryPayment = async (req, res) => {
     }
     await paymentDoc.save();
 
-    return res.json({
+    return res.status(OK).json({
       success: true,
       key: process.env.RAZORPAY_KEY_ID,
       amount: razorpayOrder.amount,
@@ -601,7 +611,7 @@ const orderSuccess = async (req, res) => {
   try {
     const userId = req.session.user || req.user;
     if (!userId) {
-      return res.redirect("/login");
+      return res.status(UNAUTHORIZED).redirect("/login");
     }
     const user = await User.findById(userId);
     const orderId = req.query.orderId;
@@ -609,7 +619,7 @@ const orderSuccess = async (req, res) => {
     const orders = await Order.findById(orderId).populate(
       "orderedItems.product"
     );
-    res.render("orderSuccess", {
+     return res.status(OK).render("orderSuccess", {
       user,
       orders,
       orderId,
@@ -625,7 +635,7 @@ const orderHistory = async (req, res) => {
     const userId = req.session.user || req.user;
     const user = await User.findById(userId);
     if (!user) {
-      return res.redirect("/login");
+      return res.status(UNAUTHORIZED).redirect("/login");
     }
 
     const page = parseInt(req.query.page) || 1;
@@ -684,7 +694,7 @@ const orderHistory = async (req, res) => {
       };
     });
 
-    res.render("orderHistory", {
+     return res.status(OK).render("orderHistory", {
       orders: formattedOrders,
       user,
       search,
@@ -704,12 +714,12 @@ const orderDetails = async (req, res) => {
     const userId = req.session.user || req.user;
     const user = await User.findById(userId);
     if (!user) {
-      return res.redirect("/login");
+      return res.status(UNAUTHORIZED).redirect("/login");
     }
 
     const order = await Order.findOne({ _id: id, userId }).lean();
     if (!order) {
-      return res.redirect("/myOrders");
+      return res.status(NOT_FOUND).redirect("/myOrders");
     }
 
     const orderDate = new Date(order.createdAt);
@@ -749,7 +759,7 @@ const orderDetails = async (req, res) => {
     order.subtotal = order.totalPrice;
     order.shippingCharge = order.shippingCharge;
 
-    res.render("orderDetails", {
+     return res.status(OK).render("orderDetails", {
       user,
       order,
     });
@@ -763,7 +773,7 @@ const cancelOrder = async (req, res) => {
   try {
     const userId = req.session.user || req.user;
     if (!userId) {
-      return res.redirect("/login");
+      return res.status(UNAUTHORIZED).redirect("/login");
     }
     const orderId = req.params.id;
     const { reason } = req.body;
@@ -808,7 +818,6 @@ const cancelOrder = async (req, res) => {
     order.status = "Cancelled";
     order.cancelReason = reason;
 
-
 if(order.paymentMethod=='Online' || order.paymentMethod=="Wallet") {
   if(order.paymentStatus=="Paid"){
     await addToWallet(order.userId, order.finalPayableAmount, "Credit", `Refund for order: #${order.orderId}`)
@@ -817,7 +826,7 @@ if(order.paymentMethod=='Online' || order.paymentMethod=="Wallet") {
 
     await order.save();
 
-    return res.json({
+    return res.status(OK).json({
       success: true,
       message: "Order Cancelled Successfully",
     });
@@ -830,6 +839,9 @@ if(order.paymentMethod=='Online' || order.paymentMethod=="Wallet") {
 const cancelSingleItem = async (req, res) => {
   try {
     const userId = req.session.user || req.user;
+    if (!userId) {
+      return res.status(UNAUTHORIZED).redirect('/login');
+    } 
     const { orderId, itemId } = req.params;
     const { reason } = req.body;
 
@@ -911,7 +923,7 @@ const cancelSingleItem = async (req, res) => {
     }
     await order.save();
 
-    return res.json({ success: true, message: `"${item.name} Cancelled"` });
+    return res.status(OK).json({ success: true, message: `"${item.name} Cancelled"` });
   } catch (error) {
     const err = new Error("Single item cancelling server error");
     return next (err);
@@ -921,6 +933,9 @@ const cancelSingleItem = async (req, res) => {
 const returnOrder = async (req, res) => {
   try {
     const userId = req.session.user || req.user;
+    if(!userId) {
+      return res.status(UNAUTHORIZED).redirect('/login')
+    }
     const orderId = req.params.id;
     const { reason } = req.body;
 
@@ -977,7 +992,7 @@ const returnSingleItem = async (req, res) => {
   try {
     const userId = req.session.user || req.user;
     if (!userId) {
-      return res.redirect("/login");
+      return res.status(UNAUTHORIZED).redirect("/login");
     }
     const { orderId, itemId } = req.params;
 
@@ -1049,7 +1064,7 @@ const downloadInvoice = async (req, res) => {
 
     const order = await Order.findOne({ _id: id, userId }).lean();
     if (!order) {
-      return res.redirect("/myOrders");
+      return res.status(NOT_FOUND).redirect("/myOrders");
     }
 
     res.setHeader(

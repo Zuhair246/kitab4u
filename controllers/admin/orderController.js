@@ -126,6 +126,10 @@ const updateOrderStatus = async (req, res) => {
         if(!order) return res.status(404).json({success: false, message: 'Order not found'});
 
         order.status = status;
+        if(status == "Delivered") {
+            order.paymentStatus = "Paid";
+        }
+
         const activeItems = order.orderedItems.filter(
             item => !["Cancelled", "Returned"].includes(item.itemStatus)
         )

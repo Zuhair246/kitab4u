@@ -7,11 +7,11 @@ const loadWishlist = async (req,res)=>{
     try {
         const userId = req.session.user || req.user;
         if(!userId){
-            return res.redirect('/login')
+            return res.status(401).redirect('/login')
         }
         const user = await User.findById(userId);
         if(!user) {
-            return res.redirect('/login');
+            return res.status(404).redirect('/login');
         }
 
         const page = parseInt(req.query.page) || 1;
@@ -88,7 +88,7 @@ const loadWishlist = async (req,res)=>{
         const totalPages = Math.ceil(totalItems / limit);
         const paginatedItems = wishlistItems.slice((page - 1) * limit, page * limit);
         
-        res.render('wishlist', {
+       return res.status(200).render('wishlist', {
             user,
             wishlistItems: paginatedItems,
             search,
@@ -108,7 +108,7 @@ const addToWishlist = async (req, res) => {
         const userId = req.session.user || req.user;
         if(!userId) {
              req.flash('error','Please login to add products to Wishlist');
-             return res.redirect('/login');
+             return res.status(401).redirect('/login');
         }
         const {productId, variantId} = req.body
 
@@ -160,7 +160,7 @@ const addToWishlist = async (req, res) => {
         await wishlist.save()
         console.log(`${product} added to wishlist`);
         const previousPage = req.get('Referer') || '/';
-        return res.redirect(previousPage);
+        return res.status(200).redirect(previousPage);
 
     } catch (error) {
       const err = new Error("Add to wishlist server error");
@@ -171,6 +171,9 @@ const addToWishlist = async (req, res) => {
 const removeFromWishlist = async (req, res) => {
     try {
         const userId = req.session.user || req.user;
+        if(!userId) {
+            return res.status(401).redirect('/login')
+        }
         const {productId, variantId} = req.body;
 
         await Wishlist.findOneAndUpdate(
@@ -178,7 +181,7 @@ const removeFromWishlist = async (req, res) => {
             { $pull: { products: { productId: productId, variantId: variantId } } },
             {new: true}
         )
-        return res.json({ success: true});
+        return res.status(200).json({ success: true});
         
     } catch (error) {
       const err = new Error("Remove from wishlist server error");

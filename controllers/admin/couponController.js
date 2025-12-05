@@ -97,7 +97,7 @@ const applyCoupon = async (req, res) => {
         const coupon = await Coupon.findOne({ code: code.toUpperCase(), isActive: true});
         const currentDate = new Date();
 
-        if(!coupon || currentDate> coupon.expiryDate){
+        if(!coupon || currentDate > coupon.expiryDate){
             return res.status(400).json({ success: false, message: "Invalid or expired coupon!"});
         }
 

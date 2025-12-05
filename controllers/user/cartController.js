@@ -4,6 +4,7 @@ const Cart = require("../../models/cartSchema");
 const Wishlist = require("../../models/wishlistSchema");
 const { default: mongoose, model } = require("mongoose");
 const calculateDiscountedPrice  = require('../../helpers/offerPriceCalculator');
+const {OK, UNAUTHORIZED, NOT_FOUND, FORBIDDEN, CONFLICT} = require('../../helpers/statusCodes')
 
 const loadCart = async (req, res) => {
   try {
@@ -11,7 +12,7 @@ const loadCart = async (req, res) => {
     const user = await User.findById(userId);
 
     if (!user) {
-      return res.redirect("/login");
+      return res.status(UNAUTHORIZED).redirect("/login");
     }
 
     const productId = req.query.id;
@@ -45,10 +46,10 @@ const loadCart = async (req, res) => {
         item.totalPrice = item.finalPrice * item.quantity;
         subtotal += item.totalPrice; 
       }
-      // subtotal = cartItems.reduce((total, item) => total + item.totalPrice , 0);
+
     }
 
-    res.render("cart", {
+     return res.status(OK).render("cart", {
       user,
       product,
       cartItems,
@@ -65,7 +66,7 @@ const addTocart = async (req, res) => {
   try {
     const userId = req.session.user || req.user;
     if (!userId) {
-      return res.redirect(
+      return res.status(UNAUTHORIZED).redirect(
         "/login?error=" +
           encodeURIComponent("Please login to add products to cart")
       );
@@ -80,7 +81,7 @@ const addTocart = async (req, res) => {
     }).populate("categoryId");
 
     if (!product) {
-      return res.redirect(
+      return res.status(NOT_FOUND).redirect(
         "/cart?error=" + encodeURIComponent("Product not found")
       );
     }
@@ -88,13 +89,13 @@ const addTocart = async (req, res) => {
     const variant = product.variants.id(variantId);
 
     if (!variant) {
-      return res.redirect(
+      return res.status(NOT_FOUND).redirect(
         "/cart?error=" + encodeURIComponent("Variant not found")
       );
     }
 
     if(variant.stock===0) {
-        return res.redirect(
+        return res.status(CONFLICT).redirect(
         "/cart?error=" + encodeURIComponent("Out of stock")
       );
     }
@@ -104,8 +105,8 @@ const addTocart = async (req, res) => {
       !product.categoryId ||
       !product.categoryId.isListed
     ) {
-      console.log("if product/category blocked");
-      return res.redirect(
+      console.log("product/category blocked");
+      return res.status(FORBIDDEN).redirect(
         "/cart?error=" + encodeURIComponent("This product is not available")
       );
     }
@@ -127,7 +128,7 @@ const addTocart = async (req, res) => {
         cartItem.quantity += 1;
         cartItem.totalPrice = cartItem.quantity * cartItem.price;
       } else {
-        return res.redirect(
+        return res.status(CONFLICT).redirect(
           "/cart?error=" + encodeURIComponent("Maximum quantity reached")
         );
       }
@@ -152,7 +153,7 @@ const addTocart = async (req, res) => {
     }
 
     await cart.save();
-    return res.redirect(
+    return res.status(OK).redirect(
       "/cart?success=" + encodeURIComponent("Product added to cart")
     );
   } catch (error) {
@@ -171,7 +172,7 @@ const removeFromCart = async (req, res) => {
           { $pull: { items: { productId: productId, variantId: variantId } } },
           { new: true }
     );
-    return res.json({ success: true });
+    return res.status(OK).json({ success: true });
 
   } catch (error) {
     const err = new Error("Cart item removig server error");
@@ -181,10 +182,14 @@ const removeFromCart = async (req, res) => {
 
 const updateQuantity = async (req, res) => {
   try {
-    const userId = req.session.user || req.user;
+    const userId = req.session.user?._id || req.user?._id;
     const { productId, action, variantId } = req.body;
 
     const cart = await Cart.findOne({ userId }).populate("items.productId");
+
+    if (!cart) {
+      return res.status(NOT_FOUND).redirect("/cart?error=" + encodeURIComponent("Cart not found!"))
+      }
     
     const cartItem = cart.items.find(
       item =>
@@ -193,13 +198,17 @@ const updateQuantity = async (req, res) => {
     );
 
       if (!cartItem)
-      return res.redirect(
+      return res.status(NOT_FOUND).redirect(
         "/cart?error=" + encodeURIComponent("Item not in cart")
       );
 
     if(cartItem.productId.isBlocked){
-      return res.redirect('/cart?error='+encodeURIComponent("Item is Unlisted \nRemove it from the cart"))
+      return res.status(FORBIDDEN).redirect('/cart?error='+encodeURIComponent("Item is Unlisted \nRemove it from the cart"))
     }
+
+  if (!variant) {
+    return res.status(NOT_FOUND).redirect("/cart?error=" + encodeURIComponent("Variant not found!"));
+  }
 
   const variant = cartItem.productId.variants.find(
     v => v._id.toString() === cartItem.variantId.toString()
@@ -209,7 +218,7 @@ const updateQuantity = async (req, res) => {
       if (cartItem.quantity < variant.stock && cartItem.quantity < 5) {
         cartItem.quantity += 1;
       } else {
-        return res.redirect(
+        return res.status(CONFLICT).redirect(
           "/cart?error=" + encodeURIComponent("Maximum limit/stock reached")
         );
       }
@@ -220,7 +229,7 @@ const updateQuantity = async (req, res) => {
     }
     cartItem.totalPrice = cartItem.quantity * cartItem.price;
     await cart.save();
-    res.redirect("/cart");
+    return res.status(OK).redirect("/cart");
   } catch (error) {
     const err = new Error("Quantity updating server error")
     err.redirect = "/cart?error=" + encodeURIComponent("Unable to update quantity");

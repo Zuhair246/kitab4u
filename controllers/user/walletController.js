@@ -8,7 +8,7 @@ const loadWallet = async (req, res) =>{
     try {
         const userId = req.session.user || req.user;
         if (!userId) {
-            return res.redirect('/login')
+            return res.status(401).redirect('/login')
         }
         const user = await User.findById(userId);
 
@@ -33,7 +33,7 @@ const loadWallet = async (req, res) =>{
         const startIndex = (currentPage -1) * transactionsPerPage;
         const paginatedTransactions = sortedTransaction.slice(startIndex, startIndex+transactionsPerPage);
 
-        res.render('wallet', {
+        return res.status(200).render('wallet', {
             user,
             wallet,
             paginatedTransactions,
@@ -66,7 +66,7 @@ const addMoney = async ( req, res ) => {
         };
         const order = await razorpay.orders.create(options);  //razorpay return an id from here which we send --to--> frontend API.
 
-        return res.json({
+        return res.status(200).json({
             success: true,
             key: process.env.RAZORPAY_KEY_ID,
             orderId: order.id,
@@ -115,7 +115,7 @@ const verifyPayment = async (req, res) => {
             await addToWallet(userId, creditedAmount, "Credit", `Added by you on ${new Date().toLocaleDateString()}`);
             return res.status(200).json({ success: true, message: `${creditedAmount} credited to your wallet`})
         } else {
-            return res.json({
+            return res.status(500).json({
                 success: false,
                 message: "Payment verification failed"
             });
@@ -130,12 +130,12 @@ const loadreferral = async (req, res) => {
     try {
         const userId = req.session.user?._id || req.user?._id;
         if(!userId) {
-            return res.redirect('/login');
+            return res.status(401).redirect('/login');
         }
         const user = await User.findById(userId);
         const referralCode = user.referralCode;
         console.log(referralCode);
-        res.render('referral', {
+       return res.status(200).render('referral', {
             user
         })
         

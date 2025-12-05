@@ -42,13 +42,19 @@ const addProductOffer = async (req, res) => {
             return res.status(BAD_REQUEST).json({ success: false, message: "Fill all the fields"});
         }
 
+        const endDay = new Date(endDate);
+        endDay.setHours(23, 59, 59, 999)
+
+        const startDay = new Date(startDate);
+        startDay.setHours(0, 0, 0, 0)
+
         await ProductOffer.deleteMany({ productId });
 
         await ProductOffer.create({
             productId,
             discountPercentage,
-            startDate,
-            endDate,
+            startDate: startDay,
+            endDate: endDay,
             isActive: true
         });
 
@@ -72,10 +78,16 @@ const editProductOffer = async (req, res) => {
             return res.status(BAD_REQUEST).json({ success: false, message: "Fill all the fields"});
         }
 
+        const startDay = new Date(startDate);
+        startDay.setHours(0, 0, 0, 0);
+
+        const endDay = new Date(endDate);
+        endDay.setHours(23, 59, 59, 999);
+
         await ProductOffer.findByIdAndUpdate(offerId, {
             discountPercentage,
-            startDate,
-            endDate
+            startDate: startDay,
+            endDate: endDay,
         });
 
         return res.status(OK).json({ success: true, message: "Offer updated"});

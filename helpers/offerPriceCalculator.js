@@ -4,11 +4,13 @@ const CategoryOffer = require('../models/categoryOfferSchema');
 const calculateDiscountedPrice = async ( product ) => {
     const currentPrice = product.discountPrice ;
     let maxDiscount = 0 ;
+    const today = new Date();
 
-    const productOffer = await ProductOffer.findOne({ productId: product._id, isActive: true });
+    const productOffer = await ProductOffer.findOne({ productId: product._id, isActive: true, endDate: {$gte: today}, startDate: {$lte: today} });
+    
     if(productOffer) maxDiscount = Math.max(maxDiscount, productOffer.discountPercentage);
 
-    const categoryOffer = await CategoryOffer.findOne({ categoryId: product.categoryId, isActive: true }) ;
+    const categoryOffer = await CategoryOffer.findOne({ categoryId: product.categoryId, isActive: true, endDate: {$gte: today}, startDate: {$lte: today} }) ;
     if(categoryOffer) maxDiscount = Math.max(maxDiscount, categoryOffer.discountPercentage);
 
     const discountAmount = (currentPrice * maxDiscount) / 100;

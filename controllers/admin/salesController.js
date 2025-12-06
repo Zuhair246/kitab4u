@@ -14,6 +14,7 @@ const loadSales = async (req, res) => {
         const dateFilter = await getDateFilter(range, startDate, endDate);
 
         const kpis = await getKPIData(dateFilter);
+console.log(kpis);
 
         const totalOrdersCount = await Order.countDocuments(dateFilter);
 

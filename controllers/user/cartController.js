@@ -206,13 +206,13 @@ const updateQuantity = async (req, res) => {
       return res.status(FORBIDDEN).redirect('/cart?error='+encodeURIComponent("Item is Unlisted \nRemove it from the cart"))
     }
 
-  if (!variant) {
-    return res.status(NOT_FOUND).redirect("/cart?error=" + encodeURIComponent("Variant not found!"));
-  }
-
   const variant = cartItem.productId.variants.find(
     v => v._id.toString() === cartItem.variantId.toString()
   );
+
+    if (!variant) {
+    return res.status(NOT_FOUND).redirect("/cart?error=" + encodeURIComponent("Variant not found!"));
+  }
 
     if (action === "inc") {
       if (cartItem.quantity < variant.stock && cartItem.quantity < 5) {
@@ -233,7 +233,7 @@ const updateQuantity = async (req, res) => {
   } catch (error) {
     const err = new Error("Quantity updating server error")
     err.redirect = "/cart?error=" + encodeURIComponent("Unable to update quantity");
-    return next (err)
+    return next(err);
   }
 };
 

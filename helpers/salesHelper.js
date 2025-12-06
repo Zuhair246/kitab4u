@@ -46,89 +46,123 @@ const getDateFilter = async function getDateFilter( range, startDate, endDate ) 
     }
 }
 
-const getKPIData = async function getKPIData ( dateFilter ) {
-    const data = await Order.aggregate([
-        { $match: dateFilter },
+const getKPIData = async function getKPIData(dateFilter) {
+  const data = await Order.aggregate([
 
-        { $unwind: "$orderedItems" },
+    { $match: dateFilter },
 
-        {
-            $addFields:{
-                itemDiscount: {
-                    $multiply: [
-                        { $subtract: ["$orderedItems.salePrice" , "$orderedItems.price"] },
-                        "$orderedItems.quantity"
-                    ]
-                },
-            }
-        },
+    {
+      $facet: {
 
-        {
+        //  ORDER LEVEL METRICS
+        orderStats: [
+          {
             $group: {
-                _id: null,
-                
-                totalOrders: { $addToSet: "$orderId" },
+              _id: null,
 
-                grossRevenue: { $sum: "$finalAmount" },
-                netRevenue: { $sum: "$finalPayableAmount" },
+              totalOrders: { $sum: 1 },
 
-                totalDiscountFromOffers: { $sum: "$itemDiscount" },
-                totalCouponDiscount: { $sum: "$discount" },
+              grossRevenue: { $sum: "$finalAmount" },
+              netRevenue: { $sum: "$finalPayableAmount" },
 
-                totalShippingCharge: { $sum: "$shippingCharge"},
+              totalCouponDiscount: { $sum: "$discount" },
+              totalShippingCharge: { $sum: "$shippingCharge" },
 
-                deliveredOrders: {
-                    $sum: {
-                        $cond: [ { $eq: ["$status" , "Delivered"] }, 1, 0 ]
-                    }
-                },
-                cancelledOrders: {
-                    $sum: {
-                        $cond: [ { $eq: ["$status" , "Cancelled" ] }, 1, 0 ]
-                    }
-                },
-                returnedOrders: {
-                    $sum: {
-                        $cond: [ { $eq: ["$status" , "Returned" ] }, 1, 0 ]
-                    }
-                },
-                cancelledItems: {
-                    $sum: {
-                        $cond: [ { $eq: ["$orderedItems.itemStatus" , "Cancelled"] }, 1, 0 ]
-                    }
-                },
-                returnedItems: {
-                    $sum: {
-                        $cond: [ { $eq: ["$orderedItems.itemStatus" , "Returned"] }, 1, 0 ]
-                    }
+              deliveredOrders: {
+                $sum: {
+                  $cond: [{ $eq: ["$status", "Delivered"] }, 1, 0]
                 }
-            }
-        },
+              },
 
-        {
-            $project: {
-                _id: 0,
-                totalOrders: { $size: "$totalOrders" },
+              cancelledOrders: {
+                $sum: {
+                  $cond: [{ $eq: ["$status", "Cancelled"] }, 1, 0]
+                }
+              },
 
-                grossRevenue: 1,
-                netRevenue: 1,
-
-                totalDiscountFromOffers: 1,
-                totalCouponDiscount: 1,
-                totalShippingCharge: 1,
-
-                deliveredOrders: 1,
-                cancelledOrders: 1,
-                returnedOrders: 1,
-                cancelledItems: 1,
-                returnedItems: 1
+              returnedOrders: {
+                $sum: {
+                  $cond: [{ $eq: ["$status", "Returned"] }, 1, 0]
+                }
+              }
 
             }
-        }
+          }
+        ],
 
-    ]);
-    return data[0] || {};
+        //  ITEM LEVEL METRICS
+        itemStats: [
+          { $unwind: "$orderedItems" },
+
+          {
+            $addFields: {
+              itemDiscount: {
+                $multiply: [
+                  { $subtract: ["$orderedItems.salePrice", "$orderedItems.price"] },
+                  "$orderedItems.quantity"
+                ]
+              }
+            }
+          },
+
+          {
+            $group: {
+              _id: null,
+
+              totalDiscountFromOffers: { $sum: "$itemDiscount" },
+
+              cancelledItems: {
+                $sum: {
+                  $cond: [
+                    { $eq: ["$orderedItems.itemStatus", "Cancelled"] },
+                    1,
+                    0
+                  ]
+                }
+              },
+
+              returnedItems: {
+                $sum: {
+                  $cond: [
+                    { $eq: ["$orderedItems.itemStatus", "Returned"] },
+                    1,
+                    0
+                  ]
+                }
+              }
+
+            }
+          }
+        ]
+      }
+    },
+
+    //  MERGE BOTH RESULTS
+    {
+      $project: {
+        totalOrders: { $arrayElemAt: ["$orderStats.totalOrders", 0] },
+
+        grossRevenue: { $arrayElemAt: ["$orderStats.grossRevenue", 0] },
+        netRevenue: { $arrayElemAt: ["$orderStats.netRevenue", 0] },
+
+        totalCouponDiscount: { $arrayElemAt: ["$orderStats.totalCouponDiscount", 0] },
+        totalShippingCharge: { $arrayElemAt: ["$orderStats.totalShippingCharge", 0] },
+
+        deliveredOrders: { $arrayElemAt: ["$orderStats.deliveredOrders", 0] },
+        cancelledOrders: { $arrayElemAt: ["$orderStats.cancelledOrders", 0] },
+        returnedOrders: { $arrayElemAt: ["$orderStats.returnedOrders", 0] },
+
+        totalDiscountFromOffers: { $arrayElemAt: ["$itemStats.totalDiscountFromOffers", 0] },
+        cancelledItems: { $arrayElemAt: ["$itemStats.cancelledItems", 0] },
+        returnedItems: { $arrayElemAt: ["$itemStats.returnedItems", 0] }
+      }
+    }
+
+  ]);
+
+  return data[0] || {};
 };
+
 
 module.exports = {
   getDateFilter,

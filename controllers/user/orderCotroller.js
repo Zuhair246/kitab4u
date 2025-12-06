@@ -12,7 +12,7 @@ const razorpay = require("../../config/razorpay");
 const crypto = require("crypto");
 const path = require("path");
 const PDFDocument = require("pdfkit");
-const { OK, BAD_REQUEST, FORBIDDEN, UNAUTHORIZED, NOT_FOUND, CONFLICT, PAYMENT_REQUIRED } = require('../../helpers/statusCodes')
+const { OK, BAD_REQUEST, UNAUTHORIZED, NOT_FOUND, CONFLICT, PAYMENT_REQUIRED } = require('../../helpers/statusCodes')
 
 const loadCheckoutPage = async (req, res) => {
   try {
@@ -276,6 +276,9 @@ const checkout = async (req, res) => {
     }
 
     if (paymentMethod === "COD") {
+      if(finalPayableAmount>1000) {
+        return res.status(CONFLICT).redirect("/orders?error=" + encodeURIComponent("Order above ₹1000/- can't be COD"))
+      } 
       const newOrder = new Order({
         userId,
         orderedItems: items,
@@ -1076,6 +1079,9 @@ const downloadInvoice = async (req, res) => {
     const doc = new PDFDocument({ margin: 50 });
     doc.pipe(res);
 
+    const logo = path.join(__dirname, "../../public/images/logo.png");
+    doc.image(logo, 40, 20, {width:80})
+
     doc
       .fillColor("#c93f1c")
       .fontSize(25)
@@ -1173,7 +1179,7 @@ const downloadInvoice = async (req, res) => {
       doc.text(`${item.itemStatus}`, 540, itemY, { width: 100 }).moveDown(0.3);
     });
 
-    doc.moveDown(1);
+    doc.moveDown(3);
 
     // === Totals ===
     let currenY = doc.y;
@@ -1188,7 +1194,7 @@ const downloadInvoice = async (req, res) => {
       })
       .font("Times-Roman")
       .fillColor("#000")
-      .text(`Rs: ${order.totalPrice}`, 450, currenY, { align: "right" })
+      .text(`Rs: ${order.totalPrice}`, 450, currenY-5, { align: "right" })
       .moveDown(0.3);
 
     currenY = doc.y;
@@ -1202,7 +1208,7 @@ const downloadInvoice = async (req, res) => {
       })
       .font("Times-Roman")
       .fillColor("#000")
-      .text(`Rs: ${order.shippingCharge || 0}`, 450, currenY, {
+      .text(`Rs: ${order.shippingCharge || 0}`, 450, currenY-15, {
         align: "right",
       })
       .moveDown(0.3);
@@ -1234,7 +1240,7 @@ const downloadInvoice = async (req, res) => {
       })
       .font("Times-Bold")
       .fillColor("#000")
-      .text(`Rs: ${order.finalAmount}`, 450, doc.y, { align: "right" })
+      .text(`Rs: ${order.finalAmount}`, 450, doc.y-15, { align: "right" })
       .moveDown(2);
 
     // === Footer ===

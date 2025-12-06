@@ -81,7 +81,7 @@
             <%  if(item.itemStatus === 'Return Rejected'){ %>
                 <span class="badge text-danger">Return Rejected</span>
                 <%}%>
-             <% if(['Pending', 'Placed', 'Packed'].includes(item.itemStatus)) { %>
+             <% if(['Placed', 'Packed'].includes(item.itemStatus)) { %>
         <button class="btn btn-sm btn-outline-danger cancel-item-btn mt-2 fw-bold" data-bs-toggle="modal" data-bs-target="#cancelModal-<%= item._id %>">
           Cancel Item
         </button>

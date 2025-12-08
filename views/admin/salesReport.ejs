@@ -131,19 +131,6 @@
   </div>
   <!-- KPI GRID END -->
 
-  <!-- Sales Trend Chart Placeholder -->
-<div class="card shadow-sm border-0 mb-4">
-  <div class="card-header bg-light">
-    <h5 class="mb-0 fw-semibold">Sales Trend</h5>
-  </div>
-  <div class="card-body">
-    <canvas id="salesTrendChart" height="120"></canvas>
-  </div>
-</div>
-
-
-  
-
   <!-- Sales Table -->
   <div class="card shadow-sm border-0">
   <div class="card-header bg-light d-flex justify-content-between align-items-center">
@@ -168,19 +155,17 @@
         <!-- Radio Filters -->
         <div class="btn-group" role="group" aria-label="Date Filters">
           <input type="radio" class="btn-check" name="range" id="daily">
-          <label class="btn btn-outline-secondary" for="daily">Daily</label>
+          <label class="btn btn-outline-success" for="daily">Daily</label>
 
           <input type="radio" class="btn-check" name="range" id="weekly" checked>
-          <label class="btn btn-outline-secondary" for="weekly">Weekly</label>
+          <label class="btn btn-outline-primary" for="weekly">Weekly</label>
 
           <input type="radio" class="btn-check" name="range" id="monthly">
           <label class="btn btn-outline-secondary" for="monthly">Monthly</label>
 
           <input type="radio" class="btn-check" name="range" id="yearly">
-          <label class="btn btn-outline-secondary" for="yearly">Yearly</label>
+          <label class="btn btn-outline-danger" for="yearly">Yearly</label>
 
-          <input type="radio" class="btn-check" name="range" id="custom">
-          <label class="btn btn-outline-secondary" for="custom">Custom</label>
         </div>
 
         <!-- Custom Date Range -->
@@ -227,7 +212,7 @@
                   <td class="text-center text-info"><%= order.paymentMethod %></td>
 
                     <% if (order.status == "Delivered" ) { %>
-                      <td class="text-center text-success"><%= order.status %></td>
+                      <td class="text-center text-success fw-semibold"><%= order.status %></td>
                     <% } else { %>
                       <td class="text-center text-danger"><%= order.status %></td>
                     <% } %>
@@ -286,8 +271,6 @@
   </div>
 
 </div>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 
 <script>
   // Show custom date inputs only if custom is selected
@@ -400,70 +383,6 @@ function getFilters() {
 
     return `${base}?${params.toString()}`;
   }
-
-let salesChart;
-
-// Initialize chart
-function renderChart(labels, data) {
-    const ctx = document.getElementById("salesTrendChart").getContext("2d");
-
-    if (salesChart) {
-        salesChart.destroy();  // destroy old chart before drawing new
-    }
-
-    salesChart = new Chart(ctx, {
-        type: "line",
-        data: {
-            labels: labels,
-            datasets: [{
-                label: "Sales Amount (₹)",
-                data: data,
-                borderWidth: 2,
-                tension: 0.3,
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: { beginAtZero: true }
-            }
-        }
-    });
-}
-
-
-// Fetch chart data based on range
-async function loadChart(range, startDate = "", endDate = "") {
-    try {
-        const params = new URLSearchParams({ range, startDate, endDate });
-
-        const res = await fetch(`/admin/salesReport/chartData?${params.toString()}`);
-        const { labels, data } = await res.json();
-
-        renderChart(labels, data);
-    } catch (error) {
-        console.error("Chart load error:", error);
-    }
-}
-
-
-// Trigger chart loading on filter change
-document.querySelectorAll("input[name='range']").forEach((radio) => {
-    radio.addEventListener("change", () => {
-        const range = radio.id;
-
-        const startDate = document.getElementById("startDate").value;
-        const endDate = document.getElementById("endDate").value;
-
-        loadChart(range, startDate, endDate);
-    });
-});
-
-
-// Load weekly by default
-window.onload = () => {
-    loadChart("weekly");
-};
 
 </script>
 

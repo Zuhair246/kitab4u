@@ -64,7 +64,7 @@
                   <%= finalAmount > 1000 ? "disabled" : "" %>
                 >
 
-                <label class="form-check-label fw-semibold w-100 p-0" for="cod">
+                <label class="form-check-label fw-bold w-100 p-0" for="cod">
                   <i class="bi bi-cash-coin me-2 fs-3 text-primary"></i>
                   Cash on Delivery
 
@@ -81,7 +81,7 @@
             <div class="border rounded p-3 mb-2 payment-option" data-target="online">
               <div class="form-check w-100">
                 <input class="form-check-input" type="radio" name="paymentMethod" id="online" value="Online">
-                <label class="form-check-label fw-semibold w-100 p-0" for="online">
+                <label class="form-check-label fw-bold w-100 p-0" for="online">
                   <i class="bi bi-credit-card-fill me-2 fs-3 text-primary"></i>Online Payment
                 </label>
               </div>
@@ -89,9 +89,10 @@
             <div class="border rounded p-3 payment-option" data-target="wallet">
               <div class="form-check w-100">
                 <input class="form-check-input" type="radio" name="paymentMethod" id="wallet" value="wallet">
-                <label class="form-check-label fw-semibold w-100 p-0" for="wallet">
+                <label class="form-check-label fw-bold w-100 p-0" for="wallet">
                   <i class="bi bi-wallet2 me-2 fs-3 text-primary"></i>Wallet Payment
                 </label>
+                <p class="text-success fw-semibold">Your wallet balance: <%=userWallet.balance.toFixed(2) %></p>
               </div>
             </div>            
           </div>

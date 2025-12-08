@@ -14,7 +14,6 @@ const loadSales = async (req, res) => {
         const dateFilter = await getDateFilter(range, startDate, endDate);
 
         const kpis = await getKPIData(dateFilter);
-console.log(kpis);
 
         const totalOrdersCount = await Order.countDocuments(dateFilter);
 
@@ -197,37 +196,9 @@ const downloadSalesExcel = async (req, res) => {
     }
 };
 
-const chartDataController = async (req, res) => {
-    try {
-        const { range, startDate, endDate } = req.query;
-        const dateFilter = await getDateFilter(range, startDate, endDate);
-
-        const orders = await Order.find(dateFilter)
-            .sort({ createdAt: 1 })  // ascending for chart
-            .lean();
-
-        let labels = [];
-        let data = [];
-
-        orders.forEach(order => {
-            labels.push(order.createdAt.toLocaleDateString());
-            data.push(order.finalPayableAmount ?? order.finalAmount);
-        });
-
-        return res.json({ labels, data });
-
-    } catch (error) {
-        const err = new Error("Chart report load server error");
-        err.redirect = "/admin/salesReport?error=Server error";
-        throw err;
-    }
-};
-
-
 module.exports ={
     loadSales,
     filterSales,
     downloadSalesPDF,
     downloadSalesExcel,
-    chartDataController
 }

@@ -30,11 +30,6 @@ const getDateFilter = async function getDateFilter( range, startDate, endDate ) 
                 to = now;
                 break;
 
-            case "custom":
-                from = new Date(startDate);
-                to = new Date(endDate);
-                break;
-
             default:
                 from = new Date(0);
                 to = now;

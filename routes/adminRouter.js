@@ -7,7 +7,8 @@ const productController = require("../controllers/admin/productController");
 const orderController = require("../controllers/admin/orderController");
 const couponController = require("../controllers/admin/couponController");
 const productOfferController = require("../controllers/admin/productOfferController");
-const salesController = require('../controllers/admin/salesController')
+const salesController = require('../controllers/admin/salesController');
+const dashboardController = require ('../controllers/admin/dashboardController');
 const { adminAuth } = require("../middlewares/adminAuth");
 const uploadImages = require("../middlewares/imgValid");
 const couponValidator = require("../middlewares/couponValidator");
@@ -16,7 +17,6 @@ const couponValidator = require("../middlewares/couponValidator");
 //admin authentication
 router.get("/", adminController.loadLogin);
 router.post("/", adminController.login);
-router.get("/dashboard", adminAuth, adminController.loadDashboard);
 router.post("/logout", adminController.logout);
 
 //customer Controller
@@ -65,7 +65,8 @@ router.get('/salesReport', adminAuth, salesController.loadSales);
 router.post('/salesReport', adminAuth, salesController.filterSales);
 router.get('/salesReport/downloadPDF', adminAuth, salesController.downloadSalesPDF);
 router.get('/salesReport/downloadExcel', salesController.downloadSalesExcel);
-router.get("/salesReport/chartData", adminAuth, salesController.chartDataController);
 
+//Admin Dashboard
+router.get("/dashboard", adminAuth, dashboardController.loadDashboard);
 
 module.exports = router;

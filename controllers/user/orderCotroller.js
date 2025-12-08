@@ -122,7 +122,9 @@ const loadCheckoutPage = async (req, res) => {
       isActive: true,
       usedUsers: { $ne: userId },
     });
+    const userWallet =  await Wallet.findOne({userId}) 
     let session = req.session;
+    
     return res.status(OK).render("checkout", {
       user,
       items,
@@ -131,6 +133,7 @@ const loadCheckoutPage = async (req, res) => {
       finalAmount,
       discountFinalAmount,
       discount,
+      userWallet,
       coupons,
       session,
       addresses: recentAddresses,

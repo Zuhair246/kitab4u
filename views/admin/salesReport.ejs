@@ -273,10 +273,6 @@
 </div>
 
 <script>
-  // Show custom date inputs only if custom is selected
-  document.getElementById("custom").addEventListener("change", () => {
-    document.getElementById("customDateInputs").style.display = "flex";
-  });
 
   ["daily", "weekly", "monthly", "yearly"].forEach(id => {
     document.getElementById(id).addEventListener("change", () => {

@@ -1,5 +1,6 @@
 const Orders = require('../../models/orderSchema');
-const { getDateFilter } = require('../../helpers/salesHelper')
+const { getDateFilter } = require('../../helpers/salesHelper');
+const { format } = require('sharp');
 
 const loadDashboard = async (req, res) => {
     try {
@@ -74,6 +75,7 @@ const loadDashboard = async (req, res) => {
         }
         ]);
         
+        
         return res.status(200).render('dashboard', {
             topProducts: dashboardData.topProducts,
             topCategories: dashboardData.topCategories
@@ -84,33 +86,128 @@ const loadDashboard = async (req, res) => {
         throw err;
     }
 }
-const chartDataController = async (req, res) => {
-    try {
-        const { range, startDate, endDate } = req.query;
-        const dateFilter = await getDateFilter(range, startDate, endDate);
 
-        const orders = await Order.find(dateFilter)
-            .sort({ createdAt: 1 })  // ascending for chart
-            .lean();
+const chartData = async (req, res) => {
+  try {
+    const { range } = req.query;
+    const now = new Date();
 
-        let labels = [];
-        let data = [];
+    let matchStage = {};
+    let groupStage = {};
+    let labels = [];
 
-        orders.forEach(order => {
-            labels.push(order.createdAt.toLocaleDateString());
-            data.push(order.finalPayableAmount ?? order.finalAmount);
-        });
+    if (range === "today") {
+      const from = new Date(now);
+      from.setHours(0, 0, 0, 0);
 
-        return res.json({ labels, data });
+      matchStage = { createdAt: { $gte: from, $lte: now } };
 
-    } catch (error) {
-        const err = new Error("Chart report load server error");
-        err.redirect = "/admin/salesReport?error=Server error";
-        throw err;
+      groupStage = {
+        _id: { $dateToString: { format: "%H", date: "$createdAt" } },
+        totalSales: { $sum: "$finalPayableAmount" }
+      };
+
+      labels = ["00","01","02","03","04","05","06","07","08","09","10","11",
+                "12","13","14","15","16","17","18","19","20","21","22","23"];
     }
+
+    if (range === "daily") {
+      const from = new Date(now);
+      from.setDate(now.getDate() - 6);
+      from.setHours(0, 0, 0, 0);
+
+      matchStage = { createdAt: { $gte: from, $lte: now } };
+
+      groupStage = {
+        _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+        totalSales: { $sum: "$finalPayableAmount" }
+      };
+
+      // last 7 dates as labels
+      labels = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(from);
+        d.setDate(from.getDate() + i);
+        return d.toISOString().slice(0, 10); 
+      });
+    }
+
+if (range === "weekly") {
+  const from = new Date();
+  from.setDate(from.getDate() - 28);
+
+  matchStage = { createdAt: { $gte: from, $lte: new Date() } };
+
+  groupStage = {
+    _id: {
+      $concat: [
+        "Week ",
+        { $toString: { $isoWeek: "$createdAt" } }
+      ]
+    },
+    totalSales: { $sum: "$finalPayableAmount" }
+  };
+
+  // ✅ Last 4 week labels
+  labels = ["Week 1", "Week 2", "Week 3", "Week 4"];
+}
+
+    if (range === "monthly") {
+      const from = new Date(now);
+      from.setMonth(now.getMonth() - 11);
+      from.setDate(1);
+
+      matchStage = { createdAt: { $gte: from, $lte: now } };
+
+      groupStage = {
+        _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } },
+        totalSales: { $sum: "$finalPayableAmount" }
+      };
+
+      labels = Array.from({ length: 12 }, (_, i) => {
+        const d = new Date(from);
+        d.setMonth(from.getMonth() + i);
+        return d.toISOString().slice(0, 7); // YYYY-MM
+      });
+    }
+
+if (range === "yearly") {
+  matchStage = {};
+
+  groupStage = {
+    _id: { $dateToString: { format: "%Y", date: "$createdAt" } },
+    totalSales: { $sum: "$finalPayableAmount" }
+  };
+
+  labels = [];
+}
+
+    const salesData = await Orders.aggregate([
+      { $match: matchStage },
+      { $group: groupStage },
+      { $sort: { _id: 1 } }
+    ]);
+
+    const salesMap = {};
+    salesData.forEach(item => {
+      salesMap[item._id] = item.totalSales;
+    });
+
+    const data = labels.length
+      ? labels.map(label => salesMap[label] || 0)
+      : salesData.map(i => i.totalSales);
+
+    return res.status(200).json({ labels, data });
+
+  } catch (error) {
+    console.log("Chart Error:", error);
+    res.status(500).json({ message: "Chart load failed" });
+  }
 };
 
+
+
 module.exports = {
-    loadDashboard
+    loadDashboard,
+    chartData
 }
 

@@ -113,37 +113,132 @@ const downloadSalesPDF = async (req, res) => {
         const { range, startDate, endDate } = req.query;
         const dateFilter = await getDateFilter(range, startDate, endDate);
 
-        // get all sales (NO pagination)
+        const PDFDocument = require("pdfkit");
+        const doc = new PDFDocument({ margin: 20 });
+
+        // Fetch orders + user + items
         const sales = await Order.find(dateFilter)
             .populate("userId", "name")
+            .populate("orderedItems.product", "title name")
             .sort({ createdAt: -1 })
             .lean();
-
-        const doc = new PDFDocument({ margin: 30 });
 
         res.setHeader("Content-Type", "application/pdf");
         res.setHeader("Content-Disposition", "attachment; filename=sales_report.pdf");
 
         doc.pipe(res);
 
-        doc.fontSize(20).text("Sales Report", { align: "center" });
-        doc.moveDown();
+        // -------------------------------
+        // TITLE
+        // -------------------------------
+        doc.fontSize(22).fillColor("#000").text("Sales Report", { align: "center" });
+        doc.moveDown(1.5);
 
+        // Table positions
+        const tableTop = 130;
+        let y = tableTop;
+
+        const rowHeight = 30;
+
+        // Column widths
+        const col = {
+            id: 100,
+            product: 120,
+            amount: 70,
+            discount: 70,
+            date: 80,
+            payment: 80,
+            status: 70
+        };
+
+        const totalWidth =
+            col.id + col.product + col.amount + col.discount +
+            col.date + col.payment + col.status;
+
+        // -------------------------------
+        // TABLE HEADER
+        // -------------------------------
+        doc.rect(30, y, totalWidth, rowHeight).fill("#1e40af");
+
+        doc.fillColor("white").fontSize(8);
+        doc.text("Order ID", 35, y + 10);
+        doc.text("Product", 35 + col.id , y + 10);
+        doc.text("Amount", 35 + col.id  + col.product, y + 10);
+        doc.text("Discount", 35 + col.id  + col.product + col.amount, y + 10);
+        doc.text("Date", 35 + col.id  + col.product + col.amount + col.discount, y + 10);
+        doc.text("Payment", 35 + col.id  + col.product + col.amount + col.discount + col.date, y + 10);
+        doc.text("Status", 35 + col.id  + col.product + col.amount + col.discount + col.date + col.payment, y + 10);
+
+        y += rowHeight;
+
+        // -------------------------------
+        // TABLE ROWS (multiple items per order)
+        // -------------------------------
         sales.forEach((sale) => {
-            doc.fontSize(12).text(`Order ID: ${sale.orderId}`);
-            doc.text(`Customer: ${sale.userId?.name || "-"}`);
-            doc.text(`Final Amount: ₹${sale.finalPayableAmount}`);
-            doc.text(`Date: ${sale.createdAt.toLocaleDateString()}`);
-            doc.moveDown();
+            sale.orderedItems.forEach((item, i) => {
+                const isEvenRow = (i % 2 === 0);
+
+                // Background color
+                doc.rect(30, y, totalWidth, rowHeight).fill(isEvenRow ? "#f1f5f9" : "#ffffff");
+
+                const productName =
+                    item.product?.title ||
+                    item.product?.name ||
+                    item.name ||
+                    "-";
+
+                doc.fillColor("black").fontSize(8);
+
+                doc.text(sale.orderId, 35, y + 10);
+                doc.text(productName, 35 + col.id , y + 10);
+
+                doc.text(`Rs: ${item.salePrice}/-`, 35 + col.id  + col.product, y + 10);
+                doc.text(
+                    `Rs: ${(item.price - item.salePrice).toFixed(2)}/-`,
+                    35 + col.id  + col.product + col.amount,
+                    y + 10
+                );
+
+                doc.text(
+                    new Date(sale.createdAt).toLocaleDateString(),
+                    35 + col.id  + col.product + col.amount + col.discount,
+                    y + 10
+                );
+
+                doc.text(
+                    sale.paymentMethod || "-",
+                    35 + col.id  + col.product + col.amount + col.discount + col.date,
+                    y + 10
+                );
+
+                doc.text(
+                    sale.status || "-",
+                    35 + col.id  + col.product + col.amount + col.discount + col.date + col.payment,
+                    y + 10
+                );
+
+                y += rowHeight;
+
+                // Page break logic
+                if (y > doc.page.height - 50) {
+                    doc.addPage();
+                    y = 50;
+                }
+            });
         });
 
         doc.end();
+
     } catch (error) {
+        console.log(error);
+        
         const err = new Error("PDF download server error");
         err.redirect = "/admin/salesReport?error=Server error";
         throw err;
     }
 };
+
+
 
 const downloadSalesExcel = async (req, res) => {
     try {
@@ -152,6 +247,7 @@ const downloadSalesExcel = async (req, res) => {
 
         const sales = await Order.find(dateFilter)
             .populate("userId", "name")
+            .populate("orderedItems.product", "name")
             .sort({ createdAt: -1 })
             .lean();
 
@@ -159,42 +255,49 @@ const downloadSalesExcel = async (req, res) => {
         const sheet = workbook.addWorksheet("Sales Report");
 
         sheet.columns = [
-            { header: "Order ID", key: "id", width: 35 },
+            { header: "Order ID", key: "id", width: 20 },
             { header: "Customer Name", key: "name", width: 20 },
-            { header: "Amount", key: "amount", width: 15 },
-            { header: "Date", key: "date", width: 20 }
+            { header: "Product", key: "product", width: 30 },
+            { header: "Paid Amount", key: "amount", width: 20 },
+            { header: "Discount", key: "discount", width: 15 },
+            { header: "Date", key: "date", width: 20 },
+            { header: "Payment Method", key: "payment", width: 20 },
+            { header: "Status", key: "status", width: 15 },
         ];
 
-        sheet.getRow(1).eachCell((cell)=>{
-            cell.font = { bold: true }
-        })
+        sheet.getRow(1).eachCell(cell => {
+            cell.font = { bold: true };
+        });
 
-        sales.forEach((sale) => {
-            sheet.addRow({
-                id: sale.orderId,
-                name: sale.userId?.name || "-",
-                amount: sale.finalPayableAmount + '/-',
-                date: sale.createdAt.toLocaleDateString(),
+        sales.forEach(sale => {
+            sale.orderedItems.forEach(item => {
+                sheet.addRow({
+                    id: sale.orderId,
+                    name: sale.userId?.name || "-",
+                    product: item.product?.name || "-",
+                    amount: `₹${item.salePrice}/-`,
+                    discount: `₹${(item.price - item.salePrice).toFixed(2)}/-`,
+                    date: sale.createdAt.toLocaleDateString(),
+                    payment: sale.paymentMethod,
+                    status: sale.status
+                });
             });
         });
 
-        res.setHeader(
-            "Content-Disposition",
-            "attachment; filename=sales_report.xlsx"
-        );
-        res.setHeader(
-            "Content-Type",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        );
+        res.setHeader("Content-Disposition", "attachment; filename=sales_report.xlsx");
+        res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 
         await workbook.xlsx.write(res);
         res.end();
     } catch (error) {
+        console.log(error);
+        
         const err = new Error("Excel download server error");
         err.redirect = "/admin/salesReport?error=Server error";
         throw err;
     }
 };
+
 
 module.exports ={
     loadSales,

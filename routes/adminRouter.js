@@ -68,5 +68,6 @@ router.get('/salesReport/downloadExcel', salesController.downloadSalesExcel);
 
 //Admin Dashboard
 router.get("/dashboard", adminAuth, dashboardController.loadDashboard);
+router.get('/dashboard/chartData', dashboardController.chartData);
 
 module.exports = router;

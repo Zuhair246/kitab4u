@@ -116,7 +116,6 @@ const downloadSalesPDF = async (req, res) => {
         const PDFDocument = require("pdfkit");
         const doc = new PDFDocument({ margin: 20 });
 
-        // Fetch orders + user + items
         const sales = await Order.find(dateFilter)
             .populate("userId", "name")
             .populate("orderedItems.product", "title name")
@@ -128,19 +127,14 @@ const downloadSalesPDF = async (req, res) => {
 
         doc.pipe(res);
 
-        // -------------------------------
-        // TITLE
-        // -------------------------------
         doc.fontSize(22).fillColor("#000").text("Sales Report", { align: "center" });
         doc.moveDown(1.5);
 
-        // Table positions
         const tableTop = 130;
         let y = tableTop;
 
         const rowHeight = 30;
 
-        // Column widths
         const col = {
             id: 100,
             product: 120,
@@ -155,9 +149,6 @@ const downloadSalesPDF = async (req, res) => {
             col.id + col.product + col.amount + col.discount +
             col.date + col.payment + col.status;
 
-        // -------------------------------
-        // TABLE HEADER
-        // -------------------------------
         doc.rect(30, y, totalWidth, rowHeight).fill("#1e40af");
 
         doc.fillColor("white").fontSize(8);
@@ -171,14 +162,10 @@ const downloadSalesPDF = async (req, res) => {
 
         y += rowHeight;
 
-        // -------------------------------
-        // TABLE ROWS (multiple items per order)
-        // -------------------------------
         sales.forEach((sale) => {
             sale.orderedItems.forEach((item, i) => {
                 const isEvenRow = (i % 2 === 0);
 
-                // Background color
                 doc.rect(30, y, totalWidth, rowHeight).fill(isEvenRow ? "#f1f5f9" : "#ffffff");
 
                 const productName =
@@ -219,7 +206,6 @@ const downloadSalesPDF = async (req, res) => {
 
                 y += rowHeight;
 
-                // Page break logic
                 if (y > doc.page.height - 50) {
                     doc.addPage();
                     y = 50;
@@ -237,8 +223,6 @@ const downloadSalesPDF = async (req, res) => {
         throw err;
     }
 };
-
-
 
 const downloadSalesExcel = async (req, res) => {
     try {

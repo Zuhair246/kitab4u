@@ -123,7 +123,6 @@ const chartData = async (req, res) => {
         totalSales: { $sum: "$finalPayableAmount" }
       };
 
-      // last 7 dates as labels
       labels = Array.from({ length: 7 }, (_, i) => {
         const d = new Date(from);
         d.setDate(from.getDate() + i);
@@ -147,7 +146,7 @@ if (range === "weekly") {
     totalSales: { $sum: "$finalPayableAmount" }
   };
 
-  // ✅ Last 4 week labels
+
   labels = ["Week 1", "Week 2", "Week 3", "Week 4"];
 }
 
@@ -166,7 +165,7 @@ if (range === "weekly") {
       labels = Array.from({ length: 12 }, (_, i) => {
         const d = new Date(from);
         d.setMonth(from.getMonth() + i);
-        return d.toISOString().slice(0, 7); // YYYY-MM
+        return d.toISOString().slice(0, 7); 
       });
     }
 
@@ -203,8 +202,6 @@ if (range === "yearly") {
     res.status(500).json({ message: "Chart load failed" });
   }
 };
-
-
 
 module.exports = {
     loadDashboard,

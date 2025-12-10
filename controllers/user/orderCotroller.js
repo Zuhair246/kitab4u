@@ -16,7 +16,7 @@ const { OK, BAD_REQUEST, UNAUTHORIZED, NOT_FOUND, CONFLICT, PAYMENT_REQUIRED } =
 
 const loadCheckoutPage = async (req, res) => {
   try {
-    const userId = req.session.user || req.user;
+    const userId = req.session.user?._id || req.user?._id;
     if (!userId) {
       return res.status(UNAUTHORIZED).redirect("/login");
     }
@@ -122,8 +122,10 @@ const loadCheckoutPage = async (req, res) => {
       isActive: true,
       usedUsers: { $ne: userId },
     });
-    const userWallet =  await Wallet.findOne({userId}) 
+    const wallet =  await Wallet.findOne({userId});
+    const userWallet =  wallet ? wallet : "";
     let session = req.session;
+    console.log(userWallet.balance);
     
     return res.status(OK).render("checkout", {
       user,
@@ -140,6 +142,8 @@ const loadCheckoutPage = async (req, res) => {
       allAddresses,
     });
   } catch (error) {
+    console.log(error);
+    
     const err = new Error("Order page load server error!");
     return next (err);
   }

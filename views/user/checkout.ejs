@@ -92,7 +92,11 @@
                 <label class="form-check-label fw-bold w-100 p-0" for="wallet">
                   <i class="bi bi-wallet2 me-2 fs-3 text-primary"></i>Wallet Payment
                 </label>
+                <%if(userWallet.balance == undefined){ %>
+                  <p class="text-danger">Your Wallet is empty!</p>
+                <%} else{ %>
                 <p class="text-success fw-semibold">Your wallet balance: <%=userWallet.balance.toFixed(2) %></p>
+                <%}%>
               </div>
             </div>            
           </div>

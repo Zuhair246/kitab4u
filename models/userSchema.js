@@ -48,8 +48,7 @@ const userSchema = new mongoose.Schema({
     }],
     wallet: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Wallet",
-        default: null
+        ref: "Wallet"
     },
     wishlist: {
         type: mongoose.Schema.Types.ObjectId,

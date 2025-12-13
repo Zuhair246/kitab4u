@@ -27,13 +27,7 @@
                                 <div class="input-group">
                                     <input type="text" class="form-control form-control-lg" id="bookName" name="name" 
                                         placeholder="eg: Atomic Habits"
-                                        value="<%= typeof product !== 'undefined' ? product.name : '' %>" 
-                                        <%= typeof product !== 'undefined' ? 'readonly' : '' %>>
-                                    <% if (typeof product !== 'undefined') { %>
-                                    <span class="input-group-text bg-light">
-                                        <i class="fas fa-lock text-muted"></i>
-                                    </span>
-                                    <% } %>
+                                        value="<%= typeof product !== 'undefined' ? product.name : '' %>" maxlength="50">
                                 </div>
                                 </div>
 
@@ -43,13 +37,7 @@
                                 <div class="input-group">
                                     <input type="text" class="form-control form-control-lg" id="author" name="author" 
                                         placeholder="eg: James Clear"
-                                        value="<%= typeof product !== 'undefined' ? product.author : '' %>" 
-                                        <%= typeof product !== 'undefined' ? 'readonly' : '' %>>
-                                    <% if (typeof product !== 'undefined') { %>
-                                    <span class="input-group-text bg-light">
-                                        <i class="fas fa-lock text-muted"></i>
-                                    </span>
-                                    <% } %>
+                                        value="<%= typeof product !== 'undefined' ? product.author : '' %>" maxlength="50">
                                 </div>
                                 </div>
 

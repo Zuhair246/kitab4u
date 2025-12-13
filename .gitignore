@@ -1,2 +1,12 @@
+# env variables
 .env
+
+# dependencies
 node_modules/
+
+#database backups
+dump/
+
+# temporary / runtime files
+temp/
+public/uploads/

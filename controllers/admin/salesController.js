@@ -1,8 +1,8 @@
-const User = require('../../models/userSchema');
-const Order = require('../../models/orderSchema');
-const { getDateFilter, getKPIData } = require('../../helpers/salesHelper');
-const PDFDocument = require('pdfkit');
-const ExcelJS = require('exceljs');
+import User from '../../models/userSchema.js';
+import Order from '../../models/orderSchema.js';
+import { getDateFilter, getKPIData } from '../../helpers/salesHelper.js';
+import PDFDocument from 'pdfkit';
+import ExcelJS from 'exceljs';
 
 const loadSales = async (req, res) => {
     try {
@@ -113,7 +113,6 @@ const downloadSalesPDF = async (req, res) => {
         const { range, startDate, endDate } = req.query;
         const dateFilter = await getDateFilter(range, startDate, endDate);
 
-        const PDFDocument = require("pdfkit");
         const doc = new PDFDocument({ margin: 20 });
 
         const sales = await Order.find(dateFilter)
@@ -283,7 +282,7 @@ const downloadSalesExcel = async (req, res) => {
 };
 
 
-module.exports ={
+export default {
     loadSales,
     filterSales,
     downloadSalesPDF,

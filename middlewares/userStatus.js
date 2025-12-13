@@ -1,6 +1,6 @@
-const User = require("../models/userSchema");
+import User from '../models/userSchema.js';
 
-const checkUserStatus = async (req, res, next) => {
+export const checkUserStatus = async (req, res, next) => {
   try {
 
     if(!req.session.user && !req.user) {
@@ -9,43 +9,41 @@ const checkUserStatus = async (req, res, next) => {
     const userId = req.session.user?._id || req.user?._id || req.session.user || req.user;
     if(!userId) {
       if(req.session.user){
-        delete req.session.user;
+        req.session.user = null;
       }
       if(req.user) {
-        req.user = null;
+        delete req.user;
       }
-      return res.redirect('/login')
+      return res.status(401).redirect('/login');
     }
 
     const user = await User.findById(userId);
 
     if(!user) {
       if(req.session.user) {
-        delete req.session.user;
+        req.session.user = null;
       }
       if(req.user){
-        req.user = null;
+        delete req.user;
       }
-      return res.redirect('/login')
+      return res.status(401).redirect('/login')
     }
 
     if (user.isBlocked) {
       if(req.session.user){
-        delete req.session.user;
+        req.session.user = null;
       }
       if(req.user){
-        req.user = null;
+        delete req.user;
       }
     console.log("Blocked User Forcefully Logged Out");
-    return res.redirect("/login?error=" + encodeURIComponent("Your account has been blocked"));
+    return res.status(403).redirect("/login?error=" + encodeURIComponent("Your account has been blocked"));
     }
       
-    next();
+    return next();
     
   } catch (error) {
     console.error("User status check failed:", error);
-    return res.redirect("/login");
+    return res.status(500).redirect("/login");
   }
 };
-
-module.exports = checkUserStatus;

@@ -1,9 +1,7 @@
-const User = require('../../models/userSchema');
-const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
+import User from '../../models/userSchema.js';
+import bcrypt from 'bcrypt';
 
-
-const loadLogin = async (req,res) => {
+export const loadLogin = async (req,res) => {
     try {
         if(req.session.admin) {
            return res.redirect ('/admin/dashboard')
@@ -15,7 +13,7 @@ const loadLogin = async (req,res) => {
     }
 }
 
-const login = async (req,res) => {
+export const login = async (req,res) => {
     try {
         const {email, password} = req.body;
         if(!email || !password){
@@ -40,7 +38,7 @@ const login = async (req,res) => {
     }
 }
 
- const logout = async (req,res) => {
+export const logout = async (req,res) => {
     try {
         req.session.destroy((err) => {
             if(err) {
@@ -55,9 +53,3 @@ const login = async (req,res) => {
         return next(err);
     }
  }
-
-module.exports = {
-    loadLogin,
-    login,
-    logout
-}

@@ -1,7 +1,7 @@
-
-const session = require('express-session');
-const MongoStore = require('connect-mongo');
-require('dotenv').config()
+import session from 'express-session';
+import MongoStore from 'connect-mongo';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const commonCookieOptions = {
   maxAge: 1000 * 60 * 60 * 24, // 1 day
@@ -35,11 +35,9 @@ const userSession = session({
 });
 
 
-function sessionConfig(app) {
+export default function sessionConfig(app) {
   app.set('trust proxy', 1);
 
   app.use('/admin', adminSession);
   app.use(userSession);
 }
-
-module.exports = sessionConfig;

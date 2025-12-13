@@ -1,10 +1,8 @@
-const Product = require('../../models/productSchema');
-const Category = require ('../../models/categorySchema');
-const fs = require('fs');
-const path = require('path');
-const sharp = require('sharp');
-const multer = require('multer');
-const upload = multer({dest: "temp/"});
+import Product from '../../models/productSchema.js'
+import Category from '../../models/categorySchema.js';
+import fs from 'fs';
+import path from 'path';
+import sharp from 'sharp';
 
 const getProductAddPage = async (req, res) => {
     try {
@@ -288,7 +286,7 @@ const deleteProduct = async (req, res) => {
     }
 };
 
-module.exports = {
+export default {
     getProductAddPage,
     getProductList,
     addProduct,

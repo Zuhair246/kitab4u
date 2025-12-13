@@ -1,36 +1,45 @@
-const dotenv = require('dotenv');
+import dotenv from 'dotenv';
 dotenv.config();
-const express = require('express');
-const app = express()
-const path = require('path');
-const session=require('./middlewares/session');
-const db = require('./config/db');
-const userRouter = require("./routes/userRouter");
-const adminRouter = require('./routes/adminRouter');
-const ejs = require('ejs');
-const flash = require('connect-flash');
-const passport = require("./config/passport");
-const nocache = require('nocache');
-const pageNotFound = require('./middlewares/404middleware');
-const serverError = require('./middlewares/500errorHandling');
 
-db()
+import express from 'express';
+const app = express();
 
-app.use(express.json())
-app.use(express.urlencoded({extended:true}))
+import path from 'path';
+import session from './middlewares/session.js';
+import db from './config/db.js'
+import userRouter from './routes/userRouter.js';
+import adminRouter from './routes/adminRouter.js';
+import ejs from 'ejs';
+import flash from 'connect-flash';
+import passport  from './config/passport.js';
+import nocache  from 'nocache';
+import { pageNotFound } from './middlewares/404middleware.js';
+import { serverError } from './middlewares/500errorHandling.js';
 
-app.use(nocache())
+import { fileURLToPath } from 'url';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-session(app)
+db();
+
+app.use(express.json());
+app.use(express.urlencoded({ extended:true }));
+
+app.use(nocache());
+
+session(app);
 
 app.use(passport.initialize());
-app.use(passport.session())
+app.use(passport.session());
 
 app.use(flash())
 
 app.set('view engine', 'ejs');
-app.set("views", [path.join(__dirname,'views/user'), path.join(__dirname,"views/admin")])
-app.use(express.static(path.join(__dirname,"public")))
+app.set("views", [
+    path.join(__dirname,'views/user'), 
+    path.join(__dirname,"views/admin")
+]);
+app.use(express.static(path.join(__dirname,"public")));
 
 app.use('/', userRouter);
 app.use('/admin', adminRouter);
@@ -43,4 +52,4 @@ app.listen(process.env.PORT, ()=>{
     
 })
 
-module.exports = app;
+// export default app;

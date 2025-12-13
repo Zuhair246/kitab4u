@@ -1,21 +1,19 @@
-const User = require("../../models/userSchema");
-const Category = require('../../models/categorySchema');
-const Product = require('../../models/productSchema');
-const Wishlist = require('../../models/wishlistSchema');
-const Wallet = require('../../models/walletSchema');
-const Referral = require('../../models/referralSchema');
-const { OK, BAD_REQUEST, NOT_FOUND, SERVER_ERROR, UNAUTHORIZED, FOUND, FORBIDDEN } = require('../../helpers/statusCodes')
-const { addToWallet } = require('../../helpers/walletHelper');
-const mongoose = require('mongoose')
-const flash = require("connect-flash");
-const bcrypt = require("bcrypt");
-const nodemailer = require("nodemailer");
-const dotenv = require('dotenv');
+import User from '../../models/userSchema.js';
+import Category from '../../models/categorySchema.js';
+import Product from '../../models/productSchema.js';
+import Wishlist from '../../models/wishlistSchema.js';
+import Referral from '../../models/referralSchema.js';
+import { statusCodes } from '../../helpers/statusCodes.js';
+const { OK, BAD_REQUEST, NOT_FOUND, SERVER_ERROR, UNAUTHORIZED, FOUND, FORBIDDEN } = statusCodes;
+import { addToWallet } from '../../helpers/walletHelper.js';
+import flash from 'connect-flash';
+import bcrypt from 'bcrypt';
+import dotenv from 'dotenv';
 dotenv.config()
-const session = require("express-session")
-const { generateOtp, sendVerificationEmail, resendOtpVerification } = require("../../helpers/otpService");
-const calculateDiscountedPrice = require('../../helpers/offerPriceCalculator');
-const { json } = require("express");
+import session from 'express-session';
+import { generateOtp, sendVerificationEmail, resendOtpVerification } from '../../helpers/otpService.js';
+import { calculateDiscountedPrice } from '../../helpers/offerPriceCalculator.js';
+import { json } from 'express';
 
 // const { router } = require("../../app")
 
@@ -691,7 +689,7 @@ const loadShoppingPage = async (req, res) => {
 };
 
 
-module.exports = {
+export default {
     loadHomePage,
     loadSignup,
     signup,

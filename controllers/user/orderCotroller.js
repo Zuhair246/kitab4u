@@ -1,18 +1,20 @@
-const User = require("../../models/userSchema");
-const Product = require("../../models/productSchema");
-const Cart = require("../../models/cartSchema");
-const Address = require("../../models/addressSchema");
-const Order = require("../../models/orderSchema");
-const Payment = require("../../models/paymentSchema");
-const Wallet = require("../../models/walletSchema");
-const { addToWallet } = require('../../helpers/walletHelper')
-const Coupon = require("../../models/couponSchema");
-const calculateDiscountedPrice = require("../../helpers/offerPriceCalculator");
-const razorpay = require("../../config/razorpay");
-const crypto = require("crypto");
-const path = require("path");
-const PDFDocument = require("pdfkit");
-const { OK, BAD_REQUEST, UNAUTHORIZED, NOT_FOUND, CONFLICT, PAYMENT_REQUIRED } = require('../../helpers/statusCodes')
+import User from '../../models/userSchema.js';
+import Product from '../../models/productSchema.js';
+import Cart from '../../models/cartSchema.js';
+import Address from '../../models/addressSchema.js';
+import Order from '../../models/orderSchema.js';
+import Payment from '../../models/paymentSchema.js';
+import Wallet from '../../models/walletSchema.js';
+import { addToWallet } from '../../helpers/walletHelper.js';
+import Coupon from '../../models/couponSchema.js';
+import { calculateDiscountedPrice } from '../../helpers/offerPriceCalculator.js';
+import razorpay from '../../config/razorpay.js';
+import crypto from 'crypto';
+import path from 'path';
+import PDFDocument from 'pdfkit';
+import { statusCodes } from '../../helpers/statusCodes.js';
+import { log } from 'console';
+const { OK, BAD_REQUEST, UNAUTHORIZED, NOT_FOUND, CONFLICT, PAYMENT_REQUIRED } = statusCodes;
 
 const loadCheckoutPage = async (req, res) => {
   try {
@@ -125,7 +127,6 @@ const loadCheckoutPage = async (req, res) => {
     const wallet =  await Wallet.findOne({userId});
     const userWallet =  wallet ? wallet : "";
     let session = req.session;
-    console.log(userWallet.balance);
     
     return res.status(OK).render("checkout", {
       user,
@@ -399,7 +400,6 @@ const checkout = async (req, res) => {
         createdAt: new Date(),
       })
       
-    //  wallet.balance -= finalPayableAmount;
      await addToWallet(userId, finalPayableAmount, 'Debit', `Paid towards the Order: #${newOrder._id}`);
     
       for (const item of items) {
@@ -535,7 +535,7 @@ const verifyPayment = async (req, res) => {
     }
   } catch (error) {
     const err = new Error("Payment verification server error!");
-    return next (err);
+    throw err;
   }
 };
 
@@ -624,7 +624,7 @@ const orderSuccess = async (req, res) => {
       return res.status(UNAUTHORIZED).redirect("/login");
     }
     const user = await User.findById(userId);
-    const orderId = req.query.orderId;
+    const {orderId, orderDbId} = req.query;
 
     const orders = await Order.findById(orderId).populate(
       "orderedItems.product"
@@ -632,7 +632,7 @@ const orderSuccess = async (req, res) => {
      return res.status(OK).render("orderSuccess", {
       user,
       orders,
-      orderId,
+      orderId
     });
   } catch (error) {
     const err = new Error("Order success page load server error!");
@@ -1265,7 +1265,7 @@ const downloadInvoice = async (req, res) => {
   }
 };
 
-module.exports = {
+export default {
   loadCheckoutPage,
   checkout,
   orderHistory,

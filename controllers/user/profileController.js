@@ -1,12 +1,13 @@
-const User = require('../../models/userSchema')
-const Address = require('../../models/addressSchema');
-const sharp = require('sharp');
-const fs = require('fs');
-const path = require('path');
-const flash = require('connect-flash');
-const bcrypt = require('bcrypt');
-const { generateOtp, sendVerificationEmail, resendOtpVerification } = require("../../helpers/otpService");
-const { OK, NOT_FOUND, UNAUTHORIZED, BAD_REQUEST, FORBIDDEN, SERVER_ERROR } = require('../../helpers/statusCodes')
+import User from '../../models/userSchema.js';
+import Address from '../../models/addressSchema.js';
+import sharp from 'sharp';
+import fs from 'fs';
+import path from 'path';
+import flash from 'connect-flash';
+import bcrypt from 'bcrypt';
+import { generateOtp, sendVerificationEmail, resendOtpVerification } from '../../helpers/otpService.js';
+import { statusCodes } from '../../helpers/statusCodes.js'
+const { OK, NOT_FOUND, UNAUTHORIZED, BAD_REQUEST, FORBIDDEN, SERVER_ERROR } = statusCodes;
 
 const profile = async (req,res) => {
   try {
@@ -723,8 +724,7 @@ try {
   }
 };
 
-
-module.exports = {
+export default {
     profile,
     loadChangePassword,
     changePassword,
@@ -740,6 +740,4 @@ module.exports = {
     addAddress,
     deleteAddress,
     editAddress,
-    // loadAddAddress,
-
 }

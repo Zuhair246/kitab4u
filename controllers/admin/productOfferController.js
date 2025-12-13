@@ -1,6 +1,7 @@
-const Product = require('../../models/productSchema');
-const ProductOffer = require('../../models/productOfferSchema');
-const { BAD_REQUEST, OK, NOT_FOUND } = require('../../helpers/statusCodes')
+import Product from '../../models/productSchema.js';
+import ProductOffer from '../../models/productOfferSchema.js';
+import { statusCodes } from '../../helpers/statusCodes.js';
+const { BAD_REQUEST, OK, NOT_FOUND } = statusCodes;
 
 const loadProductOffers = async (req, res) => {
     try {
@@ -131,7 +132,7 @@ const deactivateProductOffer = async (req, res) => {
     }
 }
 
-module.exports = {
+export default {
     loadProductOffers,
     addProductOffer,
     editProductOffer,

@@ -1,5 +1,5 @@
-const mongoose = require('mongoose');
-const { referralCode } = require('../helpers/nanoGenerator')
+import mongoose from 'mongoose';
+import { referralCode } from '../helpers/nanoGenerator.js';
 
 const userSchema = new mongoose.Schema({
     name: {
@@ -85,4 +85,4 @@ const userSchema = new mongoose.Schema({
     }]
 })
 
-module.exports  = mongoose.model("User", userSchema)
+export default mongoose.model("User", userSchema);

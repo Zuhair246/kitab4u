@@ -1,7 +1,6 @@
-const Product = require("../models/productSchema");
-const Cart = require('../models/cartSchema');
+import Product from '../models/productSchema.js';
 
-const checkProductAvailability = async (req, res, next) => {
+export const checkProductAvailability = async (req, res, next) => {
   try {
     const productId = req.params?.id || req.body?.productId || req.query?.id;
 
@@ -25,5 +24,3 @@ const checkProductAvailability = async (req, res, next) => {
     return res.redirect("/shop");
   }
 };
-
-module.exports = checkProductAvailability;

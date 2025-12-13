@@ -1,6 +1,6 @@
-const User = require('../models/userSchema');
+import User from '../models/userSchema.js';
 
-const adminAuth = async (req, res, next) => {
+export const adminAuth = async (req, res, next) => {
     try {
         if(!req.session.admin) {
             return res.status(401).redirect("/admin");
@@ -17,8 +17,4 @@ const adminAuth = async (req, res, next) => {
         console.error("Admin auth error: ", error);
         return res.status(500).send("Internal Sever Error");
     }
-}
-
-module.exports = {
-    adminAuth
 }

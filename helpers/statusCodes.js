@@ -1,5 +1,5 @@
 
-const statusCodes=Object.freeze ({
+export const statusCodes=Object.freeze ({
     OK: 200,
     CREATED: 201,
     FOUND: 302,
@@ -11,5 +11,3 @@ const statusCodes=Object.freeze ({
     CONFLICT: 409,
     SERVER_ERROR: 500
 })
-
-module.exports = statusCodes;

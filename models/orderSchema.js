@@ -1,5 +1,5 @@
-const mongoose = require("mongoose");
-const { orderID } = require('../helpers/nanoGenerator');
+import mongoose from 'mongoose';
+import { orderID } from '../helpers/nanoGenerator.js';
 
 const orderSchema = new mongoose.Schema({
   userId: {
@@ -191,4 +191,4 @@ const orderSchema = new mongoose.Schema({
   },
 });
 
-module.exports = mongoose.model("Order", orderSchema);
+export default mongoose.model("Order", orderSchema);

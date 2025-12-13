@@ -1,12 +1,12 @@
-const nodemailer = require("nodemailer");
+import nodemailer from 'nodemailer';
 
 // Generate OTP
-function generateOtp() {
+export function generateOtp() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
 // Send OTP email (for first time)
-async function sendVerificationEmail(email, otp, context = "signup") {
+export async function sendVerificationEmail(email, otp, context = "signup") {
   try {
     const transporter = nodemailer.createTransport({
       service: "gmail",
@@ -53,7 +53,7 @@ async function sendVerificationEmail(email, otp, context = "signup") {
 }
 
 // Resend OTP email (separate subject/text)
-async function resendOtpVerification(email, otp) {
+export async function resendOtpVerification(email, otp) {
   try {
     const transporter = nodemailer.createTransport({
       service: "gmail",
@@ -80,9 +80,3 @@ async function resendOtpVerification(email, otp) {
     return false;
   }
 }
-
-module.exports = {
-  generateOtp,
-  sendVerificationEmail,
-  resendOtpVerification,
-};

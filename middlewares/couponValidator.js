@@ -1,4 +1,4 @@
- const valdateCoupon = (req, res, next) => {
+export const valdateCoupon = (req, res, next) => {
     try {
         let { name, code, discountType, discountValue, minPrice, maxDiscAmount, expiryDate } = req.body || {} ;
         
@@ -45,6 +45,4 @@
         return res.status(500).json({ success: false, message: "Coupon validaion server error!"})   
     }
  };
-
- module.exports = valdateCoupon;
  

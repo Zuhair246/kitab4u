@@ -1,5 +1,5 @@
-const Category = require('../../models/categorySchema');
-const CategoryOffer = require("../../models/categoryOfferSchema");
+import Category from '../../models/categorySchema.js'
+import CategoryOffer from '../../models/categoryOfferSchema.js';
 
 const categoryInfo = async (req,res) => {
     try {
@@ -180,7 +180,7 @@ const activateCategory = async (req, res) => {
 };
 
 
-module.exports = {
+export default {
     categoryInfo,
     addCategory,
     editCategory,

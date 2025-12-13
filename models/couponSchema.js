@@ -1,5 +1,4 @@
-const mongoose = require('mongoose');
-const { ref } = require('pdfkit');
+import mongoose from "mongoose";
 
 const couponSchema = new mongoose.Schema({
     name: {
@@ -48,4 +47,4 @@ const couponSchema = new mongoose.Schema({
 {timestamps: true}
 );
 
-module.exports = mongoose.model("Coupon", couponSchema);
+export default mongoose.model("Coupon", couponSchema);

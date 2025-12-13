@@ -1,4 +1,4 @@
-const Coupon = require('../../models/couponSchema');
+import Coupon from '../../models/couponSchema.js';
 
 const loadCoupons = async (req, res) => {
     try {
@@ -154,7 +154,7 @@ const removeCoupon = async (req, res) => {
     }
 }
 
-module.exports = {
+export default {
     loadCoupons,
     addCoupon,
     editCoupon,

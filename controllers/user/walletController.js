@@ -1,8 +1,8 @@
-const User = require('../../models/userSchema');
-const Wallet = require('../../models/walletSchema');
-const { addToWallet } = require('../../helpers/walletHelper');
-const razorpay = require('../../config/razorpay');
-const crypto = require('crypto');
+import User from '../../models/userSchema.js';
+import Wallet from '../../models/walletSchema.js';
+import { addToWallet } from '../../helpers/walletHelper.js';
+import razorpay from '../../config/razorpay.js';
+import crypto from 'crypto';
 
 const loadWallet = async (req, res) =>{
     try {
@@ -145,7 +145,7 @@ const loadreferral = async (req, res) => {
     }
 }
 
-module.exports = {
+export default {
     loadWallet,
     addMoney,
     verifyPayment,

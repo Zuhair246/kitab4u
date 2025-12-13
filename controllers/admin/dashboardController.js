@@ -1,6 +1,4 @@
-const Orders = require('../../models/orderSchema');
-const { getDateFilter } = require('../../helpers/salesHelper');
-const { format } = require('sharp');
+import Orders from '../../models/orderSchema.js';
 
 const loadDashboard = async (req, res) => {
     try {
@@ -203,7 +201,7 @@ if (range === "yearly") {
   }
 };
 
-module.exports = {
+export default {
     loadDashboard,
     chartData
 }

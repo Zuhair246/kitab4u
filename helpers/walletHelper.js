@@ -1,7 +1,7 @@
-const Wallet = require('../models/walletSchema');
-const User = require('../models/userSchema');
+import Wallet from '../models/walletSchema.js';
+import User from '../models/userSchema.js';
 
-async function  addToWallet (userId, amount, transactionType, description) {
+export async function  addToWallet (userId, amount, transactionType, description) {
     try {
         let wallet = await Wallet.findOne({userId});
         let user = await User.findById(userId)
@@ -38,8 +38,4 @@ if(transactionType=="Credit"){
         console.log('Add to wallet error:', error);
         return res.status(500).json({ success: false, message: "Add to wallet server error"});
     }
-}
-
-module.exports = {
-    addToWallet
 }

@@ -588,9 +588,9 @@ async function removeCoupon() {
 
 document.addEventListener("DOMContentLoaded", () => {
   const urlParams = new URLSearchParams(window.location.search);
-const retryMode = urlParams.get("retry");
-const retryOrderDbId = urlParams.get("orderId");
-const retryRzpOrderId = urlParams.get("rzpOrder");
+  const retryMode = urlParams.get("retry");
+  const retryOrderDbId = urlParams.get("orderId");
+  const retryRzpOrderId = urlParams.get("rzpOrder");
 
 if (retryMode && retryRzpOrderId) {
   openRetryPaymentPopup();

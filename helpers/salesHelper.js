@@ -1,6 +1,6 @@
-const Order = require('../models/orderSchema');
+import Order from '../models/orderSchema.js';
 
-const getDateFilter = async function getDateFilter( range, startDate, endDate ) {
+export const getDateFilter = async function getDateFilter( range, startDate, endDate ) {
     try {
         const now = new Date();
         let from, to;
@@ -41,7 +41,7 @@ const getDateFilter = async function getDateFilter( range, startDate, endDate ) 
     }
 }
 
-const getKPIData = async function getKPIData(dateFilter) {
+export const getKPIData = async function getKPIData(dateFilter) {
   const data = await Order.aggregate([
 
     { $match: dateFilter },
@@ -157,9 +157,3 @@ const getKPIData = async function getKPIData(dateFilter) {
 
   return data[0] || {};
 };
-
-
-module.exports = {
-  getDateFilter,
-  getKPIData,
-} 

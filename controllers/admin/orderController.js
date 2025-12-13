@@ -1,9 +1,7 @@
-const User = require('../../models/userSchema');
-const Order = require('../../models/orderSchema');
-const Product = require('../../models/productSchema');
-const Payment = require('../../models/paymentSchema');
-const {addToWallet} = require('../../helpers/walletHelper');
-
+import User from '../../models/userSchema.js';
+import Order from '../../models/orderSchema.js';
+import Product from '../../models/productSchema.js';
+import { addToWallet } from '../../helpers/walletHelper.js';
 
 const orderListing = async (req, res) => {
     try {
@@ -259,7 +257,7 @@ const itemReturnRequest = async (req, res) => {
     }
 }
 
-module.exports = {
+export default {
     orderListing,
     viewOrderDetails,
     updateOrderStatus,

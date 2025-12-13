@@ -1,4 +1,4 @@
-const serverError = (err, req, res, next) => {
+export const serverError = (err, req, res, next) => {
     const url = req.url || null;
     console.error(`url: ${url}`)
     console.error(`method: ${req.method}`)
@@ -25,5 +25,3 @@ const serverError = (err, req, res, next) => {
         url
     });
 }
-
-module.exports = serverError;

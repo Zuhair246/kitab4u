@@ -1,16 +1,24 @@
-const ProductOffer = require('../models/productOfferSchema');
-const CategoryOffer = require('../models/categoryOfferSchema');
+import ProductOffer from '../models/productOfferSchema.js';
+import CategoryOffer from '../models/categoryOfferSchema.js';
 
-const calculateDiscountedPrice = async ( product ) => {
-    const currentPrice = product.discountPrice ;
+export const calculateDiscountedPrice = async ( product ) => {
+    if (!product?._id) return null;
+
+    const currentPrice = product.discountPrice ?? product.originalPrice ?? 0;
     let maxDiscount = 0 ;
     const today = new Date();
 
-    const productOffer = await ProductOffer.findOne({ productId: product._id, isActive: true, endDate: {$gte: today}, startDate: {$lte: today} });
+    const productOfferQuery = await ProductOffer.findOne({ productId: product._id, isActive: true, endDate: {$gte: today}, startDate: {$lte: today} });
     
+    const categoryOfferQuery = await CategoryOffer.findOne({ categoryId: product.categoryId, isActive: true, endDate: {$gte: today}, startDate: {$lte: today} }) ;
+
+    const [productOffer, categoryOffer] = await Promise.all([
+        productOfferQuery,
+        categoryOfferQuery
+        ]);
+
     if(productOffer) maxDiscount = Math.max(maxDiscount, productOffer.discountPercentage);
 
-    const categoryOffer = await CategoryOffer.findOne({ categoryId: product.categoryId, isActive: true, endDate: {$gte: today}, startDate: {$lte: today} }) ;
     if(categoryOffer) maxDiscount = Math.max(maxDiscount, categoryOffer.discountPercentage);
 
     const discountAmount = (currentPrice * maxDiscount) / 100;
@@ -23,5 +31,3 @@ const calculateDiscountedPrice = async ( product ) => {
     finalPrice
 }
 }
-
-module.exports = calculateDiscountedPrice;

@@ -1,4 +1,4 @@
-const User = require ('../../models/userSchema')
+import User from '../../models/userSchema.js';
 
 const customerInfo = async (req, res) => {
     try {
@@ -68,7 +68,7 @@ const customerUnBlocked = async (req, res) => {
     }
 }
 
-module.exports = {
+export default {
     customerInfo,
     customerBlocked,
     customerUnBlocked

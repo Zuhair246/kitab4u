@@ -1,5 +1,4 @@
-const mongoose = require('mongoose');
-const { ref } = require('pdfkit');
+import mongoose from "mongoose";
 
 const categoryOfferSchema = new mongoose.Schema({
     categoryId: {
@@ -25,4 +24,4 @@ const categoryOfferSchema = new mongoose.Schema({
 {timestamps: true}
 );
 
-module.exports = mongoose.model('categoryOffer', categoryOfferSchema);
+export default mongoose.model('categoryOffer', categoryOfferSchema);

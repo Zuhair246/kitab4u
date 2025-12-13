@@ -1,8 +1,8 @@
-const Product = require('../../models/productSchema');
-const Category = require('../../models/categorySchema');
-const User = require('../../models/userSchema');
-const Wishlist = require ('../../models/wishlistSchema')
-const calculateDiscountedPrice = require('../../helpers/offerPriceCalculator');
+import Product from '../../models/productSchema.js';
+import Category from '../../models/categorySchema.js';
+import User from '../../models/userSchema.js';
+import Wishlist from '../../models/wishlistSchema.js';
+import {calculateDiscountedPrice} from '../../helpers/offerPriceCalculator.js';
 
 const productDetails = async (req, res) => {
   try {
@@ -120,7 +120,7 @@ const loadSearchResults = async (req, res) => {
   }
 };
 
-module.exports = {
+export default {
   productDetails,
   loadSearchResults,
 };

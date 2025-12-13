@@ -1,10 +1,10 @@
-const User = require("../../models/userSchema");
-const Product = require("../../models/productSchema");
-const Cart = require("../../models/cartSchema");
-const Wishlist = require("../../models/wishlistSchema");
-const { default: mongoose, model } = require("mongoose");
-const calculateDiscountedPrice  = require('../../helpers/offerPriceCalculator');
-const {OK, UNAUTHORIZED, NOT_FOUND, FORBIDDEN, CONFLICT} = require('../../helpers/statusCodes')
+import User from '../../models/userSchema.js';
+import Product from '../../models/productSchema.js';
+import Cart from '../../models/cartSchema.js';
+import Wishlist from '../../models/wishlistSchema.js';
+import { calculateDiscountedPrice }  from '../../helpers/offerPriceCalculator.js';
+import { statusCodes } from '../../helpers/statusCodes.js';
+const { OK, UNAUTHORIZED, NOT_FOUND, FORBIDDEN, CONFLICT } = statusCodes;
 
 const loadCart = async (req, res) => {
   try {
@@ -237,7 +237,7 @@ const updateQuantity = async (req, res) => {
   }
 };
 
-module.exports = {
+export default {
   loadCart,
   addTocart,
   removeFromCart,

@@ -1,18 +1,19 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const adminController = require("../controllers/admin/adminController");
-const customerController = require("../controllers/admin/customerController");
-const categoryController = require("../controllers/admin/categoryController");
-const productController = require("../controllers/admin/productController");
-const orderController = require("../controllers/admin/orderController");
-const couponController = require("../controllers/admin/couponController");
-const productOfferController = require("../controllers/admin/productOfferController");
-const salesController = require('../controllers/admin/salesController');
-const dashboardController = require ('../controllers/admin/dashboardController');
-const { adminAuth } = require("../middlewares/adminAuth");
-const uploadImages = require("../middlewares/imgValid");
-const couponValidator = require("../middlewares/couponValidator");
-// const upload = require('../middlewares/upload')
+
+import * as adminController from "../controllers/admin/adminController.js";  //eg: if each fns are seperately exported.
+import customerController from "../controllers/admin/customerController.js"; //eg: if all fns together exported as a object.
+import categoryController from "../controllers/admin/categoryController.js";
+import productController from "../controllers/admin/productController.js";
+import orderController from "../controllers/admin/orderController.js";
+import couponController from "../controllers/admin/couponController.js";
+import productOfferController from "../controllers/admin/productOfferController.js";
+import salesController from "../controllers/admin/salesController.js";
+import dashboardController from "../controllers/admin/dashboardController.js";
+
+import { adminAuth } from "../middlewares/adminAuth.js";
+import { uploadImages } from "../middlewares/imgValid.js";
+import { valdateCoupon as couponValidator } from "../middlewares/couponValidator.js";
 
 //admin authentication
 router.get("/", adminController.loadLogin);
@@ -70,4 +71,4 @@ router.get('/salesReport/downloadExcel', salesController.downloadSalesExcel);
 router.get("/dashboard", adminAuth, dashboardController.loadDashboard);
 router.get('/dashboard/chartData', dashboardController.chartData);
 
-module.exports = router;
+export default router;

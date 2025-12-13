@@ -1,17 +1,20 @@
-const express = require ('express');
+import express from 'express';
 const router = express.Router();
-const userController = require('../controllers/user/userController');
-const productController = require('../controllers/user/productController');
-const profileController = require('../controllers/user/profileController');
-const cartController = require('../controllers/user/cartController');
-const orderController = require('../controllers/user/orderCotroller');
-const couponController = require('../controllers/admin/couponController');
-const wishlistController = require('../controllers/user/wishlistController');
-const walletController = require('../controllers/user/walletController');
-const checkProductAvailability = require('../middlewares/productAuth');
-const userStatus = require('../middlewares/userStatus');
-const upload = require('../middlewares/upload');
-const passport = require('passport');
+
+import  userController from "../controllers/user/userController.js";
+import  productController from "../controllers/user/productController.js";
+import  profileController from "../controllers/user/profileController.js";
+import  cartController from "../controllers/user/cartController.js";
+import  orderController from "../controllers/user/orderCotroller.js";
+import  couponController from "../controllers/admin/couponController.js";
+import  wishlistController from "../controllers/user/wishlistController.js";
+import  walletController from "../controllers/user/walletController.js";
+
+import { checkProductAvailability } from "../middlewares/productAuth.js";
+import { checkUserStatus as userStatus } from "../middlewares/userStatus.js";
+import upload from "../middlewares/upload.js";
+
+import passport from "passport";
 
 
 //User Auths and Registration
@@ -79,7 +82,7 @@ router.post('/myOrders/:orderId/item/:itemId/return', userStatus,orderController
 router.get('/myOrders/:id/invoice', userStatus, orderController.downloadInvoice);
 router.get('/orderSuccess', orderController.orderSuccess);
 
-//Order Coupon Management
+//User Coupon Management
 router.post('/applyCoupon', couponController.applyCoupon);
 router.post('/removeCoupon', couponController.removeCoupon);
 
@@ -101,4 +104,4 @@ router.get('/google/callback', passport.authenticate('google',{failureRedirect:'
     res.redirect('/')
 });
 
-module.exports = router;
+export default router;

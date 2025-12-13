@@ -1,7 +1,7 @@
-const User = require('../../models/userSchema');
-const Product = require('../../models/productSchema');
-const Wishlist = require('../../models/wishlistSchema');
-const calculateDiscountedPrice = require('../../helpers/offerPriceCalculator');
+import User from '../../models/userSchema.js';
+import Product from '../../models/productSchema.js';
+import Wishlist from '../../models/wishlistSchema.js';
+import { calculateDiscountedPrice } from '../../helpers/offerPriceCalculator.js';
 
 const loadWishlist = async (req,res)=>{
     try {
@@ -189,7 +189,7 @@ const removeFromWishlist = async (req, res) => {
     }
 }
 
-module.exports = {
+export default {
     loadWishlist,
     addToWishlist,
     removeFromWishlist

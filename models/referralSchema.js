@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from "mongoose";
 
 const referralSchema = new mongoose.Schema({
     referredUser:{
@@ -28,4 +28,4 @@ const referralSchema = new mongoose.Schema({
 
 referralSchema.index({ referredUser: 1});
 
-module.exports = mongoose.model("Referral", referralSchema);
+export default mongoose.model("Referral", referralSchema);

@@ -1,13 +1,11 @@
 import User from '../../models/userSchema.js';
 import Address from '../../models/addressSchema.js';
-import sharp from 'sharp';
-import fs from 'fs';
-import path from 'path';
 import flash from 'connect-flash';
 import bcrypt from 'bcrypt';
 import { generateOtp, sendVerificationEmail, resendOtpVerification } from '../../helpers/otpService.js';
 import { statusCodes } from '../../helpers/statusCodes.js'
 const { OK, NOT_FOUND, UNAUTHORIZED, BAD_REQUEST, FORBIDDEN, SERVER_ERROR } = statusCodes;
+import { uploadToCloudinary } from '../../helpers/cloudinaryUpload.js'
 
 const profile = async (req,res) => {
   try {
@@ -389,38 +387,23 @@ const updateProfileImage = async (req, res) => {
     }
     const user = await User.findById(userId);
 
-    const uploadDir = path.resolve(__dirname, "../../public/uploads/profile");
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-
-    // Save resized image
-    const filename = `user-${Date.now()}.png`;
-    const outputPath = path.join(uploadDir, filename);
-
-    await sharp(req.file.buffer)
-      .resize(300, 300)
-      .png({ quality: 90 })
-      .toFile(outputPath);
-
-    // Remove old image if exists
-    if (user.image) {
-      const oldPath = path.join(uploadDir, user.image);
-      if(fs.existsSync(oldPath)) {
-        fs.unlinkSync(oldPath);
-      }
-    }
+    const result = await uploadToCloudinary(
+      req.file.buffer,
+      "profiles"
+    );
 
     // Save new image
-    user.image = filename;
+    user.image = result.secure_url;
     await user.save();
 
     req.flash("success", "Profile picture updated");
     return res.status(OK).redirect("/profile");
   } catch (error) {
+    console.log(error);
+    
         const err = new Error("Update profile image server error");
         err.redirect = "/profile/edit";
-        return next (err);
+        throw err;
   }
 };
 

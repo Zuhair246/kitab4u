@@ -3,6 +3,7 @@ import Category from '../../models/categorySchema.js';
 import fs from 'fs';
 import path from 'path';
 import sharp from 'sharp';
+import { uploadToCloudinary } from '../../helpers/cloudinaryUpload.js'
 
 const getProductAddPage = async (req, res) => {
     try {
@@ -57,17 +58,24 @@ const addProduct = async (req, res) => {
 
         const images = [];
         if (req.files && req.files.length > 0) {
-            const uploadDir = path.join(__dirname, '../../public/uploads');
-            if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
             for (const file of req.files) {
-                const fileName = `${Date.now()}_${file.originalname}`;
-                const fullPath = path.join(uploadDir, fileName);
-                await sharp(file.buffer) 
-                    .resize(400, 600, { fit: 'contain' })
-                    .toFile(fullPath);
-                // fs.unlinkSync(file.path); // Only if diskStorage
-                images.push(`/uploads/${fileName}`);
+                const result = await uploadToCloudinary(
+                  file.buffer,
+                  "products",
+                  {
+                    transformation: [
+                      {
+                        width: 400,
+                        height: 600,
+                        crop: "fit",
+                        quality: "auto",
+                        fetch_format:"auto"
+                      }
+                    ]
+                  }
+                );
+                images.push(result.secure_url);
             }
         }
 

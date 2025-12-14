@@ -39,7 +39,7 @@
         <div class="card-body text-center">
           <!-- Profile Picture -->
           <div class="mb-4">
-            <img src="<%= user && user.image ? '/uploads/profile/' + user.image : '/images/default avatar.png' %>"
+            <img src="<%= user && user.image ? user.image : '/images/default avatar.png' %>"
                     alt="Profile Picture"
                     class="rounded-circle border shadow-sm"
                     style="width: 120px; height: 120px; object-fit: cover;">

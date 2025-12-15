@@ -1,9 +1,6 @@
 import Product from '../../models/productSchema.js'
 import Category from '../../models/categorySchema.js';
-import fs from 'fs';
-import path from 'path';
-import sharp from 'sharp';
-import { uploadToCloudinary } from '../../helpers/cloudinaryUpload.js'
+import { uploadToCloudinary } from '../../helpers/cloudinaryUpload.js';
 
 const getProductAddPage = async (req, res) => {
     try {
@@ -229,19 +226,33 @@ const editProduct = async (req, res) => {
     }
 
     // --- Handle Images ---
-    let images = existingImages ? (Array.isArray(existingImages) ? existingImages : [existingImages]) : [];
+    let images = existingImages
+                          ? Array.isArray(existingImages)
+                            ? existingImages
+                            : [existingImages]
+                          : [];
 
     if (req.files && req.files.length > 0) {
-      const uploadDir = path.join(__dirname, "../../public/uploads");
-      if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
       for (const file of req.files) {
-        const fileName = `${Date.now()}_${file.originalname}`;
-        const fullPath = path.join(uploadDir, fileName);
-        await sharp(file.buffer).resize(400, 600, { fit: "contain" }).toFile(fullPath);
-        images.push(`/uploads/${fileName}`);
-      }
+        const result = await uploadToCloudinary (
+          file.buffer,
+          "products",
+          {
+            transformation: [
+            {
+              width: 400,
+              height: 600,
+              crop: "fit",
+              quality: "auto",
+              fetch_format: "auto"
+            }
+          ]
+          }
+        );
+        images.push(result.secure_url);
     }
+  }
 
     if (images.length < 3) {
       return res.redirect(
@@ -264,6 +275,8 @@ const editProduct = async (req, res) => {
       "/admin/listProducts?success=" + encodeURIComponent("Product updated successfully")
     );
   } catch (error) {
+    console.log(error);
+    
         const err = new Error("Edit product server error");
         err.redirect = `/admin/editProduct/${req.params.id}?error=` + encodeURIComponent("Edit product internal server error");
         throw err;

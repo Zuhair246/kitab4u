@@ -109,14 +109,14 @@
 <div class="modal fade" id="addMoneyModal" tabindex="-1" aria-labelledby="addMoneyModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <form id="addMoneyForm" method="POST" action="/wallet/addMoney">
+      <form id="addMoneyForm" >
         <div class="modal-header">
           <h5 class="modal-title" id="addMoneyModalLabel">Add Money to Wallet</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
           <label for="amount" class="form-label">Enter Amount (₹)</label>
-          <input type="text" name="amount" id="amount" class="form-control" min="1" placeholder="Enter amount" maxlength="4">
+          <input type="number" name="amount" id="amount" class="form-control" min="1" placeholder="Enter amount.." maxlength="4">
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>

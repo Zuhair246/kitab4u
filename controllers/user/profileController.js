@@ -536,6 +536,8 @@ try {
 }
 
 const defaultFlag = isDefault === 'on';
+
+let savedAddress;
  
     const userAddress = await Address.findOne({userId: userData._id});
     if(!userAddress) {
@@ -543,7 +545,8 @@ const defaultFlag = isDefault === 'on';
         userId: userData._id,
         address: [{addressType, name, city, streetAddress, state, pinCode, phone, isDeleted:false, isDefault:true}]
       })
- await newAddress.save()
+ await newAddress.save();
+ savedAddress = newAddress.address[0];
 
     }else {
 
@@ -556,20 +559,17 @@ const defaultFlag = isDefault === 'on';
 
       userAddress.address.push({addressType, name, city, streetAddress, state, pinCode, phone, altPhone, isDeleted: false, isDefault: defaultFlag});
         await userAddress.save();
-    
+        savedAddress = userAddress.address[userAddress.address.length - 1];
     }
 
     if(isAjax) {
-      const newAddress = userAddress
-            ? userAddress.address[userAddress.address.length - 1] 
-            : newAddress.address[0]
-      return res.status(OK).json({success: true, message: 'Address added successfully !', addressId: newAddress._id})
+      return res.status(OK).json({success: true, message: 'Address added successfully !', addressId: savedAddress._id});
     }
     return res.status(OK).redirect('/profile/address?success=Address added successfully')
     
   } catch (error) {
       const err = new Error("User add address server error");
-      return next (err);
+      throw err;
   }
  }
 

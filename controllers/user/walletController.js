@@ -48,9 +48,9 @@ const loadWallet = async (req, res) =>{
 
 const addMoney = async ( req, res ) => {
     try {
-        const userId = req.session.user?._id || req.session.user?._id;
+        const userId = req.session.user?._id || req.user?._id;
         if(!userId) {
-            return res.status(401).message({ success: false, message: "Please login for adding money to your wallet!"})
+            return res.status(401).redirect('/login');
         }
 
         let { amount }= req.body;
@@ -74,8 +74,10 @@ const addMoney = async ( req, res ) => {
             currency: order.currency
         })        
     } catch (error) {
+        console.log(error);
+        
       const err = new Error("Add money to wallet server error");
-      return next (err);
+      throw err;
     }
 }
 

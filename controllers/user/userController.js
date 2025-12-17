@@ -328,7 +328,7 @@ const resendOtp = async (req, res) => {
 const loadLogin = async (req,res) => {
     try {
 
-        if(!req.session.user || !req.user) {
+        if(!req.session.user && !req.user) {
             return res.status(OK).render('login')
         }else {
             res.redirect(FOUND, '/');

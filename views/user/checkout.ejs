@@ -230,7 +230,11 @@
                 <%= address.city %>, <%= address.state %> - <%= address.pinCode %><br>
                 <span class="badge bg-secondary"><%= address.addressType %></span>
                 <button type="button" class="btn btn-primary btn-sm float-end ms-2"
-                        onclick="selectAddressFromModal('<%= address._id %>', '<%= escape(address.name) %>', '<%= address.phone %>', '<%= escape(address.streetAddress) %>', '<%= escape(address.city) %>', '<%= escape(address.state) %>', '<%= address.pinCode %>', '<%= address.addressType %>')">
+                        onclick="selectAddressFromModal('<%= address._id %>', '<%= escape(address.name) %>',
+                         '<%= address.phone %>', 
+                         '<%= escape(address.streetAddress) %>', 
+                         '<%= escape(address.city) %>', '<%= escape(address.state) %>', 
+                         '<%= address.pinCode %>', '<%= address.addressType %>')">
                   Select this address
                 </button>
               </div>
@@ -342,9 +346,14 @@ document.addEventListener('submit', async function(e) {
       });
       const result = await res.json();
 
-      if (!result || !result.success) {
-        window.location.href = result.redirect;
-      }
+      if (!result.success) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: result.message
+          });
+          return;
+        }
 
       // Build new address card HTML and insert
       const newCard = document.createElement('div');

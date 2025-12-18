@@ -89,15 +89,21 @@
                         <div class="row g-3 mb-4">
                             <!-- Category -->
                             <div class="col-md-6">
-                                <label for="categoryId" class="form-label fw-semibold">Category *</label>
-                                <select class="form-select" id="categoryId" name="categoryId">
-                                <% for (let i = 0; i < cat.length; i++) { %>
-                                    <option value="<%= cat[i]._id %>"
-                                    <%= typeof product !== 'undefined' && product.categoryId && product.categoryId.toString() === cat[i]._id.toString() ? 'selected' : '' %>>
-                                    <%= cat[i].name %>
-                                    </option>
-                                <% } %>
-                                </select>
+                            <label for="categoryId" class="form-label fw-semibold">Category *</label>
+
+                            <select class="form-select" id="categoryId" name="categoryId" required>
+                                <% cat.forEach(category => { %>
+                                <option 
+                                    value="<%= category._id %>"
+                                    <%= product && product.categoryId && 
+                                        product.categoryId._id.toString() === category._id.toString()
+                                        ? 'selected'
+                                        : '' %>
+                                >
+                                    <%= category.name %>
+                                </option>
+                                <% }) %>
+                            </select>
                             </div>
 
                             <!-- Pages (right side of Category) -->

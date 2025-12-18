@@ -409,7 +409,6 @@ const loadVerifyEmail = async (req,res) => {
 const verifyEmail = async (req,res) => {
     try {
       const {email} = req.body;
-      const user = await User.findOne({email})
         if(!email){
             req.flash('error', "Enter the email")
           return  res.status(BAD_REQUEST).redirect('/verifyEmail')
@@ -419,21 +418,28 @@ const verifyEmail = async (req,res) => {
         req.flash("error", "Invalid Email");
         return res.status(BAD_REQUEST).redirect("/verifyEmail");
     }
+    const user = await User.findOne({email});
+    if(!user){
+        req.flash('error',"User Email doesn't exist")
+        return res.status(NOT_FOUND).redirect('/verifyEmail')
+      }
+
     if(user.googleId){
       req.flash("error", "Google user can't reset password")
        return res.status(FORBIDDEN).redirect("/verifyEmail");
-    }else if(user.isBlocked){
-      req.flash('error', "Blocked user cannot reset password");
-      return res.status(FORBIDDEN).redirect('/verifyEmail')
     }
 
-    if(user){
+    if(user.isBlocked){
+      req.flash('error', "Blocked user cannot reset password");
+      return res.status(FORBIDDEN).redirect('/verifyEmail');
+    }
+
         const otp = generateOtp()
         const emailSent = await sendVerificationEmail(email,otp);
         if(!emailSent) {
             req.flash('error', "OTP didn't send. Network issue..!")
             return res.status(SERVER_ERROR).redirect('/verifyEmail')
-        }
+          }
         req.session.userOtp = otp;
         req.session.otpExpiry = Date.now() + 2 * 60 * 1000;
         req.session.userData = {email};
@@ -445,13 +451,12 @@ const verifyEmail = async (req,res) => {
         error: req.flash("error"),
         success: req.flash("success"),
         formAction: "/resetPasswordOtp"
-    });
-        }else {
-            req.flash('error',"User Email doesn't exist")
-            return res.status(NOT_FOUND).redirect('/verifyEmail')
-        }
+          });
+
     } catch (error) {
-          return next(error);
+      console.log(error);
+      
+          throw error;
     }
 }
 
@@ -525,7 +530,6 @@ const newPassword = async (req,res) => {
     }
       const email = req.session.resetEmail;
       console.log(email);
-      console.log(newPassword);
       
       const user = await User.findOne({email});
       const hashedPassword = await bcrypt.hash(newPassword, 10);

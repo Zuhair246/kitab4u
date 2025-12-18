@@ -8,9 +8,12 @@ const loadWallet = async (req, res) =>{
     try {
         const userId = req.session.user || req.user;
         if (!userId) {
-            return res.status(401).redirect('/login')
+            return res.status(401).redirect('/login');
         }
         const user = await User.findById(userId);
+        if(!user) {
+            return res.status(401).redirect('/login');
+        }
 
         let wallet = await Wallet.findOne({userId});
 

@@ -454,8 +454,6 @@ const verifyEmail = async (req,res) => {
           });
 
     } catch (error) {
-      console.log(error);
-      
           throw error;
     }
 }

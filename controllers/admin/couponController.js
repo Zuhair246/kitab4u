@@ -2,8 +2,23 @@ import Coupon from '../../models/couponSchema.js';
 
 const loadCoupons = async (req, res) => {
     try {
+        let today = new Date();
+        today.setHours(0,0,0,0);
+        await Coupon.updateMany(
+            {
+            expiryDate: {$lt:today},
+            isActive: true
+        },
+        {
+            $set:{
+                isActive: false
+            }
+        }
+    )
+
         const coupons = await Coupon.find().sort({ createdAt: -1 });
         let search;
+        
         res.render('couponList', {
             coupons,
             search,
@@ -77,11 +92,22 @@ const deleteCoupon = async (req, res) => {
 const activateCoupon = async (req, res) => {
     try {
         const { id } = req.params;
-        const coupon = await Coupon.findByIdAndUpdate(id, {isActive: true});
+        const coupon = await Coupon.findById(id);
         if(!coupon){
             return res.status(404).json({success: false, message: "Coupon not found for activating!"})
         }
+
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        if(coupon.expiryDate < today){
+            return res.status(400).json({success:false, message: 'Coupon already expired!'});
+        }
+
+        coupon.isActive = true;
+        await coupon.save();
+
         return res.status(200).json({ success: true, message: "Coupon re-activated!"});
+
     } catch (error) {
         const err = new Error("Activate coupon server error");
         err.redirect = "/admin/coupons?error=" + encodeURIComponent("Activate coupon internal server error");

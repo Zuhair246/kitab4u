@@ -400,7 +400,7 @@ const checkout = async (req, res) => {
         createdAt: new Date(),
       })
       
-     await addToWallet(userId, finalPayableAmount, 'Debit', `Paid towards the Order: #${newOrder._id}`);
+     await addToWallet(userId, finalPayableAmount, 'Debit', `Paid towards the Order: #${newOrder.orderId}`);
     
       for (const item of items) {
         await Product.updateOne(
@@ -421,11 +421,9 @@ const checkout = async (req, res) => {
         delete req.session.appliedCoupon;
       }
 
-    return res.status(200).json({ success: true, orderId: newOrder._id})
+    return res.status(200).json({ success: true, orderId: newOrder.orderId})
     }
   } catch (error) {
-    console.log(error);
-    
     const err = new Error("Order checkout server error");
     throw err;
   }
@@ -586,7 +584,7 @@ const loadRetryPayment = async (req, res) => {
     }
     const user = await User.findById(userId);
     const { orderId } = req.query;
-    const order = await Order.findById(orderId)
+    const order = await Order.findOne({orderId})
       .populate("orderedItems.product")
       .lean();
     return res.status(OK).render("retryPayment", {
@@ -594,15 +592,17 @@ const loadRetryPayment = async (req, res) => {
       order,
     });
   } catch (error) {
+    console.log(error);
+    
     const err = new Error("Retry payment page load server error")
-    return next (err);
+    throw err;
   }
 };
 
 const retryPayment = async (req, res) => {
   try {
     const { orderId } = req.body;
-    const order = await Order.findById(orderId).lean();
+    const order = await Order.findOne({orderId}).lean();
     if (!order)
       return res
         .status(404)
@@ -611,7 +611,7 @@ const retryPayment = async (req, res) => {
     if (order.paymentStatus === "Paid") {
       return res
         .status(400)
-        .json({ success: false, message: "Order already Paid!" });
+        .json({ success: false, message: "Payment already done!" });
     }
 
     const receiptId = `reciept_retry_${Date.now()}`;
@@ -623,7 +623,7 @@ const retryPayment = async (req, res) => {
 
     const razorpayOrder = await razorpay.orders.create(options);
 
-    let paymentDoc = await Payment.findOne({ orderId: orderId });
+    let paymentDoc = await Payment.findOne({ orderId });
     if (!paymentDoc) {
       paymentDoc = new Payment({
         orderId: orderId,

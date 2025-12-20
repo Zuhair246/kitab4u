@@ -12,15 +12,15 @@
               <i class="bi bi-exclamation-triangle text-danger" style="font-size: 4rem;"></i>
             </div>
             <!-- Title -->
-            <h1 class="h2 fw-bold text-dark mb-3">Payment Failed</h1>
+            <h1 class="h2 fw-bold text-danger mb-3">Payment Failed</h1>
             <!-- Description -->
-            <p class="text-muted mb-4 lead">We were unable to process your payment for Order #<%= order._id || '12345' %>. 
-              Please check your payment details and try again. Don't worry, your order has been saved.</p>
+            <p class="text-dark mb-4 lead fw-semibold">We were unable to process your payment for <br> Order: #<%= order.orderId || '12345' %>. 
+              <br>Please check your payment details and try again. Don't worry, your order has been saved.</p>
             <!-- Buttons Row -->
             <div class="row g-3 justify-content-center">
               <div class="col-12 col-md-6">
                 <form id="retryForm">
-                  <input type="hidden" name="orderId" value="<%= order._id %>" id="retryOrderId">
+                  <input type="hidden" name="orderId" value="<%= order.orderId %>" id="retryOrderId">
                   <button type="submit" class="btn btn-primary w-100 fw-bold"> Retry Payment</button>
                 </form>
               </div>

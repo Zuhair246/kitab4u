@@ -13,7 +13,7 @@ import crypto from 'crypto';
 import path from 'path';
 import PDFDocument from 'pdfkit';
 import { statusCodes } from '../../helpers/statusCodes.js';
-import { log } from 'console';
+import mongoose from 'mongoose';
 const { OK, BAD_REQUEST, UNAUTHORIZED, NOT_FOUND, CONFLICT, PAYMENT_REQUIRED } = statusCodes;
 
 const loadCheckoutPage = async (req, res) => {
@@ -355,7 +355,7 @@ const checkout = async (req, res) => {
       await newOrder.save();
 
       const newPayment = new Payment({
-        orderId: newOrder._id,
+        orderId: newOrder.orderId,
         method: "Online",
         status: "Pending",
         amount: finalPayableAmount,
@@ -373,7 +373,7 @@ const checkout = async (req, res) => {
         amount: razorpayOrder.amount,
         currency: razorpayOrder.currency,
         orderId: razorpayOrder.id,
-        orderDbId: newOrder._id,
+        orderDbId: newOrder.orderId,
       });
     }else if(paymentMethod === "Wallet"){
       const wallet = await Wallet.findOne({userId});
@@ -424,19 +424,27 @@ const checkout = async (req, res) => {
     return res.status(200).json({ success: true, orderId: newOrder._id})
     }
   } catch (error) {
+    console.log(error);
+    
     const err = new Error("Order checkout server error");
-    return next (err)
+    throw err;
   }
 };
 
 const verifyPayment = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
     const userId = req.session.user || req.user;
     if (!userId) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(UNAUTHORIZED).redirect("/login");
     }
-    const user = await User.findById(userId);
+    const user = await User.findById(userId).session(session);
     if(!user) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(UNAUTHORIZED).json({ success: false, message: "User not found!"})
     }
 
@@ -447,26 +455,34 @@ const verifyPayment = async (req, res) => {
       orderDbId,
     } = req.body;
 
-    const paymentDoc = await Payment.findOne({ orderId: orderDbId });
+    const paymentDoc = await Payment.findOne({ orderId: orderDbId }).session(session);
     if(paymentDoc?.status === "Paid") {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(CONFLICT).json({ success: false, message: "Payment already processed!"})
     }
 
     const responseSnapshot = { ...req.body };
 
     //Payment failure
-    if (!razorpay_signature) {
+    if (!razorpay_signature || !razorpay_payment_id || !razorpay_order_id) {
       if (paymentDoc) {
         paymentDoc.status = "Failed";
         paymentDoc.paymentId = razorpay_payment_id || null;
-        paymentDoc.transactionId = razorpay_order_id || paymentDoc.transactionId;
+        paymentDoc.transactionId = razorpay_payment_id || paymentDoc.transactionId;
         paymentDoc.responseData = responseSnapshot;
-        await paymentDoc.save();
+        await paymentDoc.save({ session });
       }
-      await Order.findByIdAndUpdate(orderDbId, {
-        paymentStatus: "Failed",
-        status: "Pending",
-      });
+      await Order.updateOne(
+        { orderId: orderDbId },
+        {
+          paymentStatus: "Failed",
+          status: "Pending"
+        },
+        { session }
+      );
+      await session.commitTransaction();
+      session.endSession();
       return res.status(PAYMENT_REQUIRED).json({
         success: false,
         redirect: `/loadRetryPayment?orderId=${orderDbId}`,
@@ -483,38 +499,51 @@ const verifyPayment = async (req, res) => {
         paymentDoc.status = "Paid";
         paymentDoc.paymentId = razorpay_payment_id;
         paymentDoc.responseData = responseSnapshot;
-        await paymentDoc.save();
+        await paymentDoc.save( { session } );
       }
-      await Order.findByIdAndUpdate(orderDbId, {
-        paymentStatus: "Paid",
-        status: "Placed",
-      });
+      await Order.updateOne(
+        { orderId: orderDbId },
+        {
+          paymentStatus: "Paid",
+          status: "Placed"
+        },
+        { session }
+      )
 
       // Reduce stock only after successful payment
-      const order = await Order.findById(orderDbId).populate(
-        "orderedItems.product"
-      );
+      const order = await Order.findOne({orderId: orderDbId})
+                .populate("orderedItems.product")
+                .session(session);
       if(!order){
+        await session.abortTransaction();
+        session.endSession();
         return res.status(NOT_FOUND).json({ success: false, message: "Order not found!"})
       }
       for (const item of order.orderedItems) {
-        await Product.updateOne(
+        const updated = await Product.updateOne(
           { _id: item.product, "variants._id": item.variantId },
-          { $inc: { "variants.$.stock": -item.quantity } }
+          { $inc: { "variants.$.stock": -item.quantity } },
+          { session }
         );
+        if(updated.modifiedCount === 0) {
+           throw new Error("Stock update failed!");
+        }
       }
 
-      await Cart.updateOne({ userId }, { $set: { items: [] } });
+      await Cart.updateOne( { userId }, { $set: { items: [] } }, { session } );
 
       if (req.session.appliedCoupon?.couponCode) {
         await Coupon.updateOne(
           { code: req.session.appliedCoupon.couponCode },
-          { $addToSet: { usedUsers: userId } }
+          { $addToSet: { usedUsers: userId } },
+          { session }
         );
         delete req.session.appliedCoupon;
       } else {
         delete req.session.appliedCoupon;
-      }
+      };
+      await session.commitTransaction();
+      session.endSession();
 
       return res.status(OK).json({ success: true, orderId: orderDbId });
     } else {
@@ -522,18 +551,28 @@ const verifyPayment = async (req, res) => {
       if (paymentDoc) {
         paymentDoc.status = "Failed";
         paymentDoc.responseData = responseSnapshot;
-        await paymentDoc.save();
+        await paymentDoc.save({ session });
       }
-      await Order.findByIdAndUpdate(orderDbId, {
-        paymentStatus: "Failed",
-        status: "Pending",
-      });
+      await Order.updateOne(
+        { orderId: orderDbId },
+        {
+          paymentStatus: "Failed",
+          status: "Pending"
+        },
+        { session }
+      );
+      await session.commitTransaction();
+      session.endSession();
       return res.status(UNAUTHORIZED).json({
         success: false,
         redirect: `/loadRetryPayment?orderId=${orderDbId}`,
       });
     }
   } catch (error) {
+    if(session.inTransaction()){
+      await session.abortTransaction();
+    }
+    session.endSession();
     const err = new Error("Payment verification server error!");
     throw err;
   }
@@ -624,19 +663,24 @@ const orderSuccess = async (req, res) => {
       return res.status(UNAUTHORIZED).redirect("/login");
     }
     const user = await User.findById(userId);
-    const {orderId, orderDbId} = req.query;
+    const {orderId} = req.query;
 
-    const orders = await Order.findById(orderId).populate(
+    const order = await Order.findOne({orderId}).populate(
       "orderedItems.product"
     );
+    if(!order){
+      return res.status(404).render('404-page');
+    }
      return res.status(OK).render("orderSuccess", {
       user,
-      orders,
+      order,
       orderId
     });
   } catch (error) {
+    console.log(error);
+    
     const err = new Error("Order success page load server error!");
-    return next(err);
+    throw err;
   }
 };
 

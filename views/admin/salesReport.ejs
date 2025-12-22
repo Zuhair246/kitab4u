@@ -1,5 +1,13 @@
 <%- include('../../views/partials/admin/header') %>
-<% let queryString = `&range=${range || ''}&startDate=${startDate || ''}&endDate=${endDate || ''}`; %>
+<%
+let queryString = "";
+if (startDate && endDate) {
+  queryString = `&startDate=${startDate}&endDate=${endDate}`;
+} else if (range) {
+  queryString = `&range=${range}`;
+}
+%>
+
 
 <style>
   .text-purple { color: #9c27b0; }
@@ -271,117 +279,120 @@
   </div>
 
 </div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
+document.addEventListener("DOMContentLoaded", () => {
 
-  ["daily", "weekly", "monthly", "yearly"].forEach(id => {
+  /* ----------------------------------
+     0️⃣ SHOW BACKEND ERROR (FROM URL)
+  ---------------------------------- */
+  const params = new URLSearchParams(window.location.search);
+  const errorMessage = params.get("error");
+
+  if (errorMessage) {
+    Swal.fire({
+      icon: "error",
+      title: "Invalid Date Selection",
+      text: decodeURIComponent(errorMessage)
+    });
+
+    params.delete("error");
+    const cleanUrl =
+      window.location.pathname +
+      (params.toString() ? "?" + params.toString() : "");
+
+    window.history.replaceState({}, "", cleanUrl);
+  }
+
+  /* ----------------------------------
+     1️⃣ ELEMENT REFERENCES
+  ---------------------------------- */
+  const radios = ["daily", "weekly", "monthly", "yearly"];
+  const startDateInput = document.getElementById("startDate");
+  const endDateInput = document.getElementById("endDate");
+  const customBox = document.getElementById("customDateInputs");
+  const generateBtn = document.getElementById("generateReportBtn");
+
+  radios.forEach(id => {
     document.getElementById(id).addEventListener("change", () => {
-      document.getElementById("customDateInputs").style.display = "none";
+      customBox.style.display = "none";
+      startDateInput.value = "";
+      endDateInput.value = "";
     });
   });
 
-  document.getElementById("generateReportBtn").addEventListener("click", async () => {
+  function activateCustomDate() {
+    customBox.style.display = "flex";
+    radios.forEach(id => {
+      document.getElementById(id).checked = false;
+    });
+  }
 
-    // 1. Get range (which radio is selected)
-    const range = document.querySelector('input[name="range"]:checked').id;
+  startDateInput.addEventListener("focus", activateCustomDate);
+  endDateInput.addEventListener("focus", activateCustomDate);
 
-    // 2. Get custom dates only if custom is selected
-    let startDate = null;
-    let endDate = null;
+  /* ----------------------------------
+      2️⃣ GENERATE REPORT
+  ---------------------------------- */
+  generateBtn.addEventListener("click", (e) => {
+    e.preventDefault();
 
-    if (range === "custom") {
-      startDate = document.getElementById("startDate").value;
-      endDate = document.getElementById("endDate").value;
+    const startDate = startDateInput.value;
+    const endDate = endDateInput.value;
+    let query = "";
 
-      if (!startDate || !endDate) {
-        alert("Please select both start and end date!");
+    if (startDate && endDate) {
+      query = `?startDate=${startDate}&endDate=${endDate}`;
+    } else {
+      const range = document.querySelector("input[name='range']:checked")?.id;
+
+      if (!range) {
+        Swal.fire({
+          icon: "warning",
+          title: "Select a filter",
+          text: "Choose a date range or custom dates"
+        });
         return;
       }
+      query = `?range=${range}`;
     }
 
-    // 3. Send request to backend
-    const res = await fetch("/admin/salesReport", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ range, startDate, endDate })
-    });
-
-    const data = await res.json();
-
-    if (!data.success) {
-      alert("Error generating report!");
-      return;
-    }
-
-    // 4. Render the returned values to the table
-    renderSalesTable(data.sales);
+    window.location.href = `/admin/salesReport${query}`;
   });
 
-  // Function to load new table rows after filtering
-  function renderSalesTable(sales) {
-    const tbody = document.getElementById("salesTableBody");
-    tbody.innerHTML = "";
+  /* ----------------------------------
+     3️⃣ RESTORE STATE FROM URL
+  ---------------------------------- */
+  const range = params.get("range");
+  const startDate = params.get("startDate");
+  const endDate = params.get("endDate");
 
-    sales.forEach(order => {
-      tbody.innerHTML += `
-      <tr>
-        <td>#${order.orderId}</td>
-        <td>${new Date(order.createdAt).toLocaleDateString()}</td>
-        <td>${order.userId?.name || 'Unknown'}</td>
-        <td class="text-end">-₹${order.discount.toFixed(2)}</td>
-        <td class="text-end">₹${order.finalPayableAmount}</td>
-        <td>${order.paymentMethod}</td>
-        <td class="${order.status === 'Delivered' ? 'text-success' : 'text-danger'}">${order.status}</td>
-      </tr>
-      `;
-    });
+  if (startDate && endDate) {
+    customBox.style.display = "flex";
+    startDateInput.value = startDate;
+    endDateInput.value = endDate;
+    radios.forEach(id => document.getElementById(id).checked = false);
+  } else if (range) {
+    document.getElementById(range)?.setAttribute("checked", true);
   }
+});
 
+/* ----------------------------------
+   4️⃣ DOWNLOAD HELPERS
+---------------------------------- */
 function getFilters() {
-  const range = document.querySelector("input[name='range']:checked")?.id;
-  const startDate = document.getElementById("startDate")?.value;
-  const endDate = document.getElementById("endDate")?.value;
-
-  const params = new URLSearchParams();
-
-  if (range) params.append("range", range);
-  if (startDate) params.append("startDate", startDate);
-  if (endDate) params.append("endDate", endDate);
-
-  return params.toString();
+  return new URLSearchParams(window.location.search).toString();
 }
 
-  // PDF DOWNLOAD
-  document.getElementById("downloadPdfBtn").addEventListener("click", () => {
-    const query = getFilters();
-    window.location.href = `/admin/salesReport/downloadPDF?${query}`
-  });
+document.getElementById("downloadPdfBtn").addEventListener("click", () => {
+  window.location.href = `/admin/salesReport/downloadPDF?${getFilters()}`;
+});
 
-  // EXCEL DOWNLOAD
-  document.getElementById("downloadExcelBtn").addEventListener("click", () => {
-    const query = getFilters();
-    window.location.href = `/admin/salesReport/downloadExcel?${query}` 
-  });
-
-  // Helper function — collects current filters + pagination
-  function buildQueryURL(base) {
-    const range = document.querySelector("input[name='range']:checked")?.id;
-    const startDate = document.getElementById("startDate")?.value;
-    const endDate = document.getElementById("endDate")?.value;
-
-    const params = new URLSearchParams();
-
-    if (range) params.append("range", range);
-    if (startDate) params.append("startDate", startDate);
-    if (endDate) params.append("endDate", endDate);
-
-    return `${base}?${params.toString()}`;
-  }
-
+document.getElementById("downloadExcelBtn").addEventListener("click", () => {
+  window.location.href = `/admin/salesReport/downloadExcel?${getFilters()}`;
+});
 </script>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <%- include('../../views/partials/admin/footer') %>

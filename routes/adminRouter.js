@@ -63,7 +63,6 @@ router.post("/productOffers/:offerId/deactivate", adminAuth, productOfferControl
 
 //Sales Report
 router.get('/salesReport', adminAuth, salesController.loadSales);
-router.post('/salesReport', adminAuth, salesController.filterSales);
 router.get('/salesReport/downloadPDF', adminAuth, salesController.downloadSalesPDF);
 router.get('/salesReport/downloadExcel', salesController.downloadSalesExcel);
 

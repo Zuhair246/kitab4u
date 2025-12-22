@@ -6,14 +6,28 @@ import ExcelJS from 'exceljs';
 
 const loadSales = async (req, res) => {
     try {
-        const { range, startDate, endDate } = req.query;
-        const page = Number(req.query.page) || 1;
-        const limit = Number(req.query.limit) || 10;
-        const skip = (page - 1) * limit;
+        let { range, startDate, endDate } = req.query;
+        
+        startDate = startDate ? new Date(startDate) : null;
+        endDate = endDate ? new Date(endDate) : null;
+
+        const today = new Date();
+        today.setHours(23, 59, 59, 999);
+
+        if( startDate && startDate > today || endDate && endDate > today ) {
+            return res.redirect(`/admin/salesReport?error=${encodeURIComponent("Dates should not be future!")}`);
+        }
+        if( startDate && endDate && startDate > endDate ){
+            return res.redirect(`/admin/salesReport?error=${encodeURIComponent("End date should not be before start date!")}`);
+        }
 
         const dateFilter = await getDateFilter(range, startDate, endDate);
 
         const kpis = await getKPIData(dateFilter);
+
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
 
         const totalOrdersCount = await Order.countDocuments(dateFilter);
 
@@ -66,44 +80,6 @@ const loadSales = async (req, res) => {
         })
     } catch (error) {
         const err = new Error("Load Sales Report server error!");
-        throw err;
-    }
-}
-
-const filterSales = async (req, res) => {
-    try {
-        const { range, startDate, endDate } = req.body;
-        const page = Number(req.query.page) || 1;
-        const limit = Number(req.query.limit) || 10;
-        const skip = (page - 1) * limit;
-
-        const dateFilter = await getDateFilter( range, startDate, endDate );
-
-        const totalOrders = await Order.countDocuments(dateFilter);
-
-        const sales = await Order.find(dateFilter)
-                                                .populate("userId" , "name")
-                                                .sort({ createdAt: -1 })
-                                                .skip(skip)
-                                                .limit(limit)
-                                                .lean();
-
-        const totalPages = Math.ceil( totalOrders / limit );
-
-        return res.json({
-            success: true,
-            currentPage: page,
-            totalPages,
-            totalOrders,
-            limit,
-            sales,
-            range,
-            startDate,
-            endDate
-        });
-    } catch (error) {
-        const err = new Error("Sales report filter server error");
-        err.redirect = "/admin/salesReport?error=Server error";
         throw err;
     }
 }
@@ -284,7 +260,6 @@ const downloadSalesExcel = async (req, res) => {
 
 export default {
     loadSales,
-    filterSales,
     downloadSalesPDF,
     downloadSalesExcel,
 }

@@ -83,19 +83,22 @@ router.get('/myOrders/:id/invoice', userStatus, orderController.downloadInvoice)
 router.get('/orderSuccess', orderController.orderSuccess);
 
 //User Coupon Management
-router.post('/applyCoupon', couponController.applyCoupon);
-router.post('/removeCoupon', couponController.removeCoupon);
+router.post('/applyCoupon', userStatus, couponController.applyCoupon);
+router.post('/removeCoupon', userStatus, couponController.removeCoupon);
 
 //Wallet Management
-router.get('/loadWallet', walletController.loadWallet);
-router.post('/wallet/addMoney', walletController.addMoney);
-router.post('/wallet/verifyPayment', walletController.verifyPayment);
-router.get('/referral', walletController.loadreferral);
+router.get('/loadWallet', userStatus, walletController.loadWallet);
+router.post('/wallet/addMoney', userStatus, walletController.addMoney);
+router.post('/wallet/verifyPayment', userStatus, walletController.verifyPayment);
+router.get('/referral', userStatus, walletController.loadreferral);
 
 //Wishlist Management
-router.get('/wishlist', wishlistController.loadWishlist);
-router.post('/wishlist', wishlistController.addToWishlist);
-router.post('/wishlist/removeItem', wishlistController.removeFromWishlist);
+router.get('/wishlist', userStatus, wishlistController.loadWishlist);
+router.post('/wishlist', userStatus, wishlistController.addToWishlist);
+router.post('/wishlist/removeItem', userStatus, wishlistController.removeFromWishlist);
+
+//About Page
+router.get('/about', productController.loadAboutPage);
 
 
 router.get('/auth/google', passport.authenticate('google', {scope:['profile','email']}));

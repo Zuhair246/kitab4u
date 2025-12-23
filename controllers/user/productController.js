@@ -120,7 +120,12 @@ const loadSearchResults = async (req, res) => {
   }
 };
 
+const loadAboutPage = async (req, res) => {
+  return res.render('about');
+}
+
 export default {
   productDetails,
   loadSearchResults,
+  loadAboutPage
 };

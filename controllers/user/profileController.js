@@ -55,6 +55,11 @@ const updateProfile = async (req,res) => {
 
     let updated = false;
 
+    if(name == "" || email == ""){
+      req.flash("error", "Name and Email should not be empty");
+      return res.status(BAD_REQUEST).redirect("/profile/edit")
+    }
+
     if(name && name !== user.name) {
       user.name = name;
       updated = true;

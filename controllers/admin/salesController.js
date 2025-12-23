@@ -152,7 +152,11 @@ const downloadSalesPDF = async (req, res) => {
                 doc.fillColor("black").fontSize(8);
 
                 doc.text(sale.orderId, 35, y + 10);
-                doc.text(productName, 35 + col.id , y + 10);
+                doc.text(productName, 35 + col.id, y + 8, {
+                                width: col.product - 5,
+                                align: "left"
+                                });
+
 
                 doc.text(`Rs: ${item.salePrice}/-`, 35 + col.id  + col.product, y + 10);
                 doc.text(

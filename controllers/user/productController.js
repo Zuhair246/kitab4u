@@ -121,11 +121,26 @@ const loadSearchResults = async (req, res) => {
 };
 
 const loadAboutPage = async (req, res) => {
-  return res.render('about');
+  try {
+      return res.status(200).render('about');
+  } catch (error) {
+    const err = new Error("About page loading error");
+    throw err;
+  }
+}
+
+const loadContactPage = async (req, res) => {
+  try {
+    return res.status(200).render('contactUs')
+  } catch (error) {
+    const err = new Error("Conatact us page  load error");
+    throw err;
+  }
 }
 
 export default {
   productDetails,
   loadSearchResults,
-  loadAboutPage
+  loadAboutPage,
+  loadContactPage
 };

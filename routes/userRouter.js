@@ -100,6 +100,9 @@ router.post('/wishlist/removeItem', userStatus, wishlistController.removeFromWis
 //About Page
 router.get('/about', productController.loadAboutPage);
 
+//Contact Page
+router.get('/contact', productController.loadContactPage);
+
 
 router.get('/auth/google', passport.authenticate('google', {scope:['profile','email']}));
 

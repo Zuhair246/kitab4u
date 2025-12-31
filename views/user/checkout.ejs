@@ -659,7 +659,12 @@ if (retryMode && retryRzpOrderId) {
         });
 
         const order = await res.json();
-        if (!order.success) throw new Error("Failed to create Razorpay order");
+        if (!order.success) {
+            Swal.fire("Error", order.message, "error").then(() => {
+            if (order.redirect) window.location.href = order.redirect;
+          });
+          return;
+        }
 
         // -------------------------------------------
         // 2️⃣ Step 2: Razorpay Payment Window

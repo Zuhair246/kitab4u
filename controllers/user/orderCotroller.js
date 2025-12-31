@@ -110,6 +110,8 @@ const loadCheckoutPage = async (req, res) => {
             "Some of the products in cart are out of stock, Please remove it and proceed"
           )
       );
+    }else if (items.some((item) => item.stock < item.quantity)){
+      return res.status(CONFLICT).redirect("/cart?error=" + encodeURIComponent("Some product stock is low. Reduce quantity."))
     }
 
     const subtotal = items.reduce((sum, item) => sum + item.totalPrice, 0);
@@ -215,20 +217,28 @@ const checkout = async (req, res) => {
       })
     );
 
-    if (items.some((item) => item.isBlocked)) {
-      return res.status(CONFLICT).redirect(
-        "/cart?error=" +
-          encodeURIComponent(
-            "Some of your products are Un-available, Please remove it and proceed !"
-          )
-      );
-    } else if (items.some((item) => item.stock <= 0)) {
-      return res.status(CONFLICT).redirect(
-        "/cart?error=" +
-          encodeURIComponent(
-            "Some of your products in cart are out of stock, Please remove it and proceed...."
-          )
-      );
+    if (items.some(i => i.isBlocked)) {
+      return res.status(409).json({
+        success: false,
+        message: "Some products are unavailable. Please remove them.",
+        redirect: "/cart"
+      });
+    }
+
+    if (items.some(i => i.stock <= 0)) {
+      return res.status(409).json({
+        success: false,
+        message: "Some products are out of stock. Please remove them.",
+        redirect: "/cart"
+      });
+    }
+
+    if (items.some(i => i.stock < i.quantity)) {
+      return res.status(409).json({
+        success: false,
+        message: "Some product stock is low. Reduce quantity.",
+        redirect: "/cart"
+      });
     }
 
     const subtotal = items.reduce((sum, item) => sum + item.totalPrice, 0);

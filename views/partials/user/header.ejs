@@ -55,29 +55,7 @@
 
                   <!-- Right side - User actions -->
             <div class="user-actions d-flex align-items-center ms-lg-3 mt-3 mt-lg-0">
-                <!-- Search -->
-             <div class="search-container me-3">
-                <form class="d-flex" onsubmit="event.preventDefault(); performSearch();">
-                    <input type="text"
-                        id="productSearch"
-                        name="q"
-                        value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>" 
-                        class="form-control rounded-pill me-2 px-3" 
-                        placeholder="Search books..." style="max-width: 200px;">
-                    
-                    <!-- Search Button -->
-                    <button type="button" class="btn btn-outline-primary ms-2" id="searchBtn">
-                    Search
-                    </button>
-
-                    <!-- Clear Button -->
-                    <button type="button" id="clearBtn"
-                            class="btn btn-outline-secondary ms-2 d-none"
-                            onclick="clearSearch()">
-                    <i class="bi bi-x"></i> Clear
-                    </button>
-                </form>
-                </div>
+                
 
 
 <% if (locals.user) {%>
@@ -117,59 +95,3 @@
             </div>
         </nav>
     </header>
-
-<script>
-const searchInput = document.getElementById("productSearch");
-const clearBtn = document.getElementById("clearBtn");
-const searchBtn = document.getElementById("searchBtn");
-
-if (searchBtn) {
-  searchBtn.addEventListener("click", performSearch);
-}
-
-function performSearch() {
-  const searchTerm = searchInput.value.trim();
-  const currentUrl = new URL(window.location);
-
-  if (searchTerm) {
-    currentUrl.searchParams.set("q", searchTerm);
-  } else {
-    currentUrl.searchParams.delete("q");
-  }
-  currentUrl.searchParams.set("page", "1");
-  window.location.href = currentUrl.toString();
-}
-
-// Show/hide clear button based on value
-if (clearBtn) {
-  if (searchInput.value.trim() !== "") {
-    clearBtn.classList.remove("d-none");
-  }
-
-  searchInput.addEventListener("input", () => {
-    if (searchInput.value.trim() !== "") {
-      clearBtn.classList.remove("d-none");
-    } else {
-      clearBtn.classList.add("d-none");
-    }
-  });
-}
-
-function clearSearch() {
-  const currentUrl = new URL(window.location);
-  currentUrl.searchParams.delete("q");
-  currentUrl.searchParams.set("page", "1");
-  window.location.href = currentUrl.toString();
-}
-
-// Allow Enter key to trigger search
-searchInput.addEventListener("keypress", (e) => {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    performSearch();
-  }
-});
-</script>
-
-
-

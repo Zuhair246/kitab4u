@@ -49,27 +49,16 @@ const loadHomePage = async (req,res) => {
       'variants.stock': { $gt: 0 },
     });
 
-
         const totalPages = Math.ceil(totalProducts /  limit);
-      
-        const searchQuery = req.query.q ? req.query.q.trim() : "";
 
     if (user && user._id) {
       const userData = await User.findById(user._id); 
-    
-        if (searchQuery) {
-      filter.$or = [
-        { name: { $regex: searchQuery, $options: "i" } },
-        { author: { $regex: searchQuery, $options: "i" } }
-      ];
-    }
       
       return res.status(OK).render("homePage", { 
                                                         user: userData, 
                                                         books: productData,
                                                         currentPage: page,
                                                         totalPages,
-                                                        searchQuery
                                                       });
     }
 
@@ -77,7 +66,6 @@ const loadHomePage = async (req,res) => {
                                             books: productData,
                                             currentPage: page,
                                             totalPages,
-                                            searchQuery
                                             });
     }catch (error) {
         const err = new Error("Server error in loading Home Page")
@@ -558,9 +546,13 @@ const loadShoppingPage = async (req, res) => {
     const skip = (page - 1) * limit;
 
     const searchQuery = req.query.q ? req.query.q.trim() : "";
-    const selectedCategory = req.params.category || req.query.category || null;
+    let selectedCategory = req.query.category || [];
     const selectedPriceRange = req.query.priceRange || null;
     const sortOption = req.query.sort || null;
+
+    if(!Array.isArray(selectedCategory)) {
+      selectedCategory = [selectedCategory];
+    }
 
     const match = {
       isBlocked: false,
@@ -574,11 +566,12 @@ const loadShoppingPage = async (req, res) => {
       ];
     }
 
-    if (selectedCategory) {
-      const findCategory = await Category.findOne({ name: {$regex: new RegExp(`^${selectedCategory}$`, 'i') } });
-      if (findCategory) {
-        match.categoryId = findCategory._id;
-      }
+    if (selectedCategory.length > 0) {
+      const categoryDocs = await Category.find({
+        name: { $in: selectedCategory }
+      });
+      const categoryIds = categoryDocs.map(cat => cat._id);
+      match.categoryId = { $in: categoryIds };
     }
 
     const pipelineForCount = [{ $match: match }];
@@ -611,10 +604,30 @@ const loadShoppingPage = async (req, res) => {
     const countResult = await Product.aggregate(pipelineForCount);
     const totalProductsCount = (countResult[0] && countResult[0].count) ? countResult[0].count : 0;
     const totalPages = Math.ceil(totalProductsCount / limit);
+    if (page > totalPages && totalPages > 0) {
+    return res.redirect(
+          `/shop?page=${totalPages}` +
+          selectedCategory.map(c => `&category=${encodeURIComponent(c)}`).join("") +
+          (selectedPriceRange ? `&priceRange=${selectedPriceRange}` : "") +
+          (searchQuery ? `&q=${searchQuery}` : "")
+        );
+      }
+
 
     const pipeline = [{ $match: match }];
 
     pipeline.push({ $addFields: { minPrice: { $min: "$variants.discountPrice" } } });
+    pipeline.push({
+        $addFields: {
+          inStock: {
+            $gt: [
+              { $max: "$variants.stock" },
+              0
+            ]
+          }
+        }
+      });
+
 
     if (selectedPriceRange) {
       let minP = 0;

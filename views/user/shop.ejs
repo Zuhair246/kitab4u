@@ -50,6 +50,7 @@
     <h5 class="mb-3 border-bottom pb-2">Filters</h5>
 
     <form action="/shop" method="get" class="filter-form">
+      <input type="hidden" name="page" value="1">
       <!-- Categories -->
       <h6 class="fw-semibold text-primary mb-2">Categories</h6>
       <div class="list-group mb-3">
@@ -60,7 +61,7 @@
               type="checkbox" 
               name="category" 
               value="<%= category[i].name %>"
-              <%= selectedCategory === category[i].name ? "checked" : "" %>>
+              <%= selectedCategory?.includes(category[i].name) ? "checked" : "" %>>
             <%= category[i].name %>
           </label>
         <% } %>
@@ -108,35 +109,60 @@
 
     <!-- Products Listing -->
     <main class="col-md-9 col-lg-10">
+      <!-- Search -->
+             <div class="search-container me-3">
+                <form class="d-flex" onsubmit="event.preventDefault(); performSearch();">
+                    <input type="text"
+                        id="productSearch"
+                        name="q"
+                        value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>" 
+                        class="form-control rounded-pill me-2 px-3" 
+                        placeholder="Search books..." style="max-width: 200px;">
+                    
+                    <!-- Search Button -->
+                    <button type="button" class="btn btn-outline-primary ms-2" id="searchBtn">
+                    Search
+                    </button>
+
+                    <!-- Clear Button -->
+                    <button type="button" id="clearBtn"
+                            class="btn btn-outline-secondary ms-2 d-none"
+                            onclick="clearSearch()">
+                    <i class="bi bi-x"></i> Clear
+                    </button>
+                </form>
+                </div>
 
       <!-- Sort Options -->
-<div class="d-flex justify-content-end mb-3">
-  <form id="sortForm" method="get" action="/shop" class="d-flex align-items-center">
+        <div class="d-flex justify-content-end mb-3">
+          <form id="sortForm" method="get" action="/shop" class="d-flex align-items-center">
+            <% if (searchQuery) { %>
+              <input type="hidden" name="q" value="<%= searchQuery %>">
+            <% } %>
+            <% if (selectedCategory && selectedCategory.length) { %>
+              <% selectedCategory.forEach(cat => { %>
+                <input type="hidden" name="category" value="<%= cat %>">
+              <% }) %>
+            <% } %>
+            <% if (selectedPriceRange) { %>
+              <input type="hidden" name="priceRange" value="<%= selectedPriceRange %>">
+            <% } %>
+
+            <select class="form-select w-auto" name="sort" onchange="document.getElementById('sortForm').submit()">
+              <option value="" disabled <%= !sortOption ? "selected" : "" %>>Sort by</option>
+              <option value="low-high" <%= sortOption === "low-high" ? "selected" : "" %>>Price: Low to High</option>
+              <option value="high-low" <%= sortOption === "high-low" ? "selected" : "" %>>Price: High to Low</option>
+              <option value="az" <%= sortOption === "az" ? "selected" : "" %>>Name: A - Z</option>
+              <option value="za" <%= sortOption === "za" ? "selected" : "" %>>Name: Z - A</option>
+            </select>
+          </form>
+        </div>
+
+
+        <!-- Search info -->
     <% if (searchQuery) { %>
-      <input type="hidden" name="q" value="<%= searchQuery %>">
+      <h5 class="mb-4">Search results for: "<%= searchQuery %>"</h5>
     <% } %>
-    <% if (selectedCategory) { %>
-      <input type="hidden" name="category" value="<%= selectedCategory %>">
-    <% } %>
-    <% if (selectedPriceRange) { %>
-      <input type="hidden" name="priceRange" value="<%= selectedPriceRange %>">
-    <% } %>
-
-    <select class="form-select w-auto" name="sort" onchange="document.getElementById('sortForm').submit()">
-      <option value="" disabled <%= !sortOption ? "selected" : "" %>>Sort by</option>
-      <option value="low-high" <%= sortOption === "low-high" ? "selected" : "" %>>Price: Low to High</option>
-      <option value="high-low" <%= sortOption === "high-low" ? "selected" : "" %>>Price: High to Low</option>
-      <option value="az" <%= sortOption === "az" ? "selected" : "" %>>Name: A - Z</option>
-      <option value="za" <%= sortOption === "za" ? "selected" : "" %>>Name: Z - A</option>
-    </select>
-  </form>
-</div>
-
-
-      <!-- Search info -->
-  <% if (searchQuery) { %>
-    <h5 class="mb-4">Search results for: "<%= searchQuery %>"</h5>
-  <% } %>
 
       <!-- Product Grid -->
       <div class="row g-4">
@@ -193,18 +219,16 @@
                 <!-- Buttons -->
                  
                   <div class="mt-auto d-flex justify-content-between align-items-center">
-                    <% if (book.variants[0].stock > 0) { %>
-                      <form action="/cart" method="post" class="d-inline-block">
-                        <input type="hidden" name="productId" value="<%= book._id %>">
-                        <input type="hidden" name="variantId" value="<%= book.variants[0]._id %>">
-                        <button class="btn btn-sm btn-primary" type="submit" >
-                          <i class="bi bi-cart-plus" style="font-size: 1rem; width: 1rem; height: 1rem; display: inline-flex; align-items: center; justify-content: center;"></i>
-                        </button>
-                      </form>
-                    <% } else { %>
-                      <!-- Invisible placeholder to keep cart button on the left -->
-                      <div class="badge bg-danger py-2 px-4">Out of stock</div>
-                    <% } %>
+                  <% if (book.inStock) { %>
+                    <form action="/cart" method="post">
+                      <button class="btn btn-sm btn-primary">
+                        <i class="bi bi-cart-plus"></i>
+                      </button>
+                    </form>
+                  <% } else { %>
+                    <span class="badge bg-danger py-2 px-3">Out of stock</span>
+                  <% } %>
+
 
                     <form action="/wishlist" method="post" class="d-inline-block">
                         <input type="hidden" name="productId" value="<%= book._id %>">
@@ -223,28 +247,48 @@
       </div>
 
        <!-- Pagination Section -->
-<% if (totalPages > 1) { %>
-  <nav aria-label="Page navigation" class="mt-5 fixed-pagination">
-    <ul class="pagination justify-content-center">
+        <%
+          const baseQuery = new URLSearchParams();
 
-      <!-- Previous Button -->
-      <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
-        <a class="page-link" 
-           href="/shop?page=<%= currentPage - 1 %>
-                 <%= selectedCategory ? '&category=' + encodeURIComponent(selectedCategory) : '' %>
-                 <%= selectedPriceRange ? '&priceRange=' + encodeURIComponent(selectedPriceRange) : '' %>
-                 <%= searchQuery ? '&q=' + encodeURIComponent(searchQuery) : '' %>
-                 <%= sortOption ? '&sort=' + encodeURIComponent(sortOption) : '' %>">
-          &laquo;
-        </a>
-      </li>
+          if (searchQuery) baseQuery.append("q", searchQuery);
+          if (selectedPriceRange) baseQuery.append("priceRange", selectedPriceRange);
+          if (sortOption) baseQuery.append("sort", sortOption);
+
+          if (selectedCategory && selectedCategory.length) {
+            selectedCategory.forEach(cat => baseQuery.append("category", cat));
+          }
+        %>
+
+    <% if (totalPages > 1) { %>
+      <nav aria-label="Page navigation" class="mt-5 fixed-pagination">
+        <ul class="pagination justify-content-center">
+
+          <!-- Previous Button -->
+          <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
+            <a class="page-link" 
+              href="/shop?<%= baseQuery.toString() %>&page=<%= currentPage - 1 %>
+                    <% if (selectedCategory && selectedCategory.length) { %>
+                        <% selectedCategory.forEach(cat => { %>
+                          &category=<%= encodeURIComponent(cat) %>
+                        <% }) %>
+                      <% } %>
+                    <%= selectedPriceRange ? '&priceRange=' + encodeURIComponent(selectedPriceRange) : '' %>
+                    <%= searchQuery ? '&q=' + encodeURIComponent(searchQuery) : '' %>
+                    <%= sortOption ? '&sort=' + encodeURIComponent(sortOption) : '' %>">
+              &laquo;
+            </a>
+          </li>
 
       <!-- Page Numbers -->
       <% for (let i = 1; i <= totalPages; i++) { %>
         <li class="page-item <%= currentPage === i ? 'active' : '' %>">
           <a class="page-link" 
-             href="/shop?page=<%= i %>
-                   <%= selectedCategory ? '&category=' + encodeURIComponent(selectedCategory) : '' %>
+             href="/shop?<%= baseQuery.toString() %>&page=<%= i %>
+                   <% if (selectedCategory && selectedCategory.length) { %>
+                    <% selectedCategory.forEach(cat => { %>
+                      &category=<%= encodeURIComponent(cat) %>
+                    <% }) %>
+                    <% } %>
                    <%= selectedPriceRange ? '&priceRange=' + encodeURIComponent(selectedPriceRange) : '' %>
                    <%= searchQuery ? '&q=' + encodeURIComponent(searchQuery) : '' %>
                    <%= sortOption ? '&sort=' + encodeURIComponent(sortOption) : '' %>">
@@ -256,8 +300,12 @@
       <!-- Next Button -->
       <li class="page-item <%= currentPage === totalPages ? 'disabled' : '' %>">
         <a class="page-link" 
-           href="/shop?page=<%= currentPage + 1 %>
-                 <%= selectedCategory ? '&category=' + encodeURIComponent(selectedCategory) : '' %>
+           href="/shop?<%= baseQuery.toString() %>&page=<%= currentPage + 1 %>
+                 <% if (selectedCategory && selectedCategory.length) { %>
+                    <% selectedCategory.forEach(cat => { %>
+                      &category=<%= encodeURIComponent(cat) %>
+                    <% }) %>
+                  <% } %>
                  <%= selectedPriceRange ? '&priceRange=' + encodeURIComponent(selectedPriceRange) : '' %>
                  <%= searchQuery ? '&q=' + encodeURIComponent(searchQuery) : '' %>
                  <%= sortOption ? '&sort=' + encodeURIComponent(sortOption) : '' %>">
@@ -293,4 +341,65 @@
     });
   </script>
 <% } %>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const searchInput = document.getElementById("productSearch");
+  if (!searchInput) return;
+
+  const clearBtn = document.getElementById("clearBtn");
+  const searchBtn = document.getElementById("searchBtn");
+
+  if (searchBtn) searchBtn.addEventListener("click", performSearch);
+
+  function performSearch() {
+    const q = searchInput.value.trim();
+    const url = new URL(window.location.origin + "/shop");
+
+    // preserve filters
+    const params = new URLSearchParams(window.location.search);
+    if (params.getAll("category").forEach(cat => {
+      url.searchParams.append("category", cat);
+    }));
+    if (params.get("priceRange")) url.searchParams.set("priceRange", params.get("priceRange"));
+    if (params.get("sort")) url.searchParams.set("sort", params.get("sort"));
+
+    if (q) url.searchParams.set("q", q);
+    url.searchParams.set("page", "1");
+
+    window.location.href = url.toString();
+  }
+
+  function clearSearch() {
+    const url = new URL(window.location.origin + "/shop");
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.getAll("category").forEach(cat => {
+      url.searchParams.append("category", cat);
+    }));
+    if (params.get("priceRange")) url.searchParams.set("priceRange", params.get("priceRange"));
+    if (params.get("sort")) url.searchParams.set("sort", params.get("sort"));
+
+    url.searchParams.set("page", "1");
+    window.location.href = url.toString();
+  }
+
+  if (searchInput.value.trim()) {
+    clearBtn.classList.remove("d-none");
+  }
+
+  searchInput.addEventListener("input", () => {
+    clearBtn.classList.toggle("d-none", !searchInput.value.trim());
+  });
+
+  searchInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      performSearch();
+    }
+  });
+
+  window.clearSearch = clearSearch;
+});
+</script>
 

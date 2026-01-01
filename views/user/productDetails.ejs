@@ -116,13 +116,15 @@
 
       <!-- Actions -->
       <div class="d-flex align-items-center gap-3 mb-4">
-        <form action="/cart" method="post" id="cartForm">
-        <input type="hidden" name="productId" value="<%= product._id %>">
-        <input type="hidden" name="variantId" id="variantId" >
-        <button class="btn btn-primary px-4" type="submit" <%= quantity <= 0 ? 'disabled' : '' %>>
+        <!-- ADD TO CART -->
+        <button
+          type="button"
+          class="btn btn-primary px-4 add-to-cart-btn"
+          data-product-id="<%= product._id %>"
+          data-variant-id="<%= product.variants[0]._id %>"
+          <%= quantity <= 0 ? 'disabled' : '' %>>
           <i class="bi bi-cart-plus me-2"></i>Add to Cart
         </button>
-      </form>
       <form action="/wishlist" method="post" id="cartForm">
         <input type="hidden" name="productId" value="<%= product._id %>">
         <input type="hidden" name="variantId" id="variantId" value="<%= variant._id %>">
@@ -186,6 +188,7 @@
 <%- include("../../views/partials/user/footer") %>
 
 <!-- <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script> -->
+ <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
  // 🔍 Image Zoom Script
   const mainImage = document.getElementById('mainImage');
@@ -204,48 +207,67 @@
     });
   }
 
-  function updateVariant(button) {
-    const original = button.dataset.original;
-    const discount = button.dataset.discount;
-    const final = button.dataset.final;
-    const offer = button.dataset.offer;
-    const stock = button.dataset.stock;
-    const variantId = button.dataset.variantid;
+ function updateVariant(button) {
+  const original = Number(button.dataset.original);
+  const discount = Number(button.dataset.discount);
+  const final = Number(button.dataset.final);
+  const offer = Number(button.dataset.offer);
+  const stock = Number(button.dataset.stock);
+  const variantId = button.dataset.variantid;
 
-    const priceSection = document.getElementById('priceSection');
-    priceSection.innerHTML = '';
+  /* ================= PRICE SECTION ================= */
+  const priceSection = document.getElementById('priceSection');
+  priceSection.innerHTML = '';
 
-    if(offer >0 && final < discount){
-      priceSection.innerHTML = `
+  if (offer > 0 && final < discount) {
+    priceSection.innerHTML = `
       <span class="fs-4 fw-bold text-danger">₹${final}/-</span>
       <span class="text-muted text-decoration-line-through ms-2">₹${discount}/-</span>
       <span class="badge bg-success ms-2">${offer}% OFF</span>
     `;
-    }else{
-    if (discount && discount < original) {
-      priceSection.innerHTML = `
-        <span class="fs-4 fw-bold text-danger">₹${discount}</span>
-        <span class="text-muted text-decoration-line-through ms-2">₹${original}</span>
-        <span class="badge bg-success ms-2">Save ₹${original - discount}</span>
-      `;
-    } else {
-      priceSection.innerHTML = `<span class="fs-4 fw-bold">₹${original}</span>`;
-    }
+  } else if (discount && discount < original) {
+    priceSection.innerHTML = `
+      <span class="fs-4 fw-bold text-danger">₹${discount}/-</span>
+      <span class="text-muted text-decoration-line-through ms-2">₹${original}/-</span>
+      <span class="badge bg-success ms-2">Save ₹${original - discount}/-</span>
+    `;
+  } else {
+    priceSection.innerHTML = `
+      <span class="fs-4 fw-bold">₹${original}/-</span>
+    `;
   }
-    const stockBadge = document.querySelector('.badge.mb-3');
-    if (stock > 0) {
-      stockBadge.className = "badge bg-success mb-3";
-      stockBadge.textContent = "In Stock";
-    } else {
-      stockBadge.className = "badge bg-danger mb-3";
-      stockBadge.textContent = "Out of Stock";
-    }
 
-    document.getElementById('variantId').value = variantId;
+  /* ================= STOCK BADGE ================= */
+  const stockBadge = document.querySelector('.badge.mb-3');
+  const addToCartBtn = document.querySelector('.add-to-cart-btn');
 
-    document.querySelectorAll('.variant-btn').forEach(btn => btn.classList.remove('active'));
-    button.classList.add('active');
+  if (stock > 0) {
+    stockBadge.className = "badge bg-success mb-3";
+    stockBadge.textContent = "In Stock";
+    addToCartBtn.disabled = false;
+  } else {
+    stockBadge.className = "badge bg-danger mb-3";
+    stockBadge.textContent = "Out of Stock";
+    addToCartBtn.disabled = true;
   }
+
+  /* ================= VARIANT ID UPDATE ================= */
+
+  // for hidden input (wishlist / fallback)
+  const hiddenVariantInput = document.getElementById('variantId');
+  if (hiddenVariantInput) {
+    hiddenVariantInput.value = variantId;
+  }
+
+  // ⭐ IMPORTANT: for AJAX add-to-cart
+  addToCartBtn.dataset.variantId = variantId;
+
+  /* ================= ACTIVE BUTTON UI ================= */
+  document.querySelectorAll('.variant-btn').forEach(btn =>
+    btn.classList.remove('active')
+  );
+  button.classList.add('active');
+}
 
   document.querySelectorAll('.variant-btn').forEach((button) => {
     button.addEventListener('click', function() {
@@ -257,5 +279,46 @@
   if (firstVariant) {
     updateVariant(firstVariant);
   }
+
+  document.addEventListener("click", async (e) => {
+  const btn = e.target.closest(".add-to-cart-btn");
+  if (!btn) return;
+
+  try {
+    const res = await fetch("/cart", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        productId: btn.dataset.productId,
+        variantId: btn.dataset.variantId
+      })
+    });
+
+    const data = await res.json();
+
+    if (res.ok && data.success) {
+      return Swal.fire({
+        icon: "success",
+        title: "Added to cart",
+        text: data.message,
+        timer: 1500,
+        showConfirmButton: false
+      });
+    }
+
+    Swal.fire({
+      icon: "error",
+      title: "Oops!",
+      text: data.message
+    });
+
+  } catch {
+    Swal.fire({
+      icon: "error",
+      title: "Server error",
+      text: "Please try again"
+    });
+  }
+});
 
 </script>

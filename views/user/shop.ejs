@@ -110,14 +110,14 @@
     <!-- Products Listing -->
     <main class="col-md-9 col-lg-10">
       <!-- Search -->
-             <div class="search-container me-3">
-                <form class="d-flex" onsubmit="event.preventDefault(); performSearch();">
+             <div class="search-container d-flex justify-content-center mt-5">
+                <form class="d-flex align-items-center" onsubmit="event.preventDefault(); performSearch();">
                     <input type="text"
                         id="productSearch"
                         name="q"
                         value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>" 
                         class="form-control rounded-pill me-2 px-3" 
-                        placeholder="Search books..." style="max-width: 200px;">
+                        placeholder="Search books..." style="width: 400px; height: 40px;">
                     
                     <!-- Search Button -->
                     <button type="button" class="btn btn-outline-primary ms-2" id="searchBtn">
@@ -134,7 +134,7 @@
                 </div>
 
       <!-- Sort Options -->
-        <div class="d-flex justify-content-end mb-3">
+        <div class="d-flex justify-content-end mb-1">
           <form id="sortForm" method="get" action="/shop" class="d-flex align-items-center">
             <% if (searchQuery) { %>
               <input type="hidden" name="q" value="<%= searchQuery %>">
@@ -220,11 +220,12 @@
                  
                   <div class="mt-auto d-flex justify-content-between align-items-center">
                   <% if (book.inStock) { %>
-                    <form action="/cart" method="post">
-                      <button class="btn btn-sm btn-primary">
-                        <i class="bi bi-cart-plus"></i>
-                      </button>
-                    </form>
+                  <button
+                    class="btn btn-sm btn-primary add-to-cart-btn"
+                    data-product-id="<%= book._id %>"
+                    data-variant-id="<%= book.variants[0]._id %>">
+                    <i class="bi bi-cart-plus"></i>
+                  </button>
                   <% } else { %>
                     <span class="badge bg-danger py-2 px-3">Out of stock</span>
                   <% } %>
@@ -248,80 +249,47 @@
 
        <!-- Pagination Section -->
         <%
-          const baseQuery = new URLSearchParams();
+  const baseQuery = new URLSearchParams();
 
-          if (searchQuery) baseQuery.append("q", searchQuery);
-          if (selectedPriceRange) baseQuery.append("priceRange", selectedPriceRange);
-          if (sortOption) baseQuery.append("sort", sortOption);
+  if (searchQuery) baseQuery.append("q", searchQuery);
+  if (selectedPriceRange) baseQuery.append("priceRange", selectedPriceRange);
+  if (sortOption) baseQuery.append("sort", sortOption);
 
-          if (selectedCategory && selectedCategory.length) {
-            selectedCategory.forEach(cat => baseQuery.append("category", cat));
-          }
-        %>
+  if (selectedCategory && selectedCategory.length) {
+    selectedCategory.forEach(cat => baseQuery.append("category", cat));
+  }
+%>
 
-    <% if (totalPages > 1) { %>
-      <nav aria-label="Page navigation" class="mt-5 fixed-pagination">
-        <ul class="pagination justify-content-center">
+<% if (totalPages > 1) { %>
+<nav class="mt-5">
+  <ul class="pagination justify-content-center">
 
-          <!-- Previous Button -->
-          <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
-            <a class="page-link" 
-              href="/shop?<%= baseQuery.toString() %>&page=<%= currentPage - 1 %>
-                    <% if (selectedCategory && selectedCategory.length) { %>
-                        <% selectedCategory.forEach(cat => { %>
-                          &category=<%= encodeURIComponent(cat) %>
-                        <% }) %>
-                      <% } %>
-                    <%= selectedPriceRange ? '&priceRange=' + encodeURIComponent(selectedPriceRange) : '' %>
-                    <%= searchQuery ? '&q=' + encodeURIComponent(searchQuery) : '' %>
-                    <%= sortOption ? '&sort=' + encodeURIComponent(sortOption) : '' %>">
-              &laquo;
-            </a>
-          </li>
+    <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
+      <a class="page-link"
+         href="/shop?<%= baseQuery.toString() %>&page=<%= currentPage - 1 %>">
+        &laquo;
+      </a>
+    </li>
 
-      <!-- Page Numbers -->
-      <% for (let i = 1; i <= totalPages; i++) { %>
-        <li class="page-item <%= currentPage === i ? 'active' : '' %>">
-          <a class="page-link" 
-             href="/shop?<%= baseQuery.toString() %>&page=<%= i %>
-                   <% if (selectedCategory && selectedCategory.length) { %>
-                    <% selectedCategory.forEach(cat => { %>
-                      &category=<%= encodeURIComponent(cat) %>
-                    <% }) %>
-                    <% } %>
-                   <%= selectedPriceRange ? '&priceRange=' + encodeURIComponent(selectedPriceRange) : '' %>
-                   <%= searchQuery ? '&q=' + encodeURIComponent(searchQuery) : '' %>
-                   <%= sortOption ? '&sort=' + encodeURIComponent(sortOption) : '' %>">
-            <%= i %>
-          </a>
-        </li>
-      <% } %>
-
-      <!-- Next Button -->
-      <li class="page-item <%= currentPage === totalPages ? 'disabled' : '' %>">
-        <a class="page-link" 
-           href="/shop?<%= baseQuery.toString() %>&page=<%= currentPage + 1 %>
-                 <% if (selectedCategory && selectedCategory.length) { %>
-                    <% selectedCategory.forEach(cat => { %>
-                      &category=<%= encodeURIComponent(cat) %>
-                    <% }) %>
-                  <% } %>
-                 <%= selectedPriceRange ? '&priceRange=' + encodeURIComponent(selectedPriceRange) : '' %>
-                 <%= searchQuery ? '&q=' + encodeURIComponent(searchQuery) : '' %>
-                 <%= sortOption ? '&sort=' + encodeURIComponent(sortOption) : '' %>">
-          &raquo;
+    <% for (let i = 1; i <= totalPages; i++) { %>
+      <li class="page-item <%= currentPage === i ? 'active' : '' %>">
+        <a class="page-link"
+           href="/shop?<%= baseQuery.toString() %>&page=<%= i %>">
+          <%= i %>
         </a>
       </li>
+    <% } %>
 
-    </ul>
-  </nav>
+    <li class="page-item <%= currentPage === totalPages ? 'disabled' : '' %>">
+      <a class="page-link"
+         href="/shop?<%= baseQuery.toString() %>&page=<%= currentPage + 1 %>">
+        &raquo;
+      </a>
+    </li>
 
-  <!-- Page Info -->
-  <div class="text-center text-muted small mb-4 fixed-pagination-info">
-    Showing <%= ((currentPage - 1) * 8) + 1 %> - <%= Math.min(currentPage * 8, totalProducts) %> of <%= totalProducts %> products
-  </div>
+  </ul>
+</nav>
 <% } %>
-
 
     </main>
   </div>
@@ -345,41 +313,22 @@
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   const searchInput = document.getElementById("productSearch");
-  if (!searchInput) return;
-
   const clearBtn = document.getElementById("clearBtn");
-  const searchBtn = document.getElementById("searchBtn");
-
-  if (searchBtn) searchBtn.addEventListener("click", performSearch);
 
   function performSearch() {
+    const url = new URL(window.location.href);
     const q = searchInput.value.trim();
-    const url = new URL(window.location.origin + "/shop");
-
-    // preserve filters
-    const params = new URLSearchParams(window.location.search);
-    if (params.getAll("category").forEach(cat => {
-      url.searchParams.append("category", cat);
-    }));
-    if (params.get("priceRange")) url.searchParams.set("priceRange", params.get("priceRange"));
-    if (params.get("sort")) url.searchParams.set("sort", params.get("sort"));
 
     if (q) url.searchParams.set("q", q);
-    url.searchParams.set("page", "1");
+    else url.searchParams.delete("q");
 
+    url.searchParams.set("page", "1");
     window.location.href = url.toString();
   }
 
   function clearSearch() {
-    const url = new URL(window.location.origin + "/shop");
-    const params = new URLSearchParams(window.location.search);
-
-    if (params.getAll("category").forEach(cat => {
-      url.searchParams.append("category", cat);
-    }));
-    if (params.get("priceRange")) url.searchParams.set("priceRange", params.get("priceRange"));
-    if (params.get("sort")) url.searchParams.set("sort", params.get("sort"));
-
+    const url = new URL(window.location.href);
+    url.searchParams.delete("q");
     url.searchParams.set("page", "1");
     window.location.href = url.toString();
   }
@@ -392,14 +341,76 @@ document.addEventListener("DOMContentLoaded", () => {
     clearBtn.classList.toggle("d-none", !searchInput.value.trim());
   });
 
-  searchInput.addEventListener("keypress", (e) => {
+  searchInput.addEventListener("keypress", e => {
     if (e.key === "Enter") {
       e.preventDefault();
       performSearch();
     }
   });
 
+  window.performSearch = performSearch;
   window.clearSearch = clearSearch;
 });
-</script>
 
+document.addEventListener("click", async (e) => {
+  const btn = e.target.closest(".add-to-cart-btn");
+  if (!btn) return;
+
+  const productId = btn.dataset.productId;
+  const variantId = btn.dataset.variantId;
+
+  try {
+    const res = await fetch("/cart", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ productId, variantId })
+    });
+
+    const data = await res.json();
+
+    // ---------- SUCCESS ----------
+    if (res.ok && data.success) {
+      return Swal.fire({
+        icon: "success",
+        title: "Added to cart",
+        text: data.message,
+        timer: 1500,
+        showConfirmButton: false
+      });
+    }
+
+    // ---------- ERROR HANDLING ----------
+    let icon = "error";
+    let title = "Error";
+
+    if (res.status === 401) {
+      icon = "info";
+      title = "Login required";
+    } 
+    else if (res.status === 409) {
+      icon = "warning";
+      title = "Action not allowed";
+    } 
+    else if (res.status === 403) {
+      icon = "error";
+      title = "Not available";
+    }
+
+    Swal.fire({
+      icon,
+      title,
+      text: data.message
+    });
+
+  } catch (err) {
+    Swal.fire({
+      icon: "error",
+      title: "Server Error",
+      text: "Something went wrong. Please try again."
+    });
+  }
+});
+
+</script>

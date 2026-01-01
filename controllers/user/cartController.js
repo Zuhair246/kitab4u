@@ -4,6 +4,7 @@ import Cart from '../../models/cartSchema.js';
 import Wishlist from '../../models/wishlistSchema.js';
 import { calculateDiscountedPrice }  from '../../helpers/offerPriceCalculator.js';
 import { statusCodes } from '../../helpers/statusCodes.js';
+import { json } from 'express';
 const { OK, UNAUTHORIZED, NOT_FOUND, FORBIDDEN, CONFLICT } = statusCodes;
 
 const loadCart = async (req, res) => {
@@ -66,14 +67,12 @@ const addTocart = async (req, res) => {
   try {
     const userId = req.session.user || req.user;
     if (!userId) {
-      return res.status(UNAUTHORIZED).redirect(
-        "/login?error=" +
-          encodeURIComponent("Please login to add products to cart")
-      );
+      return res.status(UNAUTHORIZED).json({
+        success: 'false', redirect:"/login", message: "Please login to add products to cart!"
+      })
     }
 
-    const productId = req.body.productId;
-    const variantId = req.body.variantId;
+    const { productId, variantId } = req.body;
 
     const product = await Product.findOne({
       _id: productId,
@@ -81,23 +80,23 @@ const addTocart = async (req, res) => {
     }).populate("categoryId");
 
     if (!product) {
-      return res.status(NOT_FOUND).redirect(
-        "/cart?error=" + encodeURIComponent("Product not found")
-      );
+      return res.status(NOT_FOUND).json({
+        success: "false", message: "Product not found!"
+      })
     }
 
     const variant = product.variants.id(variantId);
 
     if (!variant) {
-      return res.status(NOT_FOUND).redirect(
-        "/cart?error=" + encodeURIComponent("Variant not found")
-      );
+      return res.status(NOT_FOUND).json({
+        success: "false", message: "Variant not found!"
+      })
     }
 
     if(variant.stock===0) {
-        return res.status(CONFLICT).redirect(
-        "/cart?error=" + encodeURIComponent("Out of stock")
-      );
+        return res.status(CONFLICT).json({
+          success: "false", message: "Out of Stock!"
+        })
     }
 
     if (
@@ -105,10 +104,9 @@ const addTocart = async (req, res) => {
       !product.categoryId ||
       !product.categoryId.isListed
     ) {
-      console.log("product/category blocked");
-      return res.status(FORBIDDEN).redirect(
-        "/cart?error=" + encodeURIComponent("This product is not available")
-      );
+      return res.status(FORBIDDEN).json({
+        success: "false", message: "Product is unavailable right now!"
+      })
     }
 
     const variantPrice = variant.discountPrice || variant.originalPrice;
@@ -128,9 +126,9 @@ const addTocart = async (req, res) => {
         cartItem.quantity += 1;
         cartItem.totalPrice = cartItem.quantity * cartItem.price;
       } else {
-        return res.status(CONFLICT).redirect(
-          "/cart?error=" + encodeURIComponent("Maximum quantity reached")
-        );
+        return res.status(CONFLICT).json({
+          success: "false", message: "Maximum stock/limit reached"
+        })
       }
     } else {
       cart.items.push({
@@ -153,9 +151,9 @@ const addTocart = async (req, res) => {
     }
 
     await cart.save();
-    return res.status(OK).redirect(
-      "/cart?success=" + encodeURIComponent("Product added to cart")
-    );
+    return res.status(OK).json({
+      success: "true", message: "Book added to the cart"
+    })
   } catch (error) {
     const err = new Error("Add to cart internal server error");
     return next (err);

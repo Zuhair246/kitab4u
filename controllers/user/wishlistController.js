@@ -158,7 +158,7 @@ const addToWishlist = async (req, res) => {
         }
 
         await wishlist.save()
-        console.log(`${product} added to wishlist`);
+
         const previousPage = req.get('Referer') || '/';
         return res.status(200).redirect(previousPage);
 

@@ -703,7 +703,6 @@ const loadShoppingPage = async (req, res) => {
   }
 };
 
-
 export default {
     loadHomePage,
     loadSignup,

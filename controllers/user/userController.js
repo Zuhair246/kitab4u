@@ -20,9 +20,8 @@ import { json } from 'express';
 const loadHomePage = async (req,res) => {
     try {
         const user = req.session.user || req.user;
-        const page = parseInt(req.query.page) || 1;
         const limit = 6;
-        const skip = (page - 1)*limit;
+
         const Categories = await Category.find({isListed: true});
         let productData = await Product.find({
           isBlocked: false,
@@ -30,7 +29,6 @@ const loadHomePage = async (req,res) => {
           'variants.stock' : {$gt:0}
         })
         .sort({createdAt: -1})
-        .skip(skip)
         .limit(limit);
 
         productData = productData.map(product => {
@@ -49,23 +47,17 @@ const loadHomePage = async (req,res) => {
       'variants.stock': { $gt: 0 },
     });
 
-        const totalPages = Math.ceil(totalProducts /  limit);
-
     if (user && user._id) {
       const userData = await User.findById(user._id); 
       
       return res.status(OK).render("homePage", { 
                                                         user: userData, 
                                                         books: productData,
-                                                        currentPage: page,
-                                                        totalPages,
                                                       });
     }
 
     return res.status(OK).render("homePage", {
                                             books: productData,
-                                            currentPage: page,
-                                            totalPages,
                                             });
     }catch (error) {
         const err = new Error("Server error in loading Home Page")

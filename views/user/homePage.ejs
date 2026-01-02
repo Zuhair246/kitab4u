@@ -93,43 +93,14 @@
                                 <%= book.variants[0].stock === 0 ? "disabled" : "" %>>
                                 <i class="bi bi-cart-plus me-2"></i>Add to Cart
                                 </button>
-
-                                <!-- <button class="btn btn-primary btn-sm">Add to Cart</button> -->
                                 </div>
                             </div>
                             </div>
                         </div>
                         <% }); %>
-                                    </div>
-
-                                        <!-- Pagination -->
-                                <div class="d-flex justify-content-center mt-4">
-                                <nav aria-label="Page navigation">
-                                    <ul class="pagination">
-                                        
-                                    <% if (currentPage > 1) { %>
-                                        <li class="page-item">
-                                        <a class="page-link" href="?page=<%= currentPage - 1 %>">&lt;</a>
-                                        </li>
-                                    <% } %>
-                                    <% for (let i = 1; i <= totalPages; i++) { %>
-                                        <li class="page-item <%= i === currentPage ? 'active' : '' %>">
-                                        <a class="page-link" href="?page=<%= i %>"><%= i %></a>
-                                        </li>
-                                    <% } %>
-
-                                    <% if (currentPage < totalPages) { %>
-                                        <li class="page-item">
-                                        <a class="page-link" href="?page=<%= currentPage + 1 %>">&gt;</a>
-                                        </li>
-                                    <% } %>
-
-                                    </ul>
-                                </nav>
-                                </div>
-
-                                </div>
-                                </section>
+                    </div>                              
+                </div>
+            </section>
 
     <!-- Footer -->
     
@@ -140,12 +111,18 @@
 
         document.addEventListener('DOMContentLoaded', function() {
          
-            document.querySelectorAll('.category-card').forEach(card => {
-                card.addEventListener('click', function() {
-                    const category = this.querySelector('.category-title').textContent.toLowerCase();
-                    window.location.href = `/shop/${encodeURIComponent(category)}`;
+        document.querySelectorAll('.category-card').forEach(card => {
+        card.addEventListener('click', function () {
+            const category = this.querySelector('.category-title').textContent.trim();
+
+            const url = new URL(window.location.origin + "/shop");
+            url.searchParams.set("category", category);
+            url.searchParams.set("page", "1");
+
+            window.location.href = url.toString();
                 });
             });
+
 
             document.querySelector('.shop-now-btn').addEventListener('click', function() {
                 window.location.href = '/shop';

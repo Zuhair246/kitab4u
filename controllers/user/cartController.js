@@ -21,6 +21,7 @@ const loadCart = async (req, res) => {
 
     const cart = await Cart.findOne({ userId }).populate({
       path:'items.productId',
+      select: "name author images variants isBlocked categoryId",
       populate:{
         path:'categoryId',
         model:'Category',

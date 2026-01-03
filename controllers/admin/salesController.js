@@ -85,122 +85,171 @@ const loadSales = async (req, res) => {
 }
 
 const downloadSalesPDF = async (req, res) => {
-    try {
-        const { range, startDate, endDate } = req.query;
-        const dateFilter = await getDateFilter(range, startDate, endDate);
+  try {
+    const { range, startDate, endDate } = req.query;
+    const dateFilter = await getDateFilter(range, startDate, endDate);
 
-        const doc = new PDFDocument({ margin: 20 });
+    const doc = new PDFDocument({ size: "A4", margin: 30 });
 
-        const sales = await Order.find(dateFilter)
-            .populate("userId", "name")
-            .populate("orderedItems.product", "title name")
-            .sort({ createdAt: -1 })
-            .lean();
+    const sales = await Order.find(dateFilter)
+      .populate("userId", "name")
+      .populate("orderedItems.product", "name")
+      .sort({ createdAt: -1 })
+      .lean();
 
-        res.setHeader("Content-Type", "application/pdf");
-        res.setHeader("Content-Disposition", "attachment; filename=sales_report.pdf");
+    const kpi = await getKPIData(dateFilter);
 
-        doc.pipe(res);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=sales_report.pdf"
+    );
 
-        doc.fontSize(22).fillColor("#000").text("Sales Report", { align: "center" });
-        doc.moveDown(1.5);
+    doc.pipe(res);
 
-        const tableTop = 130;
-        let y = tableTop;
+    doc
+  .fontSize(18)
+  .font("Helvetica-Bold")
+  .text("KITAB4U", { align: "left" });
 
-        const rowHeight = 30;
+doc
+  .fontSize(10)
+  .font("Helvetica")
+  .fillColor("#555")
+  .text("Online Book Store", { align: "left" });
 
-        const col = {
-            id: 100,
-            product: 120,
-            amount: 70,
-            discount: 70,
-            date: 80,
-            payment: 80,
-            status: 70
-        };
+doc.moveDown(0.5);
+doc.moveTo(30, doc.y).lineTo(doc.page.width - 30, doc.y).stroke("#ccc");
+doc.moveDown(1);
 
-        const totalWidth =
-            col.id + col.product + col.amount + col.discount +
-            col.date + col.payment + col.status;
+    // -------------------------------
+    // TITLE
+    // -------------------------------
+    doc.fontSize(22).fillColor("#000").text("Sales Report", { align: "center" });
+    doc.moveDown(1.5);
 
-        doc.rect(30, y, totalWidth, rowHeight).fill("#1e40af");
+    // -------------------------------
+    // TABLE CONFIG
+    // -------------------------------
+    let y = doc.y + 10;
+    const rowHeight = 22;
 
-        doc.fillColor("white").fontSize(8);
-        doc.text("Order ID", 35, y + 10);
-        doc.text("Product", 35 + col.id , y + 10);
-        doc.text("Amount", 35 + col.id  + col.product, y + 10);
-        doc.text("Discount", 35 + col.id  + col.product + col.amount, y + 10);
-        doc.text("Date", 35 + col.id  + col.product + col.amount + col.discount, y + 10);
-        doc.text("Payment", 35 + col.id  + col.product + col.amount + col.discount + col.date, y + 10);
-        doc.text("Status", 35 + col.id  + col.product + col.amount + col.discount + col.date + col.payment, y + 10);
+    const col = {
+      date: 70,
+      id: 85,
+      customer: 90,
+      product: 120,
+      amount: 65,
+      payment: 70,
+      status: 65
+    };
+
+    const startX = 30;
+    const totalWidth = Object.values(col).reduce((a, b) => a + b, 0);
+
+    // -------------------------------
+    // TABLE HEADER
+    // -------------------------------
+    doc.rect(startX, y, totalWidth, rowHeight).fill("#1e40af");
+    doc.fillColor("white").fontSize(8);
+
+    let x = startX;
+    doc.text("Date", x + 3, y + 7); x += col.date;
+    doc.text("Order ID", x + 3, y + 7); x += col.id;
+    doc.text("Customer", x + 3, y + 7); x += col.customer;
+    doc.text("Product", x + 3, y + 7); x += col.product;
+    doc.text("Amount", x + 3, y + 7); x += col.amount;
+    doc.text("Payment", x + 3, y + 7); x += col.payment;
+    doc.text("Status", x + 3, y + 7);
+
+    y += rowHeight;
+
+    // -------------------------------
+    // TABLE ROWS
+    // -------------------------------
+    sales.forEach(order => {
+      order.orderedItems.forEach((item, i) => {
+
+        const isEven = i % 2 === 0;
+        doc.rect(startX, y, totalWidth, rowHeight)
+           .fill(isEven ? "#f1f5f9" : "#ffffff");
+
+        doc.fillColor("#000").fontSize(8);
+
+        let cx = startX;
+
+        doc.text(
+          new Date(order.createdAt).toLocaleDateString(),
+          cx + 3, y + 6
+        ); cx += col.date;
+
+        doc.text(order.orderId, cx + 3, y + 6); cx += col.id;
+
+        doc.text(order.userId?.name || "-", cx + 3, y + 6, {
+          width: col.customer - 5
+        }); cx += col.customer;
+
+        doc.text(
+          item.product?.name || item.name || "-",
+          cx + 3, y + 6,
+          { width: col.product - 5 }
+        ); cx += col.product;
+
+        doc.text(`Rs: ${item.salePrice}/-`, cx + 3, y + 6); cx += col.amount;
+
+        doc.text(order.paymentMethod || "-", cx + 3, y + 6); cx += col.payment;
+
+        doc.text(order.status || "-", cx + 3, y + 6);
 
         y += rowHeight;
 
-        sales.forEach((sale) => {
-            sale.orderedItems.forEach((item, i) => {
-                const isEvenRow = (i % 2 === 0);
+        // Page break
+        if (y > doc.page.height - 120) {
+          doc.addPage();
+          y = 40;
+        }
+      });
+    });
 
-                doc.rect(30, y, totalWidth, rowHeight).fill(isEvenRow ? "#f1f5f9" : "#ffffff");
+    // -------------------------------
+    // SUMMARY SECTION
+    // -------------------------------
+    doc.addPage();
+    doc.moveDown(1);
 
-                const productName =
-                    item.product?.title ||
-                    item.product?.name ||
-                    item.name ||
-                    "-";
+    doc.fontSize(18).fillColor("#000")
+      .text("Sales Summary", { align: "center" });
+    doc.moveDown(1.5);
 
-                doc.fillColor("black").fontSize(8);
+    const summaryX = 120;
+    let sy = doc.y;
 
-                doc.text(sale.orderId, 35, y + 10);
-                doc.text(productName, 35 + col.id, y + 8, {
-                                width: col.product - 5,
-                                align: "left"
-                                });
+    const drawSummaryRow = (label, value, color) => {
+      doc.rect(100, sy, 350, 28).fill(color);
+      doc.fillColor("#000").fontSize(11).text(label, 120, sy + 8);
+      doc.font("Helvetica-Bold")
+         .text(value, 330, sy + 8, { align: "right" });
+      doc.font("Helvetica");
+      sy += 32;
+    };
 
+    drawSummaryRow("Gross Revenue", `Rs: ${kpi.grossRevenue.toFixed(2)}`, "#e0f2fe");
+    drawSummaryRow("Shipping Charges", `Rs: ${kpi.totalShippingCharge.toFixed(2)}`, "#f8fafc");
+    drawSummaryRow(
+      "Total Discount",
+      `Rs: ${(kpi.totalDiscountFromOffers + kpi.totalCouponDiscount).toFixed(2)}`,
+      "#fee2e2"
+    );
+    drawSummaryRow("Net Revenue", `Rs: ${kpi.netRevenue.toFixed(2)}`, "#dcfce7");
 
-                doc.text(`Rs: ${item.salePrice}/-`, 35 + col.id  + col.product, y + 10);
-                doc.text(
-                    `Rs: ${(item.price - item.salePrice).toFixed(2)}/-`,
-                    35 + col.id  + col.product + col.amount,
-                    y + 10
-                );
+    doc.end();
 
-                doc.text(
-                    new Date(sale.createdAt).toLocaleDateString(),
-                    35 + col.id  + col.product + col.amount + col.discount,
-                    y + 10
-                );
-
-                doc.text(
-                    sale.paymentMethod || "-",
-                    35 + col.id  + col.product + col.amount + col.discount + col.date,
-                    y + 10
-                );
-
-                doc.text(
-                    sale.status || "-",
-                    35 + col.id  + col.product + col.amount + col.discount + col.date + col.payment,
-                    y + 10
-                );
-
-                y += rowHeight;
-
-                if (y > doc.page.height - 50) {
-                    doc.addPage();
-                    y = 50;
-                }
-            });
-        });
-
-        doc.end();
-
-    } catch (error) {
-        console.log(error);
-        
-        const err = new Error("PDF download server error");
-        err.redirect = "/admin/salesReport?error=Server error";
-        throw err;
-    }
+  } catch (error) {
+    console.error(error);
+    const err = new Error("PDF download server error");
+    err.redirect = "/admin/salesReport?error=Server error";
+    throw err;
+  }
 };
 
 const downloadSalesExcel = async (req, res) => {

@@ -204,63 +204,175 @@ const downloadSalesPDF = async (req, res) => {
 };
 
 const downloadSalesExcel = async (req, res) => {
-    try {
-        const { range, startDate, endDate } = req.query;
-        const dateFilter = await getDateFilter(range, startDate, endDate);
+  try {
+    const { range, startDate, endDate } = req.query;
+    const dateFilter = await getDateFilter(range, startDate, endDate);
 
-        const sales = await Order.find(dateFilter)
-            .populate("userId", "name")
-            .populate("orderedItems.product", "name")
-            .sort({ createdAt: -1 })
-            .lean();
+    const sales = await Order.find(dateFilter)
+      .populate("userId", "name")
+      .populate("orderedItems.product", "name variants.coverType")
+      .sort({ createdAt: -1 })
+      .lean();
 
-        const workbook = new ExcelJS.Workbook();
-        const sheet = workbook.addWorksheet("Sales Report");
+      const kpi = await getKPIData(dateFilter);
 
-        sheet.columns = [
-            { header: "Order ID", key: "id", width: 20 },
-            { header: "Customer Name", key: "name", width: 20 },
-            { header: "Product", key: "product", width: 30 },
-            { header: "Paid Amount", key: "amount", width: 20 },
-            { header: "Discount", key: "discount", width: 15 },
-            { header: "Date", key: "date", width: 20 },
-            { header: "Payment Method", key: "payment", width: 20 },
-            { header: "Status", key: "status", width: 15 },
-        ];
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet("Sales Report");
 
-        sheet.getRow(1).eachCell(cell => {
-            cell.font = { bold: true };
+    // -----------------------------
+    // COLUMN DEFINITIONS (A–D)
+    // -----------------------------
+    sheet.columns = [
+      { header: "Order ID", key: "orderId", width: 20 },
+      { header: "Order Date", key: "date", width: 15 },
+      { header: "Customer", key: "customer", width: 20 },
+
+      { header: "Product", key: "product", width: 30 },
+      { header: "Cover Type", key: "coverType", width: 15 },
+      { header: "Quantity", key: "quantity", width: 10 },
+      { header: "Item Status", key: "itemStatus", width: 15 },
+      { header: "Return Reason", key: "returnReason", width: 25 },
+
+      { header: "Gross Amount", key: "gross", width: 15 },
+      { header: "Offer Discount", key: "discount", width: 15 },
+      { header: "Net Amount", key: "net", width: 15 },
+
+      { header: "Payment Method", key: "payment", width: 18 },
+      { header: "Order Status", key: "orderStatus", width: 15 }
+    ];
+
+    sheet.getRow(1).eachCell(cell => {
+      cell.font = { bold: true };
+    });
+
+    // -----------------------------
+    // ROW DATA
+    // -----------------------------
+    sales.forEach(order => {
+      order.orderedItems.forEach(item => {
+        const gross = item.salePrice * item.quantity;
+        const discount = (item.price - item.salePrice) * item.quantity;
+        const net = item.price * item.quantity;
+
+        sheet.addRow({
+          orderId: order.orderId,
+          date: order.createdAt.toLocaleDateString(),
+          customer: order.userId?.name || "-",
+
+          product: item.product?.name || "-",
+          coverType: item.coverType || "-",
+          quantity: item.quantity,
+          itemStatus: item.itemStatus || "-",
+          returnReason: item.returnReason || "-",
+
+          gross: `₹${gross.toFixed(2)}`,
+          discount: `₹${discount.toFixed(2)}`,
+          net: `₹${net.toFixed(2)}`,
+
+          payment: order.paymentMethod,
+          orderStatus: order.status
         });
+      });
+    });
 
-        sales.forEach(sale => {
-            sale.orderedItems.forEach(item => {
-                sheet.addRow({
-                    id: sale.orderId,
-                    name: sale.userId?.name || "-",
-                    product: item.product?.name || "-",
-                    amount: `₹${item.salePrice}/-`,
-                    discount: `₹${(item.price - item.salePrice).toFixed(2)}/-`,
-                    date: sale.createdAt.toLocaleDateString(),
-                    payment: sale.paymentMethod,
-                    status: sale.status
-                });
-            });
-        });
+    // -----------------------------
+    // SUMMARY SECTION
+    // -----------------------------
+    sheet.addRow({});
+    const summaryRow = sheet.addRow({ product: "TOTAL SUMMARY" });
+    summaryRow.font = { 
+        bold: true,
+        size: 20,
+        color: { argb: "FFFFFFF"}
+    };
+    summaryRow.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FF343A40" }
+    };
 
-        res.setHeader("Content-Disposition", "attachment; filename=sales_report.xlsx");
-        res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    const grossRow = sheet.addRow({
+      product: "Gross Revenue:",
+      gross: `₹${kpi.grossRevenue.toFixed(2)}`
+    });
 
-        await workbook.xlsx.write(res);
-        res.end();
-    } catch (error) {
-        console.log(error);
-        
-        const err = new Error("Excel download server error");
-        err.redirect = "/admin/salesReport?error=Server error";
-        throw err;
+    grossRow.font = { 
+        size: 14,
+        color: { argb: "FF0D6EFD"}
+    };
+    grossRow.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFCCE5FF" }
     }
-};
 
+    const ShippingRow = sheet.addRow({
+        product: "Total Shipping Charge:",
+        gross: `₹${kpi.totalShippingCharge.toFixed(2)}`
+    });
+
+    ShippingRow.font = { 
+        size: 14,
+        color: { argb: "00000" }
+    };
+    ShippingRow.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFF8F9FA" }
+    }
+
+    const discountRow = sheet.addRow({
+      product: "Total Discount:",
+      gross: `₹${(kpi.totalDiscountFromOffers + kpi.totalCouponDiscount).toFixed(2)}`
+    });
+
+    discountRow.font = { 
+        size: 14,
+        color: { argb: "FF721C24" }
+    };
+    discountRow.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFF8D7DA" }
+    }
+
+    const netRow = sheet.addRow({
+      product: "Net Revenue:",
+      gross: `₹${kpi.netRevenue.toFixed(2)}`
+    });
+    
+    netRow.font = { 
+        size: 14,
+        color: { argb: "FF155724" }
+    };
+    netRow.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFD4EDDA" }
+    }
+
+    // -----------------------------
+    // RESPONSE
+    // -----------------------------
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=sales_report.xlsx"
+    );
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+
+    await workbook.xlsx.write(res);
+    res.end();
+
+  } catch (error) {
+    console.error(error);
+    const err = new Error("Excel download server error");
+    err.redirect = "/admin/salesReport?error=Server error";
+    throw err;
+  }
+};
 
 export default {
     loadSales,

@@ -67,8 +67,16 @@ export const getKPIData = async function getKPIData(dateFilter) {
 
               totalOrders: { $sum: 1 },
 
-              grossRevenue: { $sum: "$finalAmount" },
-              netRevenue: { $sum: "$finalPayableAmount" },
+              grossRevenue: {
+                 $sum: {
+                  $subtract: ["$finalAmount" , "$shippingCharge"]
+                }
+              },
+              netRevenue: {
+                 $sum: {
+                  $subtract: ["$finalPayableAmount" , "$shippingCharge"]
+                 } 
+                },
 
               totalCouponDiscount: { $sum: "$discount" },
               totalShippingCharge: { $sum: "$shippingCharge" },

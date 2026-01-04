@@ -5,7 +5,7 @@ import  userController from "../controllers/user/userController.js";
 import  productController from "../controllers/user/productController.js";
 import  profileController from "../controllers/user/profileController.js";
 import  cartController from "../controllers/user/cartController.js";
-import  orderController from "../controllers/user/orderCotroller.js";
+import  orderController from "../controllers/user/orderController.js";
 import  couponController from "../controllers/admin/couponController.js";
 import  wishlistController from "../controllers/user/wishlistController.js";
 import  walletController from "../controllers/user/walletController.js";

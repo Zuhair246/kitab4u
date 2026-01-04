@@ -122,10 +122,15 @@ const loadCheckoutPage = async (req, res) => {
     const finalAmount = subtotal + shippingCharge;
     let discountFinalAmount = 0;
     let discount = 0;
+
+    const today = new Date()
+    today.setHours(23, 59, 59, 999);
     let coupons = await Coupon.find({
       isActive: true,
       usedUsers: { $ne: userId },
+      expiryDate: {$gt: today}
     });
+    
     const wallet =  await Wallet.findOne({userId});
     const userWallet =  wallet ? wallet : "";
     let session = req.session;
@@ -312,6 +317,8 @@ const checkout = async (req, res) => {
         status: "Placed",
         createdAt: new Date(),
       });
+      const orderedItems = newOrder.orderedItems;
+      orderedItems.forEach( item => item.itemStatus = "Placed");
       await newOrder.save();
 
       for (const item of items) {
@@ -336,7 +343,7 @@ const checkout = async (req, res) => {
       return res.status(OK).render("orderSuccess", {
         orderId: newOrder.orderId,
         user,
-        orders,
+        order: orders,
       });
     } else if (paymentMethod === "Online") {
       const receiptId = `receipt_${Date.now()}`;
@@ -409,6 +416,8 @@ const checkout = async (req, res) => {
         status: "Placed",
         createdAt: new Date(),
       })
+      newOrder.orderedItems.forEach(item => item.itemStatus='Placed');
+      await newOrder.save();
       
      await addToWallet(userId, finalPayableAmount, 'Debit', `Paid towards the Order: #${newOrder.orderId}`);
     
@@ -527,6 +536,8 @@ const verifyPayment = async (req, res) => {
         session.endSession();
         return res.status(NOT_FOUND).json({ success: false, message: "Order not found!"})
       }
+      order.orderedItems.forEach(item => item.itemStatus = 'Placed');
+      order.save();
       for (const item of order.orderedItems) {
         const updated = await Product.updateOne(
           { _id: item.product, "variants._id": item.variantId },
@@ -577,6 +588,8 @@ const verifyPayment = async (req, res) => {
       });
     }
   } catch (error) {
+    console.log(error);
+    
     if(session.inTransaction()){
       await session.abortTransaction();
     }

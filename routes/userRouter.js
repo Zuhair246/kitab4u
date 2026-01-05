@@ -37,7 +37,9 @@ router.get('/shop', userStatus, userController.loadShoppingPage);
 router.get('/shop/:category', userController.loadShoppingPage)
 
 //Product Management
-router.get('/productDetails', checkProductAvailability, userStatus, productController.productDetails)
+router.get('/productDetails', checkProductAvailability, userStatus, productController.productDetails);
+router.get('/reviews/:productId', productController.loadReviews);
+router.post('/reviews/add', productController.addReviews);
 
 // Search products
 router.get("/search", checkProductAvailability, userStatus,productController.loadSearchResults);

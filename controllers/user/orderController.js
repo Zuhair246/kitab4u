@@ -5,6 +5,7 @@ import Address from '../../models/addressSchema.js';
 import Order from '../../models/orderSchema.js';
 import Payment from '../../models/paymentSchema.js';
 import Wallet from '../../models/walletSchema.js';
+import Reviews from '../../models/reviewSchema.js';
 import { addToWallet } from '../../helpers/walletHelper.js';
 import Coupon from '../../models/couponSchema.js';
 import { calculateDiscountedPrice } from '../../helpers/offerPriceCalculator.js';
@@ -836,9 +837,16 @@ const orderDetails = async (req, res) => {
     order.subtotal = order.totalPrice;
     order.shippingCharge = order.shippingCharge;
 
+    const reviewedItems = await Reviews.find({
+      userId,
+      orderId: order._id
+    }).select('productId').lean();
+    const reviewedProductIds = reviewedItems.map( r => r.productId.toString());
+
      return res.status(OK).render("orderDetails", {
       user,
       order,
+      reviewedProductIds
     });
   } catch (error) {
     const err = new Error("Order details page loading server error");

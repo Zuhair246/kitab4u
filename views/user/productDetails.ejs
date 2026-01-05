@@ -35,53 +35,35 @@
       </div>
     </div>
 
-    <!-- Right: Details -->
-    <div class="col-md-7">
+   <!-- Right: Details -->
+<div class="col-md-7">
+  <div class="row">
+
+    <!-- LEFT SIDE CONTENT -->
+    <div class="col-md-8">
+
       <h2><%= product.name %></h2>
       <h5 class="text-muted mb-3"><%= product.author %></h5>
 
-      <!-- Ratings -->
-      <div class="d-flex align-items-center mb-2">
-        <div>
-          <% for(let i=1;i<=5;i++){ %>
-            <% if(i <= Math.round(product.averageRating || 0)){ %>
-              <i class="bi bi-star-fill text-warning"></i>
-            <% } else { %>
-              <i class="bi bi-star text-warning"></i>
-            <% } %>
+      <!-- Price & Discount -->
+      <div id="priceSection" class="mb-3">
+        <% const variant = product.variants && product.variants[0]; %>
+        <% if(variant){ %>
+          <% if(variant.discountPercentage > 0 && variant.finalPrice < variant.discountPrice){ %>
+            <span class="fs-4 fw-bold text-danger">₹<%= variant.finalPrice %>/-</span>
+            <span class="text-muted text-decoration-line-through ms-2">₹<%= variant.discountPrice %>/-</span>
+            <span class="badge bg-success ms-2"><%= variant.discountPercentage %>% OFF</span>
+          <% } else if(variant.discountPrice && variant.discountPrice < variant.originalPrice){ %>
+            <span class="fs-4 fw-bold text-danger">₹<%= variant.discountPrice %>/-</span>
+            <span class="text-muted text-decoration-line-through ms-2">₹<%= variant.originalPrice %>/-</span>
+            <span class="badge bg-success ms-2">
+              Save ₹<%= variant.originalPrice - variant.discountPrice %>/-
+            </span>
+          <% } else { %>
+            <span class="fs-4 fw-bold">₹<%= variant.originalPrice %>/-</span>
           <% } %>
-        </div>
-        <span class="ms-2 text-muted">(<%= product.totalReviews || 0 %> reviews)</span>
+        <% } %>
       </div>
-
-<!-- Price & Discount -->
-<div id="priceSection" class="mb-3">
-  <% const variant = product.variants && product.variants[0]; %>
-  <% if(variant){ %>
-    <% if(variant.discountPercentage > 0 && variant.finalPrice < variant.discountPrice){ %>
-      <!-- Offer applied -->
-      <span id="discountPrice" class="fs-4 fw-bold text-danger">₹<%= variant.finalPrice %>/-</span>
-      <span id="originalPrice" class="text-muted text-decoration-line-through ms-2">₹<%= variant.discountPrice %>/-</span>
-      <span id="savings" class="badge bg-success ms-2"><%= variant.discountPercentage %>% OFF</span>
-    <% } else if(variant.discountPrice && variant.discountPrice < variant.originalPrice){ %>
-      <!-- Normal product discount -->
-      <span id="discountPrice" class="fs-4 fw-bold text-danger">₹<%= variant.discountPrice %>/-</span>
-      <span id="originalPrice" class="text-muted text-decoration-line-through ms-2">₹<%= variant.originalPrice %>/-</span>
-      <span id="savings" class="badge bg-success ms-2">Save ₹<%= variant.originalPrice - variant.discountPrice %>/-</span>
-    <% } else { %>
-      <!-- No discount -->
-      <span id="originalPriceOnly" class="fs-4 fw-bold">₹<%= variant.originalPrice %>/-</span>
-    <% } %>
-  <% } %>
-</div>
-
-
-      <!-- Coupon -->
-      <% if(product.coupon) { %>
-        <div class="alert alert-warning py-2">
-          <i class="bi bi-tag"></i> Coupon Applied: <strong><%= product.coupon %></strong>
-        </div>
-      <% } %>
 
       <!-- Stock -->
       <% if(product.variants.some(v => v.stock > 0)) { %>
@@ -94,29 +76,28 @@
       <ul class="list-unstyled mb-3">
         <li><strong>Publisher:</strong> <%= product.publisher %></li>
         <li><strong>Cover Type:</strong>
-          <% product.variants.forEach((variant, index) => { %>
-              <button class="btn btn-sm btn-outline-primary me-2 variant-btn"
-                          data-original="<%= variant.originalPrice %>"
-                          data-discount="<%= variant.discountPrice %>"
-                          data-offer="<%= variant.discountPercentage %>"
-                          data-final="<%= variant.finalPrice %>"
-                          data-stock="<%= variant.stock %>"
-                          data-variantid="<%= variant._id %>">
-                          
-                    <%= variant.coverType %>
-                  </button>
-              <% }) %>
+          <% product.variants.forEach((variant) => { %>
+            <button class="btn btn-sm btn-outline-primary me-2 variant-btn"
+              data-original="<%= variant.originalPrice %>"
+              data-discount="<%= variant.discountPrice %>"
+              data-offer="<%= variant.discountPercentage %>"
+              data-final="<%= variant.finalPrice %>"
+              data-stock="<%= variant.stock %>"
+              data-variantid="<%= variant._id %>">
+              <%= variant.coverType %>
+            </button>
+          <% }) %>
         </li>
         <li><strong>Pages:</strong> <%= product.pages %></li>
       </ul>
 
       <!-- Delivery -->
-      <p class="mb-1"><i class="bi bi-truck"></i> Estimated Delivery: Jul 30 - Aug 03</p>
-      <p class="mb-3"><i class="bi bi-box-seam"></i> Free Shipping & Returns on orders over ₹500</p>
+      <p class="mb-3">
+        <i class="bi bi-box-seam"></i> Free Shipping & Returns on orders over ₹500
+      </p>
 
       <!-- Actions -->
       <div class="d-flex align-items-center gap-3 mb-4">
-        <!-- ADD TO CART -->
         <button
           type="button"
           class="btn btn-primary px-4 add-to-cart-btn"
@@ -125,39 +106,47 @@
           <%= quantity <= 0 ? 'disabled' : '' %>>
           <i class="bi bi-cart-plus me-2"></i>Add to Cart
         </button>
-      <form action="/wishlist" method="post" id="cartForm">
-        <input type="hidden" name="productId" value="<%= product._id %>">
-        <input type="hidden" name="variantId" id="variantId" value="<%= variant._id %>">
+
+        <form action="/wishlist" method="post">
+          <input type="hidden" name="productId" value="<%= product._id %>">
+          <input type="hidden" name="variantId" value="<%= variant._id %>">
         <button class="btn" type="submit"
                 title="<%= wishlistItems.includes(product._id.toString()) ? 'Remove from Wishlist' : 'Add to Wishlist' %>">
           <i class="bi <%= wishlistItems.includes(product._id.toString()) ? 'bi-heart-fill' : 'bi-heart' %> fs-4 text-danger"
             style="font-size: 1rem; width: 1rem; height: 1rem; display: inline-flex; align-items: center; justify-content: center;"></i>
         </button>
-      </form>
+        </form>
       </div>
     </div>
+
+<!-- RIGHT SIDE: CUSTOMER REVIEWS (BORDERED) -->
+<div class="col-md-4">
+  <div class="border rounded-3 p-5 shadow bg-white">
+
+    <h6 class="mb-3 text-secondary text-nowrap fw-semibold">Customer Reviews</h6>
+
+    <div id="previewReviews"></div>
+
+    <button
+      id="showMoreBtn"
+      class="btn btn-sm btn-outline-primary w-100 mt-2 d-none"
+      data-bs-toggle="modal"
+      data-bs-target="#reviewsModal">
+      Show more reviews
+    </button>
+
+  </div>
+</div>
+
+  </div>
+</div>
   </div>
 
   <!-- Description & Ratings -->
   <div class="row mt-5">
-    <div class="col-md-8">
+    <div class="col-md-8 col-lg-12">
       <h4>Description</h4>
       <p><%= product.description %></p>
-    </div>
-    <div class="col-md-4">
-      <h4>Ratings:</h4>
-      <% [5,4,3,2,1].forEach(star => { 
-        const count = product.ratingBreakdown ? product.ratingBreakdown[star] || 0 : 0;
-        const percent = product.totalReviews ? Math.round((count / product.totalReviews) * 100) : 0;
-      %>
-        <div class="d-flex align-items-center mb-1">
-          <span class="me-2"><%= star %> star</span>
-          <div class="progress flex-grow-1" style="height: 8px;">
-            <div class="progress-bar bg-warning" role="progressbar" style="width: <%= percent %>%"></div>
-          </div>
-          <span class="ms-2"><%= percent %>%</span>
-        </div>
-      <% }) %>
     </div>
   </div>
 
@@ -183,7 +172,35 @@
       <% }) %>
     </div>
   </div>
+
+
+  <!-- REVIEWS MODAL -->
+  <div class="modal fade" id="reviewsModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">All Reviews</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <div id="modalReviews"></div>
+
+        <button
+          id="loadMoreModal"
+          class="btn btn-outline-primary w-100 mt-3">
+          Load more
+        </button>
+      </div>
+
+    </div>
+  </div>
 </div>
+
+</div>
+
+
 
 <%- include("../../views/partials/user/footer") %>
 
@@ -320,5 +337,78 @@
     });
   }
 });
+//-------Reviews-----------
+  const productId = "<%= product._id %>";
+  let page = 1;
+  let modalPage = 1;
+
+  // Load first 3 reviews (right side)
+  async function loadPreviewReviews() {
+    const res = await fetch(`/reviews/${productId}?page=1`);
+    const data = await res.json();
+
+    if (!data.success || data.reviews.length === 0) {
+      document.getElementById("previewReviews").innerHTML =
+        `<p class="text-muted small mb-0">No reviews yet</p>`;
+      return;
+    }
+
+    data.reviews.forEach(r => {
+      document.getElementById("previewReviews").innerHTML += renderReview(r);
+    });
+
+    if (data.hasMore) {
+      document.getElementById("showMoreBtn").classList.remove("d-none");
+    }
+  }
+
+  //  Load modal reviews
+  async function loadModalReviews() {
+    const res = await fetch(`/reviews/${productId}?page=${modalPage}`);
+    const data = await res.json();
+
+    data.reviews.forEach(r => {
+      document.getElementById("modalReviews").innerHTML += renderReview(r, true);
+    });
+
+    if (!data.hasMore) {
+      document.getElementById("loadMoreModal").style.display = "none";
+    }
+
+    modalPage++;
+  }
+
+  //  Review UI renderer
+  function renderReview(review, showDate = false) {
+    let stars = "";
+    for (let i = 1; i <= 5; i++) {
+      stars += i <= review.rating
+        ? `<i class="bi bi-star-fill text-warning"></i>`
+        : `<i class="bi bi-star text-warning"></i>`;
+    }
+
+    return `
+      <div class="border rounded p-2 mb-2 small bg-light">
+        <div class="mb-1">${stars}</div>
+        <p class="mb-1 text-muted">${review.comment}</p>
+        <small class="text-secondary">
+          — ${review.userId.name}
+          ${showDate ? " • " + new Date(review.createdAt).toLocaleDateString() : ""}
+        </small>
+      </div>
+    `;
+  }
+
+  // Initial load
+  loadPreviewReviews();
+
+  // Modal load
+  document.getElementById("reviewsModal")
+    .addEventListener("shown.bs.modal", () => {
+      if (modalPage === 1) loadModalReviews();
+    });
+
+  document.getElementById("loadMoreModal")
+    .addEventListener("click", loadModalReviews);
 
 </script>

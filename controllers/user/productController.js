@@ -2,6 +2,8 @@ import Product from '../../models/productSchema.js';
 import Category from '../../models/categorySchema.js';
 import User from '../../models/userSchema.js';
 import Wishlist from '../../models/wishlistSchema.js';
+import Reviews from '../../models/reviewSchema.js';
+import Order from '../../models/orderSchema.js';
 import {calculateDiscountedPrice} from '../../helpers/offerPriceCalculator.js';
 
 const productDetails = async (req, res) => {
@@ -60,13 +62,21 @@ const productDetails = async (req, res) => {
     const wishlist = await Wishlist.findOne({ userId });
     const wishlistItems = wishlist ? wishlist.products.map(p => p.productId.toString()) : [];
 
+    const reviews = await Reviews.find({ productId })
+                                                    .populate('userId', 'name')
+                                                    .sort({ createdAt: -1 })
+                                                    .lean();
+    const previewReviews = reviews.slice(0, 3);
+
      return res.status(200).render('productDetails', {
       user: userData,
       product,
       quantity,
       category,
       similarProducts,
-      wishlistItems
+      wishlistItems,
+      reviews,
+      previewReviews
     });
   } catch (error) {
     const err = new Error("Product details server error");
@@ -138,9 +148,88 @@ const loadContactPage = async (req, res) => {
   }
 }
 
+const loadReviews = async (req, res) => {
+  try {
+    const {productId} = req.params;
+    const page = Number(req.query.page) || 1;
+    const limit = 3;
+    const skip = (page -1) * limit;
+
+    const reviews = await Reviews.find({productId})
+                                                    .populate("userId", "name")
+                                                    .sort({createdAt: -1})
+                                                    .skip(skip)
+                                                    .limit(limit)
+                                                    .lean();
+
+    const totalReviews = await Reviews.countDocuments({productId});
+
+    return res.json({
+      success: true,
+      reviews,
+      hasMore: skip + reviews.length < totalReviews
+    })
+
+  } catch (error) {
+    console.log(error);
+    
+    const err = new Error('load reviews error!');
+    throw err;
+  }
+}
+
+const addReviews = async (req, res) => {
+  try {
+    const userId = req.session.userId || req.user?._id;
+    if(!userId){
+      return res.status(401).json({
+        success: false,
+        message: "Login to add reviews",
+        redirect: '/login'
+      });
+    };
+
+    const {orderId, productId, rating, comment} = req.body;
+    if(!rating || rating <1 || rating >5) {
+      return res.status(400).json({ success: false, message: "Rating must be between 1 and 5"})
+    }
+
+    const order = await Order.findOne({
+      _id: orderId,
+      userId,
+      status: "Delivered",
+      'orderedItems.product': productId
+    });
+    if(!order){
+      return res.status(403).json({ success: false, message: "Invalid review attempt!"});
+    }
+
+    const existing = await Reviews.findOne({ userId, productId, orderId});
+    if(existing) {
+      return res.status(409).json({ success: false, message: "Review already added!"})
+    }
+
+    await Reviews.create({
+      userId,
+      productId,
+      orderId,
+      rating,
+      comment: comment?.trim() || ''
+    })
+
+    return res.status(200).json({ success: true, message: "Review added successfully"})
+
+  } catch (error) {
+    const err = new Error('Error adding reviews');
+    throw err;
+  }
+}
+
 export default {
   productDetails,
   loadSearchResults,
   loadAboutPage,
-  loadContactPage
+  loadContactPage,
+  loadReviews,
+  addReviews
 };

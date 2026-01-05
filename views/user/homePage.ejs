@@ -68,21 +68,6 @@
                                 <h5 class="card-title"><%= book.name %></h5>
                                 <p class="card-text text-muted"><%= book.author %></p>
                                 
-                                <!-- Dummy Star Rating -->
-                                <div class="d-flex align-items-center mb-2">
-                                <% 
-                                    const rating = Math.floor(Math.random() * 2) + 4; // gives 4 or 5
-                                    const totalStars = 5;
-                                %>
-                                <% for (let i = 1; i <= totalStars; i++) { %>
-                                    <% if (i <= rating) { %>
-                                    <i class="fas fa-star text-warning"></i>
-                                    <% } else { %>
-                                    <i class="far fa-star text-warning"></i>
-                                    <% } %>
-                                <% } %>
-                                <small class="text-muted ms-2">(3.6k Customer Reviews)</small>
-                                </div>
                                 <div class="mt-auto d-flex justify-content-between align-items-center">
                                 <span class="price fw-bold">₹<%= book.defaultPrice %></span>
                                 <button

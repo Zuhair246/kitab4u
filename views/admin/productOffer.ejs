@@ -108,7 +108,7 @@
         <button class="btn-close" data-bs-dismiss="modal"></button>
       </div>
 
-      <form action="/admin/productOffers/add" method="POST">
+      <form id="addOfferForm" action="/admin/productOffers/add">
         <div class="modal-body">
 
           <div class="mb-3">
@@ -159,7 +159,7 @@
         <button class="btn-close" data-bs-dismiss="modal"></button>
       </div>
 
-      <form action="/admin/productOffers/edit" method="POST">
+      <form id="editOfferForm" action="/admin/productOffers/edit">
         <input type="hidden" id="editOfferId" name="offerId">
 
         <div class="modal-body">
@@ -289,6 +289,77 @@
       }
     });
   }
+
+  //add offer submit
+document.getElementById("addOfferForm").addEventListener("submit", function (e) {
+  e.preventDefault();
+
+  const form = this;
+
+  const payload = {
+    productId: form.productId.value,
+    discountPercentage: form.discountPercentage.value,
+    startDate: form.startDate.value,
+    endDate: form.endDate.value
+  };
+
+  fetch(form.action, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  })
+  .then(res => res.json().then(data => ({ ok: res.ok, data })))
+  .then(({ ok, data }) => {
+    if (!ok) throw data;
+
+    swal("Success!", data.message, "success")
+      .then(() => window.location.href = data.redirect);
+  })
+  .catch(err => {
+    swal("Error!", err?.message || "Failed to add product offer", "error");
+  });
+});
+
+
+//edit offer submit
+document.getElementById("editOfferForm").addEventListener("submit", function (e) {
+  e.preventDefault();
+
+  const form = this;
+
+  const payload = {
+    offerId: form.offerId.value,
+    productId: form.productId.value,
+    discountPercentage: form.discountPercentage.value,
+    startDate: form.startDate.value,
+    endDate: form.endDate.value
+  };
+
+  fetch(form.action, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  })
+  .then(res => res.json().then(data => ({ ok: res.ok, data })))
+  .then(({ ok, data }) => {
+    if (!ok) throw data;
+
+    swal("Success!", data.message, "success")
+      .then(() => {
+        window.location.reload();
+      });
+  })
+  .catch(err => {
+    swal(
+      "Error!",
+      err?.message || "Failed to update product offer",
+      "error"
+    );
+  });
+});
+
 </script>
-
-

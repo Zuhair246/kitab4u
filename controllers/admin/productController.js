@@ -1,7 +1,6 @@
 import Product from '../../models/productSchema.js'
 import Category from '../../models/categorySchema.js';
 import { uploadToCloudinary } from '../../helpers/cloudinaryUpload.js';
-import { json } from 'express';
 
 const getProductAddPage = async (req, res) => {
     try {

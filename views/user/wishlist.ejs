@@ -144,7 +144,7 @@
           </p>
 
           <!-- Add to Cart Button -->
-          <form action="/cart" method="post" class="mt-auto">
+          <form onsubmit="addToCart(event, '<%= item._id %>', '<%= item.variantId %>')">
             <input type="hidden" name="productId" value="<%= item._id %>">
             <input type="hidden" name="variantId" value="<%= item.variantId %>">
             <button type="submit" 
@@ -192,7 +192,62 @@
 </main>
 <%-include("../../views/partials/user/footer") %>
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
+  
+async function addToCart(event, productId, variantId) {
+  event.preventDefault();
+
+  try {
+    const response = await fetch('/cart', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ productId, variantId })
+    });
+
+    const data = await response.json();
+
+    if (data.redirect) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Login Required',
+        text: data.message,
+        confirmButtonText: 'Login'
+      }).then(() => {
+        window.location.href = data.redirect;
+      });
+      return;
+    }
+
+    if (data.success === "true") {
+      Swal.fire({
+        icon: 'success',
+        title: 'Added to Cart',
+        text: data.message,
+        timer: 1500,
+        showConfirmButton: false
+      }).then(() => {
+        location.reload(); // 🔄 reload wishlist
+      });
+    } else {
+      Swal.fire({
+        icon: 'error',
+        title: 'Oops!',
+        text: data.message
+      });
+    }
+
+  } catch (error) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Server Error',
+      text: 'Something went wrong. Please try again.'
+    });
+  }
+}
 
   function removeFromWishlist(productId, variantId) {
       fetch(`/wishlist/removeItem`, { 

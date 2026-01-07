@@ -55,9 +55,21 @@ const updateProfile = async (req,res) => {
 
     let updated = false;
 
-    if(name == "" || email == ""){
-      req.flash("error", "Name and Email should not be empty");
+    if( name == "" ){
+      req.flash("error", "Name  should not be empty");
       return res.status(BAD_REQUEST).redirect("/profile/edit")
+    }
+
+    if( email == "" ){
+      req.flash("error", "Email should not be empty");
+      return res.status(BAD_REQUEST).redirect("/profile/edit")
+    }
+
+    const nameRegex = /^(?!.*\s{2,})(?!\s)([A-Za-z]+(?:\s[A-Za-z]+)*)$/;
+    if (!nameRegex.test(name) || name.replace(/\s/g, '').length < 3) {
+        req.flash("error", "Name should be at least 3 letters and contain only alphabets with spaces only between words");
+       req.flash("formData", { name, email });
+        return res.status(BAD_REQUEST).redirect("/profile/edit");
     }
 
     if(name && name !== user.name) {

@@ -91,7 +91,7 @@ const signup = async (req, res) => {
 
     // Name: only letters, single spaces between words, no leading/trailing space
     const nameRegex = /^(?!.*\s{2,})(?!\s)([A-Za-z]+(?:\s[A-Za-z]+)*)$/;
-    if (!nameRegex.test(name) || name.replace(/\s/g, '').length < 5) {
+    if (!nameRegex.test(name) || name.replace(/\s/g, '').length < 3) {
         req.flash("error", "Name should be at least 5 letters and contain only alphabets with spaces only between words");
        req.flash("formData", { name, email, password, phone, referralCode });
         return res.status(BAD_REQUEST).redirect("/signup");

@@ -116,7 +116,7 @@
             <select class="form-select" name="productId" >
               <option value="">Select product...</option>
               <% products.forEach(product => { %>
-                <option value="<%= product._id %>"><%= product.name %> - ₹<%= product.variants[0].originalPrice %></option>
+                <option value="<%= product._id %>"><%= product.name %></option>
               <% }) %>
             </select>
           </div>
@@ -169,7 +169,7 @@
             <select class="form-select" name="productId" >
               <option value="<%= %>">Select product...</option>
               <% products.forEach(product => { %>
-                <option value="<%= product._id %>"><%= product.name %> - ₹<%= product.variants[0].originalPrice %></option>
+                <option value="<%= product._id %>"><%= product.name %> </option>
               <% }) %>
             </select>
           </div>

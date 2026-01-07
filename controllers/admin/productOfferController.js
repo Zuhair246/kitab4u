@@ -1,22 +1,16 @@
 import Product from '../../models/productSchema.js';
 import ProductOffer from '../../models/productOfferSchema.js';
 import { statusCodes } from '../../helpers/statusCodes.js';
+import { name } from 'ejs';
 const { BAD_REQUEST, OK, NOT_FOUND, SERVER_ERROR } = statusCodes;
 
 const loadProductOffers = async (req, res) => {
     try {
-        const products = await Product.find().lean();
+        const products = await Product.find().sort({name: 1}).lean();
         const offers = await ProductOffer.find()
                                                             .populate('productId')
                                                             .lean();
 
-        // const productData = products.map(pro => {
-        //     const offer = offers.find(ofr => ofr.productId.toString() === pro._id.toString());
-        //     return {
-        //         ...pro,
-        //         offer: offer || null
-        //     };
-        // });
         const currentPage = req.query.page ? Number(req.query.page) : 1;
         const totalPages = 1;
         

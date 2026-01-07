@@ -149,77 +149,71 @@
 
 <script>
 let coverTypeIndex = 0;
-let croppedImages = []; // Array of blobs for cropped images
+let croppedImages = [];
 let cropper;
 
-// Add new cover type row dynamically
+/* ---------------- COVER TYPE ---------------- */
 function addCoverType(existing = null) {
-    const container = document.getElementById("coverTypeContainer");
+  const container = document.getElementById("coverTypeContainer");
+  const index = coverTypeIndex++;
 
-    const index = coverTypeIndex++;
-    const div = document.createElement("div");
-    div.classList.add("border", "rounded-3", "p-3", "mb-3", "bg-light");
+  const div = document.createElement("div");
+  div.className = "border rounded-3 p-3 mb-3 bg-light";
 
-    div.innerHTML = `
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <span class="fw-semibold">Cover type:</span>
-            <span class="fw-semibold">Original Price:</span>
-            <span class="fw-semibold">Discount Price:</span>
-            <span class="fw-semibold">Stock:</span>
-            <button type="button" class="btn btn-sm btn-danger" onclick="this.closest('.border').remove()">Remove</button>
-        </div>
-        <div class="row g-3">
-            <div class="col-md-3">
-                <input type="text" class="form-control" name="variants[${index}][coverType]" 
-                       placeholder="e.g. Paperback" required
-                       value="${existing ? existing.coverType : ''}">
-            </div>
-            <div class="col-md-3">
-                <input type="number" class="form-control" name="variants[${index}][originalPrice]" 
-                       placeholder="Original Price" min="0" step="0.01" required
-                       value="${existing ? existing.originalPrice : ''}" maxlength="4" pattern="[0-9]{4}">
-            </div>
-            <div class="col-md-3">
-                <input type="number" class="form-control" name="variants[${index}][discountPrice]" 
-                       placeholder="Discount Price" min="0" step="0.01"
-                       value="${existing ? existing.discountPrice : ''}" maxlength="4" pattern="[0-9]{4}">
-            </div>
-            <div class="col-md-2">
-                <input type="number" class="form-control" name="variants[${index}][stock]" 
-                       placeholder="Stock" min="0" required
-                       value="${existing ? existing.stock : ''}" maxlength="3" pattern="[0-9]{3}">
-            </div>
-        </div>
-    `;
+  div.innerHTML = `
+    <div class="d-flex justify-content-between mb-2">
+      <span>Cover type</span>
+      <span>Original</span>
+      <span>Discount</span>
+      <span>Stock</span>
+      <button type="button" class="btn btn-sm btn-danger"
+        onclick="this.closest('.border').remove()">Remove</button>
+    </div>
 
-    container.appendChild(div);
+    <div class="row g-3">
+      <div class="col-md-3">
+        <input class="form-control" name="variants[${index}][coverType]"
+          value="${existing?.coverType || ''}">
+      </div>
+      <div class="col-md-3">
+        <input type="number" class="form-control"
+          name="variants[${index}][originalPrice]"
+          value="${existing?.originalPrice || ''}">
+      </div>
+      <div class="col-md-3">
+        <input type="number" class="form-control"
+          name="variants[${index}][discountPrice]"
+          value="${existing?.discountPrice || ''}">
+      </div>
+      <div class="col-md-2">
+        <input type="number" class="form-control"
+          name="variants[${index}][stock]"
+          value="${existing?.stock || ''}">
+      </div>
+    </div>
+  `;
+
+  container.appendChild(div);
 }
 
-// Pre-fill for edit page
+/* ---------- PREFILL ---------- */
 <% if (typeof product !== 'undefined' && product.variants) { %>
-    <% product.variants.forEach(function(v){ %>
-        addCoverType({
-            coverType: "<%= v.coverType %>",
-            originalPrice: "<%= v.originalPrice %>",
-            discountPrice: "<%= v.discountPrice %>",
-            stock: "<%= v.stock %>",
-        });
-    <% }) %>
+  <% product.variants.forEach(v => { %>
+    addCoverType(<%- JSON.stringify(v) %>);
+  <% }) %>
 <% } %>
 
-// ---------- IMAGE PREVIEW + CROPPER ----------
-document.getElementById("images").addEventListener("change", function (event) {
-  const file = event.target.files[0];
+/* ---------------- IMAGE CROP ---------------- */
+document.getElementById("images").addEventListener("change", e => {
+  const file = e.target.files[0];
   if (!file) return;
 
   const reader = new FileReader();
-  reader.onload = function (e) {
-    // Show cropper
-    const cropContainer = document.getElementById("cropContainer");
-    cropContainer.innerHTML = `<img id="cropImage" src="${e.target.result}" style="max-width:100%;">`;
-    
-    const cropImage = document.getElementById("cropImage");
-    cropper = new Cropper(cropImage, {
+  reader.onload = ev => {
+    document.getElementById("cropContainer").innerHTML =
+      `<img id="cropImage" src="${ev.target.result}" style="max-width:100%;">`;
+
+    cropper = new Cropper(document.getElementById("cropImage"), {
       aspectRatio: 2 / 3,
       viewMode: 1
     });
@@ -227,165 +221,80 @@ document.getElementById("images").addEventListener("change", function (event) {
   reader.readAsDataURL(file);
 });
 
-// Save cropped image
 function saveCroppedImage() {
   if (!cropper) return;
 
-  cropper.getCroppedCanvas({
-    width: 400,
-    height: 600
-  }).toBlob((blob) => {
-    croppedImages.push(blob); // Add the new cropped blob to the array
-    const index = croppedImages.length - 1; // Track position
+  cropper.getCroppedCanvas({ width: 400, height: 600 })
+    .toBlob(blob => {
+      croppedImages.push(blob);
 
-    // Preview in UI
-    const url = URL.createObjectURL(blob);
-    const preview = document.getElementById("previewContainer");
-    const div = document.createElement("div");
-    div.classList.add("col-md-4", "position-relative");
- div.innerHTML = `
-      <img src="${url}" class="img-fluid rounded" style="max-height:200px;">
-      <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1"
-              onclick="removeCroppedImage(${index}, this)">×</button>`;  
-                preview.appendChild(div);
+      const index = croppedImages.length - 1;
+      const preview = document.getElementById("previewContainer");
 
-    // Reset cropper
-    cropper.destroy();
-    cropper = null;
-    document.getElementById("cropContainer").innerHTML = "";
-    document.getElementById("images").value = ""; // Reset file input
-  }, "image/jpeg");
-}
+      const div = document.createElement("div");
+      div.className = "col-md-4 position-relative";
+      div.dataset.index = index;
 
-// Remove cropped image from array & UI
-function removeCroppedImage(index, btn) {
-  croppedImages.splice(index, 1); // Remove from array
-  btn.closest(".col-md-4").remove(); // Remove from UI
-}
+      div.innerHTML = `
+        <img src="${URL.createObjectURL(blob)}" class="img-fluid rounded">
+        <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1"
+          onclick="removeCroppedImage(this)">×</button>
+      `;
 
-// Handle query params for error/success on page load
-const urlParams = new URLSearchParams(window.location.search);
-const errorParam = urlParams.get('error');
-const successParam = urlParams.get('success');
+      preview.appendChild(div);
 
-if (errorParam) {
-    Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: decodeURIComponent(errorParam)
+      cropper.destroy();
+      cropper = null;
+      document.getElementById("cropContainer").innerHTML = "";
+      document.getElementById("images").value = "";
     });
 }
 
-if (successParam) {
-    Swal.fire({
-        icon: 'success',
-        title: 'Success',
-        text: decodeURIComponent(successParam)
-    });
+function removeCroppedImage(btn) {
+  const div = btn.closest("[data-index]");
+  const index = Number(div.dataset.index);
+
+  croppedImages.splice(index, 1);
+  div.remove();
+
+  // Re-sync indexes
+  document.querySelectorAll("[data-index]").forEach((el, i) => {
+    el.dataset.index = i;
+  });
 }
 
-// ---------- FORM SUBMIT ----------
-document.getElementById('productForm').addEventListener('submit', function(e) {
-    e.preventDefault();
+/* ---------------- SUBMIT ---------------- */
+document.getElementById("productForm").addEventListener("submit", e => {
+  e.preventDefault();
 
-    const form = this;
-    const formData = new FormData(form);
-    formData.delete('images'); // Remove original uncropped file (if any)
+  const formData = new FormData(e.target);
+  formData.delete("images");
 
-    const existingCount = <%= typeof product !== 'undefined' && product.images ? product.images.length : 0 %>;
-    const newCount = croppedImages.length; 
+  croppedImages.forEach((blob, i) => {
+    formData.append("images", blob, `image${i}.jpg`);
+  });
 
-    if (newCount + existingCount < 3) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'The product must have at least 3 images.'
-        });
-        return;
-    }
+  fetch(e.target.action, { method: "POST", body: formData })
+    .then(res => res.json().then(data => ({ ok: res.ok, data })))
+    .then(({ ok, data }) => {
+      if (!ok) throw data;
 
-    // ---------- VALIDATE VARIANTS ----------
-    const variantBlocks = document.querySelectorAll('#coverTypeContainer .border');
-    if (variantBlocks.length === 0) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'Please add at least one cover type.'
-        });
-        return;
-    }
-
-    let validationError = false;
-    variantBlocks.forEach(block => {
-        const coverType = block.querySelector('input[name*="[coverType]"]').value.trim();
-        const originalPriceField = block.querySelector('input[name*="[originalPrice]"]');
-        const discountPriceField = block.querySelector('input[name*="[discountPrice]"]');
-        const stockField = block.querySelector('input[name*="[stock]"]');
-
-        if (!coverType || !originalPriceField.value || !stockField.value) {
-            validationError = true;
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: `Please fill in all required fields for ${coverType || "variant"}.`
-            });
-            return;
-        }
-
-        const originalPrice = parseFloat(originalPriceField.value);
-        const discountPrice = parseFloat(discountPriceField.value);
-
-        if (!isNaN(discountPrice) && discountPrice >= originalPrice) {
-            validationError = true;
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: `Discount price must be less than original price for ${coverType}.`
-            });
-            return;
-        }
-    });
-
-    if (validationError) return;
-
-    // Validate pages
-    const pagesField = document.getElementById('pages');
-    const pagesValue = parseInt(pagesField.value);
-    if (isNaN(pagesValue) || pagesValue < 1) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'Pages must be at least 1.'
-        });
-        return;
-    }
-
-    // Append cropped images to formData
-    croppedImages.forEach((blob, i) => {
-        formData.append('images', blob, `image${i}.jpg`);
-    });
-
-    // ---------- SUBMIT ----------
-    fetch(form.action, {
-        method: 'POST', // Use POST for both add and edit (adjust if edit uses PUT)
-        body: formData
-    }).then(response => {
-        if (response.redirected) {
-            window.location.href = response.url;
-        } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'An error occurred. Please try again.'
-            });
-        }
-    }).catch(error => {
-        console.error('Submit error:', error);
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'An error occurred. Please try again.'
-        });
+      Swal.fire({
+        icon: "success",
+        title: "Success",
+        text: data.message,
+        timer: 1500,
+        showConfirmButton: false
+      }).then(() => {
+        if (data.redirect) location.href = data.redirect;
+      });
+    })
+    .catch(err => {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: err?.message || "Something went wrong"
+      });
     });
 });
 </script>

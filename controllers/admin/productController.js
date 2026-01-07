@@ -1,6 +1,7 @@
 import Product from '../../models/productSchema.js'
 import Category from '../../models/categorySchema.js';
 import { uploadToCloudinary } from '../../helpers/cloudinaryUpload.js';
+import { json } from 'express';
 
 const getProductAddPage = async (req, res) => {
     try {
@@ -19,22 +20,35 @@ const getProductAddPage = async (req, res) => {
 const addProduct = async (req, res) => {
     try {
         const { name, author, description, categoryId,publisher,pages} = req.body;
+
+        if (!name || !author || !description || !categoryId || !publisher || !pages || variants.length === 0) {
+              return res.status(400).json({
+                  success: false,
+                  message: "All fields are required, including at least one valid variant"
+            });        
+      }
         
         const variantsData = req.body.variants || [];
         const variants = [];
 
-        variantsData.forEach((data) => {
+        for (const data of variantsData) {
             const coverType = data.coverType?.trim();
             const originalPrice = parseFloat(data.originalPrice);
             const discountPrice = data.discountPrice ? parseFloat(data.discountPrice) : null;
             const stock = parseInt(data.stock);
             if (!coverType || isNaN(originalPrice) || originalPrice <= 0 || isNaN(stock) || stock < 0) {
-                return; 
+                  return res.status(400).json({
+                    success: false,
+                    message: "Invalid variant data"
+                  });
             }
 
-            if (discountPrice !== null && (isNaN(discountPrice) || discountPrice <= 0 || discountPrice >= originalPrice)) {
-                return res.redirect('/admin/addProducts?error=' + encodeURIComponent('Discount price must be less than original price'));
-            }
+          if (discountPrice !== null && (isNaN(discountPrice) || discountPrice <= 0 || discountPrice > originalPrice)) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Discount price must be less than or equal to original price"
+              });            
+        }
 
             variants.push({
                 coverType,
@@ -42,16 +56,14 @@ const addProduct = async (req, res) => {
                 discountPrice,
                 stock
             });
-        });
-
-        if (!name || !author || !description || !categoryId || !publisher || !pages || variants.length === 0) {
-            return res.redirect('/admin/addProducts?error=' + encodeURIComponent('All fields are required, including at least one valid variant'));
-        }
+        };
 
         const existingProduct = await Product.findOne({name})
         if(existingProduct){
-            return res.redirect('/admin/addProducts?error=' + encodeURIComponent('This Book already exist '));
-        }
+            return res.status(409).json({
+              success: false,
+              message: "This book already exists"
+      });        }
 
         const images = [];
         if (req.files && req.files.length > 0) {
@@ -77,8 +89,11 @@ const addProduct = async (req, res) => {
         }
 
         if (images.length < 3) {
-            return res.redirect('/admin/addProducts?error=' + encodeURIComponent('At least 3 images are required'));
-        }
+            return res.status(400).json({
+              success: false,
+              message: "At least 3 images are required"
+            });        
+    }
 
         const newProduct = new Product({
             name,
@@ -95,10 +110,15 @@ const addProduct = async (req, res) => {
         console.log('New product saved:', newProduct);
 
         
-        return res.redirect('/admin/listProducts?success=' + encodeURIComponent('Product added successfully'));
-    } catch (error) {
+      return res.status(201).json({
+        success: true,
+        message: "Product added successfully",
+        redirect:'/admin/listProducts'
+      });
+
+      } catch (error) {
         const err = new Error("Add product server error");
-        err.redirect = `/admin/addProducts?error=` + encodeURIComponent("Add product internal server error");
+        err.redirect = `/admin/addProducts`
         throw err;
     }
 };
@@ -167,62 +187,81 @@ const editProduct = async (req, res) => {
 
     const product = await Product.findById(id);
     if (!product) {
-      return res.redirect(`/admin/listProducts?error=` + encodeURIComponent("Product not found"));
+      return res.status(404).json({
+        success: false, message: "Product not found"
+      })
     }
 
     const variantsData = req.body.variants || [];
-    let variantError = null;
+    if (!variantsData.length) {
+      return res.status(400).json({
+        success: false,
+        message: "At least one variant is required"
+      });
+    }
 
-    const updatedIds = [];
+    const updatedVariantIds = [];
+    const newVariants = [];
 
-    variantsData.forEach((data) => {
+    for (const data of variantsData ) {
       const coverType = data.coverType?.trim();
       const originalPrice = parseFloat(data.originalPrice);
       const discountPrice = data.discountPrice ? parseFloat(data.discountPrice) : null;
       const stock = parseInt(data.stock);
 
       if (!coverType || isNaN(originalPrice) || originalPrice <= 0 || isNaN(stock) || stock < 0) {
-        return; 
+        return res.status(400).json({
+          success: false, message: "Invalid variant data"
+        });
       }
       if (
         discountPrice !== null &&
-        (isNaN(discountPrice) || discountPrice <= 0 || discountPrice >= originalPrice)
+        (isNaN(discountPrice) || discountPrice <= 0 || discountPrice > originalPrice)
       ) {
-        variantError = "Discount price must be less than original price";
-        return;
+        return res.status(400).json({
+          success: false, message: "Discount price must be less than or equal to original price"
+        });
       }
 
       if (data._id) {
         const existingVariant = product.variants.id(data._id);
-        if (existingVariant) {
+        if (!existingVariant) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid variant ID"
+          });
+        }
+
           existingVariant.coverType = coverType;
           existingVariant.originalPrice = originalPrice;
           existingVariant.discountPrice = discountPrice;
           existingVariant.stock = stock;
-          updatedIds.push(existingVariant._id.toString());
-        }
+          updatedVariantIds.push(existingVariant._id.toString());
+
       } else {
-        const newVariant = {
+        newVariants.push ({
           coverType,
           originalPrice,
           discountPrice,
           stock,
-        };
-        product.variants.push(newVariant);
+        });
       }
-    });
+    };
 
-    if (variantError) {
-      return res.redirect(`/admin/editProduct/${id}?error=` + encodeURIComponent(variantError));
+    product.variants = product.variants.filter((v) => updatedVariantIds.includes(v._id.toString()) );
+    product.variants.push(...newVariants);
+
+    if (product.variants.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "At least one variant is required"
+      });
     }
 
-    product.variants = product.variants.filter((v) => updatedIds.includes(v._id.toString()) || !v._id);
-
     if (!name || !author || !description || !categoryId || !publisher || !pages || product.variants.length === 0) {
-      return res.redirect(
-        `/admin/editProduct/${id}?error=` +
-          encodeURIComponent("All fields are required, including at least one valid variant")
-      );
+      return res.status(400).json({
+        success: false, message: "All fields are required, including at least one valid variant"
+      })
     }
 
     // --- Handle Images ---
@@ -233,7 +272,6 @@ const editProduct = async (req, res) => {
                           : [];
 
     if (req.files && req.files.length > 0) {
-
       for (const file of req.files) {
         const result = await uploadToCloudinary (
           file.buffer,
@@ -255,9 +293,9 @@ const editProduct = async (req, res) => {
   }
 
     if (images.length < 3) {
-      return res.redirect(
-        `/admin/editProduct/${id}?error=` + encodeURIComponent("At least 3 images are required")
-      );
+      return res.status(400).json({
+        success: false, message: "At least 3 images are required"
+      })
     }
 
     product.name = name;
@@ -271,15 +309,15 @@ const editProduct = async (req, res) => {
 
     await product.save();
 
-    return res.redirect(
-      "/admin/listProducts?success=" + encodeURIComponent("Product updated successfully")
-    );
+    return res.status(200).json({
+      success: true, message: "Product updated successfully", redirect: "/admin/listProducts"
+    });
   } catch (error) {
-    console.log(error);
-    
-        const err = new Error("Edit product server error");
-        err.redirect = `/admin/editProduct/${req.params.id}?error=` + encodeURIComponent("Edit product internal server error");
-        throw err;
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Edit product internal server error"
+    });
   }
 };
 

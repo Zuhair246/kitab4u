@@ -171,8 +171,14 @@ let cropper;
 
 function removeExistingImage(index) {
   const imgDiv = document.getElementById(`img-${index}`);
-  if (imgDiv) imgDiv.remove();
+  if (!imgDiv) return;
+
+  const hiddenInput = imgDiv.querySelector('input[name="existingImages[]"]');
+  if (hiddenInput) hiddenInput.remove();
+
+  imgDiv.remove();
 }
+
 
 
 // Edit / Add new cover type row dynamically
@@ -278,27 +284,6 @@ function saveCroppedImage() {
   }, "image/jpeg");
 }
 
-// Handle query params for error/success on page load
-const urlParams = new URLSearchParams(window.location.search);
-const errorParam = urlParams.get('error');
-const successParam = urlParams.get('success');
-
-if (errorParam) {
-    Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: decodeURIComponent(errorParam)
-    });
-}
-
-if (successParam) {
-    Swal.fire({
-        icon: 'success',
-        title: 'Success',
-        text: decodeURIComponent(successParam)
-    });
-}
-
 // ---------- FORM SUBMIT ----------
 document.getElementById('productForm').addEventListener('submit', function(e) {
     e.preventDefault();
@@ -307,74 +292,6 @@ document.getElementById('productForm').addEventListener('submit', function(e) {
     const formData = new FormData(form);
     formData.delete('images'); // Remove original uncropped file (if any)
 
-    const existingCount = <%= typeof product !== 'undefined' && product.images ? product.images.length : 0 %>;
-    const newCount = croppedImages.length; 
-
-    if (newCount + existingCount < 3) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'The product must have at least 3 images.'
-        });
-        return;
-    }
-
-    // ---------- VALIDATE VARIANTS ----------
-    const variantBlocks = document.querySelectorAll('#coverTypeContainer .border');
-    if (variantBlocks.length === 0) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'Please add at least one cover type.'
-        });
-        return;
-    }
-
-    let validationError = false;
-    variantBlocks.forEach(block => {
-        const coverType = block.querySelector('input[name*="[coverType]"]').value.trim();
-        const originalPriceField = block.querySelector('input[name*="[originalPrice]"]');
-        const discountPriceField = block.querySelector('input[name*="[discountPrice]"]');
-        const stockField = block.querySelector('input[name*="[stock]"]');
-
-        if (!coverType || !originalPriceField.value || !stockField.value) {
-            validationError = true;
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: `Please fill in all required fields for ${coverType || "variant"}.`
-            });
-            return;
-        }
-
-        const originalPrice = parseFloat(originalPriceField.value);
-        const discountPrice = parseFloat(discountPriceField.value);
-
-        if (!isNaN(discountPrice) && discountPrice >= originalPrice) {
-            validationError = true;
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: `Discount price must be less than original price for ${coverType}.`
-            });
-            return;
-        }
-    });
-
-    if (validationError) return;
-
-    // Validate pages
-    const pagesField = document.getElementById('pages');
-    const pagesValue = parseInt(pagesField.value);
-    if (isNaN(pagesValue) || pagesValue < 1) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'Pages must be at least 1.'
-        });
-        return;
-    }
-
     // Append cropped images to formData
     croppedImages.forEach((blob, i) => {
         formData.append('images', blob, `image${i}.jpg`);
@@ -382,25 +299,32 @@ document.getElementById('productForm').addEventListener('submit', function(e) {
 
     // ---------- SUBMIT ----------
     fetch(form.action, {
-        method: 'POST', // Use POST for both add and edit (adjust if edit uses PUT)
-        body: formData
-    }).then(response => {
-        if (response.redirected) {
-            window.location.href = response.url;
-        } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'An error occurred. Please try again.'
-            });
-        }
-    }).catch(error => {
-        console.error('Submit error:', error);
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'An error occurred. Please try again.'
-        });
-    });
+  method: "POST",
+  body: formData
+})
+.then(res => res.json().then(data => ({ ok: res.ok, data })))
+.then(({ ok, data }) => {
+  if (!ok) throw data;
+
+  Swal.fire({
+    icon: "success",
+    title: "Success",
+    text: data.message,
+    timer: 1500,
+    showConfirmButton: false
+  }).then(() => {
+    if (data.redirect) {
+      window.location.href = data.redirect;
+    }
+  });
+})
+.catch(err => {
+  Swal.fire({
+    icon: "error",
+    title: "Error",
+    text: err?.message || "Something went wrong"
+  });
+});
+
 });
 </script>

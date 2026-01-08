@@ -200,14 +200,17 @@
           </div>
           <%}%>
 
-          <% if (session.appliedCoupon) { %>
-            <p class="mt-2">Total: ₹ <%= finalAmount %>/-</p>
-            <p>Coupon Applied: <%= session.appliedCoupon.couponCode %></p>
-            <p>Discount: -₹ <%= session.appliedCoupon.discountAmount %>/-</p>
-            <h4>Final Total: ₹ <%= session.appliedCoupon.discountFinalAmount %>/-</h4>
-          <% } else { %>
-            <h4>Total: ₹ <%= finalAmount %></h4>
-          <% } %>
+<% if (session.appliedCoupon) { %>
+  <p class="mt-2">Subtotal: ₹ <%= finalAmount %>/-</p>
+  <p>Coupon Applied: <strong><%= session.appliedCoupon.couponCode %></strong></p>
+  <p class="text-success">Discount: -₹ <%= discount %>/-</p>
+  <h4 class="fw-bold">
+    Final Total: ₹ <%= finalPayableAmount %>/-
+  </h4>
+<% } else { %>
+  <h4>Total: ₹ <%= finalAmount %></h4>
+<% } %>
+
           <!-- Submit button -->
           <button class="btn btn-success w-100 fw-bold fs-4" type="submit">Place Order</button>
         </div>

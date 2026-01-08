@@ -120,8 +120,9 @@ const applyCoupon = async (req, res) => {
         const { code, finalAmount } = req.body;
         const userId = req.session.user || req.user;
         
-        const coupon = await Coupon.findOne({ code: code.toUpperCase(), isActive: true});
+        const coupon = await Coupon.findOne({ code: code.toUpperCase(), isActive: true, expiryDate: { $gt: new Date() }});
         const currentDate = new Date();
+        currentDate.setHours(23, 59, 59, 999);
 
         if(!coupon || currentDate > coupon.expiryDate){
             return res.status(400).json({ success: false, message: "Invalid or expired coupon!"});
@@ -134,49 +135,36 @@ const applyCoupon = async (req, res) => {
         if(finalAmount < coupon.minPrice){
             return res.status(400).json({ success: false, message: `Minimum order of ₹${coupon.minPrice} is required to apply this coupon`})
         }
-
-        let discountAmount = 0;
-
-        if(coupon.discountType === 'percentage') {
-            discountAmount = (finalAmount * coupon.discountValue) / 100 ;
-
-            if(coupon.maxDiscAmount > 0) {
-                discountAmount = Math.min(discountAmount, coupon.maxDiscAmount);
-            }
-        } //add else condition as flat disc. amount here.
-
-            
-        let discountedPrice = Math.round( finalAmount - discountAmount ) ;
-        discountedPrice = Math.max(discountedPrice, 0); //for avoiding hacker manipulation in price.
         
         req.session.appliedCoupon = {
-            couponCode: code,
-            discountAmount,
-            discountFinalAmount: discountedPrice,
-            userId
+            couponCode: coupon.code,
         };
 
-        res.status(200).json({ success: true, discountFinalAmount: discountedPrice, discount: discountAmount, couponCode: code, message: "Coupon applied"});
+        res.status(200).json({ success: true, message: "Coupon applied successfully"});
     } catch (error) {
-        const err = new Error("Apply coupon server error");
-        err.redirect = "/orders?error=" + encodeURIComponent("Apply coupon internal server error");
-        return next (err);
+        console.error(error);
+        return res.status(500).json({
+        success: false,
+        message: "Apply coupon internal server error"
+        });
     }
 }
 
 const removeCoupon = async (req, res) => {
     try {
         delete req.session.appliedCoupon;
-        
+
         return res.status(200).json({
             success: true,
             message: "Coupon removed!"
         })
         
     } catch (error) {
-        const err = new Error("Remove coupon server error");
-        err.redirect = "/orders?error=" + encodeURIComponent("Remove coupon internal server error");
-        return next (err);
+        console.error(error);
+        return res.status(500).json({
+        success: false,
+        message: "Remove coupon internal server error"
+        });
     }
 }
 

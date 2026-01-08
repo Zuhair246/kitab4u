@@ -131,6 +131,33 @@ const loadCheckoutPage = async (req, res) => {
       usedUsers: { $ne: userId },
       expiryDate: {$gt: today}
     });
+
+    let appliedCoupon = req.session.appliedCoupon;
+
+    if(appliedCoupon?.couponCode) {
+      const couponFromDb = await Coupon.findOne({
+        code: appliedCoupon.couponCode,
+        isActive: true,
+        expiryDate: { $gt: new Date () }
+      });
+      if(!couponFromDb || couponFromDb.usedUsers.includes(userId)) {
+        delete req.session.appliedCoupon;
+      } else if (finalAmount >= couponFromDb.minPrice) {
+        if(couponFromDb.discountType === "percentage") {
+          discount = (finalAmount * couponFromDb.discountValue) / 100;
+          if(couponFromDb.maxDiscAmount > 0) {
+            discount = Math.min(discount, couponFromDb.maxDiscAmount);
+          }
+        }
+        discount = Math.round(discount);
+        discountFinalAmount = Math.max(finalAmount - discount, 0);
+      } else {
+        delete req.session.appliedCoupon;
+      }
+    }
+    const finalPayableAmount = discountFinalAmount > 0 ? discountFinalAmount : finalAmount;
+    
+    console.log(`finalAmount:${finalAmount} discount:${discount}, discountFinalAmount:${discountFinalAmount}, finalPayableAmount:${finalPayableAmount}`);
     
     const wallet =  await Wallet.findOne({userId});
     const userWallet =  wallet ? wallet : "";
@@ -143,6 +170,7 @@ const loadCheckoutPage = async (req, res) => {
       shippingCharge,
       finalAmount,
       discountFinalAmount,
+      finalPayableAmount,
       discount,
       userWallet,
       coupons,
@@ -278,19 +306,35 @@ const checkout = async (req, res) => {
     if (!appliedCoupon) {
       delete req.session.appliedCoupon;
       appliedCoupon = null;
-    } else {
-      discountFinalAmount = appliedCoupon
-        ? appliedCoupon.discountFinalAmount
-        : 0;
-      discount = Math.round(appliedCoupon.discountAmount);
     }
 
-     if(appliedCoupon){
-        const couponFromDb = await Coupon.findOne({ code: appliedCoupon.couponCode});
-        if(!couponFromDb || !couponFromDb.isActive){
+     if(appliedCoupon?.couponCode){
+        const couponFromDb = await Coupon.findOne({ 
+          code: appliedCoupon.couponCode,
+          isActive: true,
+          expiryDate: { $gt: new Date() }
+        });
+
+        if(!couponFromDb || !couponFromDb.isActive || couponFromDb.usedUsers.includes(userId)){
+          delete req.session.appliedCoupon;
           return res.status(BAD_REQUEST).json({ 
                       success: false, 
                       message: "Coupon is unavailable at the moment \nPlease remove the coupon and proceed!"})
+        }else if (finalAmount >= couponFromDb.minPrice) {
+          if ( couponFromDb.discountType === "percentage" ) {
+            discount = ( finalAmount * couponFromDb.discountValue ) / 100;
+            if ( couponFromDb.maxDiscAmount > 0) {
+              discount = Math.min(discount, couponFromDb.maxDiscAmount);
+            }
+          } 
+          // else {
+          //   discount = couponFromDb.discountValue;
+          // } // flat discount
+
+          discount = Math.round(discount);
+          discountFinalAmount = Math.max( finalAmount - discount, 0);
+        } else {
+          delete req.session.appliedCoupon;
         }
       }
 

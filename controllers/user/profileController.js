@@ -594,10 +594,16 @@ let savedAddress;
   try {
     const {id} = req.body;
     if (!id) {
-    return res.status(NOT_FOUND).redirect("/profile/address?error=Invalid adress id");
+    return res.status(NOT_FOUND).json({ success: false, message: "Invalid address id"})
   }
-  await Address.updateOne({'address._id':id},{$set:{'address.$.isDeleted':true}})
-  return res.status(OK).redirect("/profile/address?success=Address deleted successfully");
+  const result = await Address.updateOne({'address._id':id},{$set:{'address.$.isDeleted':true}});
+  if (result.modifiedCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Address not found"
+      });
+    }
+  return res.status(OK).json({ success: true, message: "Address deleted"})
   } catch (error) {
       const err = new Error("User delete address server error");
       return next (err);

@@ -254,6 +254,10 @@ const checkout = async (req, res) => {
     }
     const finalAmount = subtotal + shippingCharge;
     let discount = 0;
+
+    if(!selectedAddressId || !mongoose.Types.ObjectId.isValid(selectedAddressId)) {
+      return res.status(BAD_REQUEST).json({ success: false, message: "Please select a delivery address"})
+    }
     const addressDoc = await Address.findOne(
       { userId, "address._id": selectedAddressId },
       { "address.$": 1 }
@@ -261,7 +265,7 @@ const checkout = async (req, res) => {
 
     if (!addressDoc || !addressDoc.address[0]) {
       return res.status(BAD_REQUEST).redirect(
-        "/orders?error=" + encodeURIComponent("Invalid Address Selection")
+        "/orders?error=" + encodeURIComponent("No Valid Address Selected")
       );
     }
     const selectedAddress = addressDoc.address[0];
@@ -301,7 +305,7 @@ const checkout = async (req, res) => {
 
     if (paymentMethod === "COD") {
       if(finalPayableAmount>1000) {
-        return res.status(CONFLICT).redirect("/orders?error=" + encodeURIComponent("Order above ₹1000/- can't be COD"))
+        return res.status(CONFLICT).json({ success: false, message: "Order above ₹1000/- can't be COD"})
       } 
       const newOrder = new Order({
         userId,
@@ -341,11 +345,12 @@ const checkout = async (req, res) => {
         delete req.session.appliedCoupon;
       }
 
-      return res.status(OK).render("orderSuccess", {
-        orderId: newOrder.orderId,
-        user,
-        order: orders,
+      return res.status(OK).json({
+        success: true,
+        message: "Order placed successfully (Cash on Delivery)",
+        redirect: `/orderSuccess?orderId=${newOrder.orderId}`
       });
+
     } else if (paymentMethod === "Online") {
       const receiptId = `receipt_${Date.now()}`;
       const options = {
@@ -444,6 +449,8 @@ const checkout = async (req, res) => {
     return res.status(200).json({ success: true, orderId: newOrder.orderId})
     }
   } catch (error) {
+    console.log(error);
+    
     const err = new Error("Order checkout server error");
     throw err;
   }

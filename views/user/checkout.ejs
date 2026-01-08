@@ -28,11 +28,14 @@
                   <span class="badge bg-secondary position-absolute top-0 end-0 mt-2 me-2">
                     <%= address.addressType %>
                   </span>
-                  <button type="button" 
-                          class="btn btn-sm btn-dark position-absolute top-0 end-0 mt-2 me-2 edit-btn" 
-                          style="transform:translateY(1.8rem);" 
-                          data-bs-toggle="modal"
-                          data-bs-target="#editAddressModal-<%=address._id %>">Edit</button>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-dark position-absolute top-0 end-0 mt-2 me-2 edit-btn"
+                    style="transform: translateY(1.8rem); z-index: 5;"
+                    data-bs-toggle="modal"
+                    data-bs-target="#editAddressModal-<%= address._id %>">
+                    Edit
+                  </button>
                 </div>
               <% }); %>
             <% } else { %>
@@ -617,7 +620,34 @@ if (retryMode && retryRzpOrderId) {
       if (!method) return Swal.fire("Error", "Please select a payment method", "error");
 
       // COD → normal form submit
-      if (method.value === "COD") return this.submit();
+      if (method.value === "COD") {
+  try {
+    const res = await fetch("/orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        selectedAddressId,
+        paymentMethod: "COD"
+      })
+    });
+
+    const result = await res.json();
+
+    if (!result.success) {
+      Swal.fire("Error", result.message || "COD failed", "error");
+      return;
+    }
+
+    Swal.fire("Success!", result.message, "success").then(() => {
+      window.location.href = result.redirect;
+    });
+
+  } catch (err) {
+    Swal.fire("Error", "Something went wrong!", "error");
+  }
+  return;
+}
+
 
       // Wallet Payment
       if(method.value === "wallet") {

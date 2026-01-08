@@ -152,6 +152,9 @@ const addTocart = async (req, res) => {
     }
 
     await cart.save();
+    if(req.session.appliedCoupon) {
+      delete req.session.appliedCoupon;
+    }
     return res.status(OK).json({
       success: "true", message: "Book added to the cart"
     })
@@ -171,6 +174,9 @@ const removeFromCart = async (req, res) => {
           { $pull: { items: { productId: productId, variantId: variantId } } },
           { new: true }
     );
+    if(req.session.appliedCoupon) {
+      delete req.session.appliedCoupon;
+    }
     return res.status(OK).json({ success: true });
 
   } catch (error) {

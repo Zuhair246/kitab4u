@@ -156,9 +156,7 @@ const loadCheckoutPage = async (req, res) => {
       }
     }
     const finalPayableAmount = discountFinalAmount > 0 ? discountFinalAmount : finalAmount;
-    
-    console.log(`finalAmount:${finalAmount} discount:${discount}, discountFinalAmount:${discountFinalAmount}, finalPayableAmount:${finalPayableAmount}`);
-    
+        
     const wallet =  await Wallet.findOne({userId});
     const userWallet =  wallet ? wallet : "";
     let session = req.session;
